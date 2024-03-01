@@ -6,7 +6,7 @@
 
 The UnobservedComponentsGAS.jl is an innovative open-source package developed entirely in Julia. This package facilitates the modeling of time series data by enabling users to define a diverse range of score-driven models with customizable parameter dynamics defined by unobserved components, akin to the State Space model. By representing these models as mathematical programming problems, this package leverages state-of-the-art optimization techniques and incorporates features from the field of optimization into the model formulation. This integration enhances predictive performance, incorporating robustness techniques for more reliable results.
 
-## Table of contents
+## Table of contents:
 
 - <a href="#score-driven-models-as-optimization-problems">Score-driven models as optimization problems</a>
 - <a href="#implemented-dynamics">Implemented dynamics</a>
