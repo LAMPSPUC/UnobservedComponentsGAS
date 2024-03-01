@@ -2,7 +2,7 @@
 
 | *Build Status* | *Coverage* |
 |:-----------------:|:-----------------:|
-| [![ci](https://github.com/matheusaps/UnobservedComponentsGAS/actions/workflows/ci.yml/badge.svg)](https://github.com/matheusaps/UnobservedComponentsGAS/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/matheusaps/UnobservedComponentsGAS/graph/badge.svg?token=HIMLHY0TEF)](https://codecov.io/gh/matheusaps/UnobservedComponentsGAS) |
+| [![ci](https://github.com/LAMPSPUC/UnobservedComponentsGAS/actions/workflows/ci.yml/badge.svg)](https://github.com/LAMPSPUC/UnobservedComponentsGAS/actions/workflows/ci.yml) | [![codecov](https://codecov.io/gh/matheusaps/UnobservedComponentsGAS/graph/badge.svg?token=HIMLHY0TEF)](https://codecov.io/gh/matheusaps/UnobservedComponentsGAS) |
 
 The UnobservedComponentsGAS.jl is an innovative open-source package developed entirely in Julia. This package facilitates the modeling of time series data by enabling users to define a diverse range of score-driven models with customizable parameter dynamics defined by unobserved components, akin to the State Space model. By representing these models as mathematical programming problems, this package leverages state-of-the-art optimization techniques and incorporates features from the field of optimization into the model formulation. This integration enhances predictive performance, incorporating robustness techniques for more reliable results.
 
@@ -144,7 +144,7 @@ This section aims to illustrate how this package can be used for time series mod
 ```julia
 import Pkg;
 
-Pkg.add("https://github.com/matheusaps/UnobservedComponentsGAS.git")
+Pkg.add("https://github.com/LAMPSPUC/UnobservedComponentsGAS.git")
 ```
 To carry out this example, we will consider sales data for new single-family homes in the US. Let's assume the data can be loaded using the code below.
 
