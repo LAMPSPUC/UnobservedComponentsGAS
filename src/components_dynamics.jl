@@ -31,7 +31,7 @@ end
 "
 Add the variables and constraints of the autoregressive dynamic to a JuMP model.
 "
-function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}}) where {Ml, Fl}
+function add_AR!(model::Ml, s::Vector{Vector{Fl}}, T::Int64, ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}}) where {Ml, Fl}
 
     idx_params = findall(i -> i != 0, ar) # Time-varying parameters with autoregressive dynamic
     order      = get_AR_order(ar)
@@ -45,6 +45,7 @@ function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Dict{Int64, Int64
 
     @constraint(model, [i in idx_params], 1e-4 ≤ κ_AR[i])
 
+    # Revisar essas restrições com o Alves !!
     for i in unique_orders
         for j in idx_params
             if i ∉ order[j]
@@ -60,7 +61,7 @@ end
 "
 Add the variables and constraints of the random walk with slope dynamic to a JuMP model.
 "
-function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_slope::Dict{Int64, Bool}) where {Ml, Fl}
+function add_random_walk_slope!(model::Ml, s::Vector{Vector{Fl}}, T::Int64, random_walk_slope::Dict{Int64, Bool}) where {Ml, Fl}
     
     idx_params = findall(i -> i == true, random_walk_slope) # Time-varying parameters with the random walk with slope dynamic
 
@@ -78,7 +79,7 @@ end
 "
 Add the variables and constraints of the random walk dynamic to a JuMP model.
 "
-function add_random_walk!(model::Ml, s::Vector{Fl}, T::Int64, random_walk::Dict{Int64, Bool}) where {Ml, Fl}
+function add_random_walk!(model::Ml, s::Vector{Vector{Fl}}, T::Int64, random_walk::Dict{Int64, Bool}) where {Ml, Fl}
 
     idx_params = findall(i -> i == true, random_walk) # Time-varying parameters with the random walk dynamic
 
@@ -112,7 +113,7 @@ end
 "
 Add the variables and constraints of the trigonometric seasonality dynamic to a JuMP model.
 "
-function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}, stochastic::Bool=true) where {Ml, Fl}
+function add_trigonometric_seasonality!(model::Ml, s::Vector{Vector{Fl}}, T::Int64, seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}, stochastic::Bool=true) where {Ml, Fl}
     
     num_harmonic, seasonal_period = UnobservedComponentsGAS.get_num_harmonic_and_seasonal_period(seasonality)
 
@@ -155,7 +156,7 @@ end
 "
 Add all the components to the JuMP model.
 "
-function include_components!(model::Ml, s::Vector{Fl}, gas_model::GASModel, T::Int64) where {Ml, Fl}
+function include_components!(model::Ml, s::Vector{Vector{Fl}}, gas_model::GASModel, T::Int64) where {Ml, Fl}
 
     @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
 
