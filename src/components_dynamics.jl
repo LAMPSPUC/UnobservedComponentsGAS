@@ -45,6 +45,7 @@ function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Dict{Int64, Int64
 
     @constraint(model, [i in idx_params], 1e-4 ≤ κ_AR[i])
 
+    # Revisar essas restrições com o Alves !!
     for i in unique_orders
         for j in idx_params
             if i ∉ order[j]
