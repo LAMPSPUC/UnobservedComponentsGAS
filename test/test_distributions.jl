@@ -1,8 +1,12 @@
 @testset "Distributions" begin
     
+    "FALTAM TESTES RELATIVOS ÀS EXPLICATIVAS"
+
     T = 100
     Random.seed!(1234)
     y = rand(T)
+    X = [2*y y/2 rand(T)]
+    
 
     @info(" --- Test distributions/common")
     μ  = 1.
@@ -46,9 +50,10 @@
     @test(round(scaled_score_t_1, digits = 3)  == -0.541)
 
     @info(" --- Test distributions/normal")
-    dist = UnobservedComponentsGAS.NormalDistribution()
-    μ  = 0.
-    σ² = 1.
+    dist            = UnobservedComponentsGAS.NormalDistribution()
+    seasonal_period = 12
+    μ               = 0.
+    σ²              = 1.
     score_normal_1          = UnobservedComponentsGAS.score_normal(μ, σ² ,0)
     score_normal_2          = UnobservedComponentsGAS.score_normal(μ, σ² ,1)
     fisher_normal           = UnobservedComponentsGAS.fisher_information_normal(μ, σ²)
@@ -58,6 +63,7 @@
     cdf_normal_2            = UnobservedComponentsGAS.cdf_normal([μ, σ²], 1)
     initial_params_normal_1 = UnobservedComponentsGAS.get_initial_params(y, [true, false], dist, Dict(1=>12))
     initial_params_normal_2 = UnobservedComponentsGAS.get_initial_params(y, [false, false], dist, Dict(1=>12))
+    seasonal_variances      = UnobservedComponentsGAS.get_seasonal_var(y,seasonal_period, dist)
 
 
     @test(size(score_normal_1) == (2,))
@@ -74,15 +80,17 @@
     @test(initial_params_normal_1[1] == y)
     @test(initial_params_normal_1[2] == var(diff(y)))
     @test(initial_params_normal_2[1] == mean(y))
+    @test(all(seasonal_variances .> 0))
 
     #Testar size das saidas do score e afins
     # Testar casos conhecidos para o score e afins
 
     @info(" --- Test distributions/t_location_scale")
-    dist = UnobservedComponentsGAS.tLocationScaleDistribution()
-    μ  = 0.
-    σ² = 1.
-    ν  = 1
+    dist            = UnobservedComponentsGAS.tLocationScaleDistribution()
+    seasonal_period = 12
+    μ               = 0.
+    σ²              = 1.
+    ν               = 1
     score_tlocationscale_1          = UnobservedComponentsGAS.score_tlocationscale(μ, σ², ν ,0)
     score_tlocationscale_2          = UnobservedComponentsGAS.score_tlocationscale(μ, σ², ν ,1)
     fisher_tlocationscale           = UnobservedComponentsGAS.fisher_information_tlocationscale(μ, σ², ν)
@@ -92,8 +100,17 @@
     cdf_tlocationscale_2            = UnobservedComponentsGAS.cdf_tlocationscale([μ, σ², ν], 1)
     initial_params_tlocationscale_1 = UnobservedComponentsGAS.get_initial_params(y, [true, false, false], dist, Dict(1=>12))
     initial_params_tlocationscale_2 = UnobservedComponentsGAS.get_initial_params(y, [false, false, true], dist, Dict(1=>12))
+    seasonal_variances              = UnobservedComponentsGAS.get_seasonal_var(y,seasonal_period, dist)
 
+    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, false, false], 0.0, Dict(1=>true),  
+                                            Dict(1 => false),  Dict(1 => false), 
+                                            Dict(1 => 12), false, false)
+    gas_model_2 = deepcopy(gas_model)
+    best_model_no_explanatory, best_ν_no_explanatory = UnobservedComponentsGAS.find_first_model_for_local_search(gas_model, y)
 
+    # Problema quando tiramos o pacote do André para selecionar as explicativas
+    # best_model_explanatory, best_ν_explanatory       = UnobservedComponentsGAS.find_first_model_for_local_search(gas_model, y, X)
+    
     @test(size(score_tlocationscale_1) == (2,))
     @test(all(score_tlocationscale_1 .== [0., -0.5]))
     @test(all(score_tlocationscale_2 .== [1., -0.0]))
@@ -110,6 +127,9 @@
     @test(initial_params_tlocationscale_1[3] == T-1)
     @test(initial_params_tlocationscale_2[1] == mean(y))
     @test(initial_params_tlocationscale_2[3] == (y.^2) ./ (ones(T) * var(diff(y))))
+    @test(all(seasonal_variances .> 0))
+    @test(all(best_ν_no_explanatory .== best_model_no_explanatory.fitted_params["param_3"]))
+    
 
     @info(" --- Test distributions/log_normal")
     dist              = UnobservedComponentsGAS.LogNormalDistribution()

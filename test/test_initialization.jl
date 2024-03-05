@@ -1,5 +1,7 @@
 @testset "Initialization" begin
     
+    "FALTAM TESTES RELATIVOS ÀS EXPLICATIVAS"
+
     # path = "data\\"
     # path = "test\\data\\"
     # time_series = CSV.read(path*"timeseries_normal_rws_d1.csv", DataFrame)
@@ -9,8 +11,8 @@
     y = rand(T)
 
     stochastic       = false
-    order            = [0]
-    max_order        = 0
+    order            = [1]
+    max_order        = 1
     X                = missing
 
     @info("Test with Random Walk and Slope")
@@ -46,9 +48,8 @@
     @test(isapprox(initial_values["rws"]["values"], initial_level; rtol = 1e-3))
     @test(isapprox(initial_values["slope"]["values"], initial_slope; rtol = 1e-3))
     @test(isapprox(initial_values["seasonality"]["values"],initial_seasonality; rtol = 1e-3))
-    @test(all(initial_values["ar"]["values"] .== zeros(T)))
+    @test(all(initial_values["ar"]["values"] .!= zeros(T)))
     @test(all(initial_values["rw"]["values"] .==  zeros(T)))
-
 
     @info("Test with Random Walk")
     has_level        = true
@@ -88,5 +89,20 @@
     @test(all(initial_values["ar"]["values"] .== zeros(T)))
     @test(all(initial_values["slope"]["values"] .== zeros(T)))
     @test(all(initial_values["rws"]["values"] .==  zeros(T)))
+
+
+    @info("Test create_output_initialization_from_fit")
+    dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
+    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, false], 0.0, Dict(1=>false, 2=>false),  
+                                            Dict(1 => true, 2=>false),  Dict(1 => 1), 
+                                            Dict(1 => 12, 2 => 12), false, false)
+    fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
+    output_initial_values = UnobservedComponentsGAS.create_output_initialization_from_fit(fitted_model, gas_model)
+    
+    @test(all(output_initial_values["rw"]["values"] .== 0))
+    @test(all(output_initial_values["seasonality"]["values"] .!= 0))
+    @test(all(output_initial_values["ar"]["values"] .!= 0))
+    @test(all(output_initial_values["slope"]["values"] .!= zeros(T)))
+    @test(all(output_initial_values["rws"]["values"] .!=  zeros(T)))
 
 end
