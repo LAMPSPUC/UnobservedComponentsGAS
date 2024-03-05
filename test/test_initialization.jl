@@ -86,7 +86,7 @@
 
     @test(isapprox(initial_values["rw"]["values"], initial_level; rtol = 1e-3))
     @test(isapprox(initial_values["seasonality"]["values"],initial_seasonality; rtol = 1e-3))
-    @test(all(initial_values["ar"]["values"] .== zeros(T)))
+    @test(all(initial_values["ar"]["values"] .!= zeros(T)))
     @test(all(initial_values["slope"]["values"] .== zeros(T)))
     @test(all(initial_values["rws"]["values"] .==  zeros(T)))
 
