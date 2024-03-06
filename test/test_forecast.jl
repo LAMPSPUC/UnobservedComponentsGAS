@@ -3,7 +3,10 @@
     """
     Pensar ainda como testar a qualidade da previsão.
     Por enquanto, coloquei apenas testes simples de estrutura do output da previsão
+    Faltam os testes para os casos com explicativas!!
     """
+
+    "FALTAM TESTES RELATIVOS ÀS EXPLICATIVAS"
 
     steps_ahead    = 24
     num_scenarious = 500
@@ -19,7 +22,7 @@
     y_normal         = time_series_normal[:,1]
     dist_normal      = UnobservedComponentsGAS.NormalDistribution()
     gas_model_normal = UnobservedComponentsGAS.GASModel(dist_normal, [true, false], 1.0, Dict(1=>false), 
-                                                Dict(1 => true),  Dict(1 => false), 
+                                                Dict(1 => true),  Dict(1 => 1), 
                                                 Dict(1 => 12), false, true)
 
     fitted_model_normal = UnobservedComponentsGAS.fit(gas_model_normal, y_normal)
@@ -37,7 +40,7 @@
     y_lognormal         = time_series_lognormal[:,2]
     dist_lognormal      = UnobservedComponentsGAS.LogNormalDistribution()
     gas_model_lognormal = UnobservedComponentsGAS.GASModel(dist_lognormal, [true, false], 1.0, Dict(1=>false), 
-                                                Dict(1 => true),  Dict(1 => false), 
+                                                Dict(1 => true),  Dict(1 => 1), 
                                                 Dict(1 => 12), false, true)
 
     fitted_model_lognormal = UnobservedComponentsGAS.fit(gas_model_lognormal, y_lognormal)
@@ -55,7 +58,7 @@
     y_t         = time_series_t[:,1]
     dist_t      = UnobservedComponentsGAS.tLocationScaleDistribution()
     gas_model_t = UnobservedComponentsGAS.GASModel(dist_t, [true, false, false], 1.0, Dict(1=>false), 
-                                                Dict(1 => true),  Dict(1 => false), 
+                                                Dict(1 => true),  Dict(1 => 1), 
                                                 Dict(1 => 12), false, true)
 
     fitted_model_t = UnobservedComponentsGAS.fit(gas_model_t, y_t)
@@ -68,6 +71,5 @@
     @test(isapprox(forecast_t["intervals"]["80"]["upper"], [quantile(forecast_t["scenarios"][t,:], 1 - 0.2/2) for t in 1:steps_ahead]; rtol = 1e-3))
     @test(isapprox(forecast_t["intervals"]["95"]["lower"], [quantile(forecast_t["scenarios"][t,:], 0.05/2) for t in 1:steps_ahead]; rtol = 1e-3))
     @test(isapprox(forecast_t["intervals"]["95"]["upper"], [quantile(forecast_t["scenarios"][t,:], 1 - 0.05/2) for t in 1:steps_ahead]; rtol = 1e-3))
-    
 
 end
