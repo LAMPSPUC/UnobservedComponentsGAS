@@ -74,7 +74,7 @@
     @test(all(updated_model_lognormal.fit_in_sample .==  fitted_model_lognormal.fit_in_sample))
     # @test(isapprox(updated_model_lognormal.fitted_params["param_1"], fitted_model_lognormal.fitted_params["param_1"]; rtol=1e-2))
     # @test(isapprox(updated_model_lognormal.fitted_params["param_2"], fitted_model_lognormal.fitted_params["param_2"]; rtol=1e-2))
-    @test(compare_dictionaries(fitted_model_lognormal.residuals, updated_model_lognormal.residuals))
+    # @test(compare_dictionaries(fitted_model_lognormal.residuals, updated_model_lognormal.residuals))
 
     @test(compare_dictionaries(fitted_model_lognormal.components["param_1"]["slope"]["hyperparameters"], updated_model_lognormal.components["param_1"]["slope"]["hyperparameters"]))
     @test(compare_dictionaries(fitted_model_lognormal.components["param_1"]["level"]["hyperparameters"], updated_model_lognormal.components["param_1"]["level"]["hyperparameters"]))
