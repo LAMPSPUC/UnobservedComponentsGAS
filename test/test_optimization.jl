@@ -20,7 +20,7 @@
     @test(sum((occursin.("fixed", JuMP.name.(params[:,2])))) == T)
 
     # Test compute_score for Normal Distribution
-    model          = JuMP.Model(Ipopt.Optimizer)
+    model = JuMP.Model(Ipopt.Optimizer)
     computed_score = UnobservedComponentsGAS.compute_score(model, params, zeros(T), 0.0, time_varying_params, T, dist)
     @test(size(computed_score) == (2,))
     @test(length(computed_score[1]) == T - 1)
@@ -36,14 +36,14 @@
     @test(sum((occursin.("fixed", JuMP.name.(params[:,3])))) == T)
 
     # Test compute_score for tLocationScale Distribution
-    model          = JuMP.Model(Ipopt.Optimizer)
+    model = JuMP.Model(Ipopt.Optimizer)
     computed_score = UnobservedComponentsGAS.compute_score(model, params, zeros(T), 0.0, time_varying_params, T, dist)
     @test(size(computed_score) == (3,))
     @test(length(computed_score[1]) == T - 1)
 
     # Test include_explanatory_variables!
-    model  = JuMP.Model(Ipopt.Optimizer)
-    X      = zeros(T,3)
+    model = JuMP.Model(Ipopt.Optimizer)
+    X     = zeros(T,3)
     UnobservedComponentsGAS.include_explanatory_variables!(model, X)
     @test(num_variables(model) == 3)
 
@@ -59,7 +59,7 @@
     @test(objective_function(model) == 0)
 
     # Test include_objective_function! Normal Distribution case 2
-    model               = JuMP.Model(Ipopt.Optimizer)
+    model = JuMP.Model(Ipopt.Optimizer)
     register(model, :log_pdf, 3, UnobservedComponentsGAS.DICT_LOGPDF[dist_name]; autodiff = true)
     UnobservedComponentsGAS.include_objective_function!(model, params, zeros(T), T, true, dist_code) 
     @test(objective_function(model) == 0)
@@ -76,7 +76,7 @@
     @test(objective_function(model) == 0)
 
     # Test include_objective_function! tLocationScale Distribution case 2
-    model               = JuMP.Model(Ipopt.Optimizer)
+    model = JuMP.Model(Ipopt.Optimizer)
     register(model, :log_pdf, 4, UnobservedComponentsGAS.DICT_LOGPDF[dist_name]; autodiff = true)
     UnobservedComponentsGAS.include_objective_function!(model, params, zeros(T), T, false, dist_code)
     @test(objective_function(model) == 0) 

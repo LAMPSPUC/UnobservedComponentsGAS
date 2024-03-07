@@ -1,7 +1,7 @@
 name: CI
 on:
   push:
-    branches: ['**']
+    branches: ['**'] #changed from 'main' to '**' in order to run these jobs only when push to main branch
   pull_request:
     types: [opened, synchronize, reopened]
 jobs:

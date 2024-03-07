@@ -11,9 +11,6 @@
     steps_ahead    = 24
     num_scenarious = 500
 
-    # path = "data\\"
-    #path = "test\\data\\"
-    # path = "..\\..\\test\\data\\"
     time_series_normal    = CSV.read(joinpath(@__DIR__, "data/timeseries_normal_rws_d1.csv"), DataFrame)
     time_series_lognormal = CSV.read(joinpath(@__DIR__, "data/timeseries_lognormal_rws_d1.csv"), DataFrame)
     time_series_t         = CSV.read(joinpath(@__DIR__, "data/timeseries_t_rws_d1.csv"), DataFrame)

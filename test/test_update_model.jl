@@ -29,9 +29,6 @@
         return true
     end    
 
-    # path = "data\\"
-    # path = "test\\data\\"
-    #path = "..\\..\\test\\data\\"
     time_series_normal    = CSV.read(joinpath(@__DIR__, "data/timeseries_normal_rws_d1.csv"), DataFrame)
     time_series_lognormal = CSV.read(joinpath(@__DIR__, "data/timeseries_lognormal_rws_d1.csv"), DataFrame)
     time_series_t         = CSV.read(joinpath(@__DIR__, "data/timeseries_t_rws_d1.csv"), DataFrame)
@@ -46,8 +43,6 @@
     fitted_model_normal = UnobservedComponentsGAS.fit(gas_model_normal, y_normal)
     # Me parece que essa função só funciona para a sazo estocástica -> ao mesmo tempo, a definição da sazo na linha 124 está determinística
     updated_model_normal = UnobservedComponentsGAS.update_fitted_params_and_components_dict(gas_model_normal, fitted_model_normal, y_normal, missing)
-
-    #Trocar tudo por isapprox!!!
 
     @test(all(updated_model_normal.fit_in_sample .==  fitted_model_normal.fit_in_sample))
     @test(isapprox(updated_model_normal.fitted_params["param_1"], fitted_model_normal.fitted_params["param_1"]; rtol=1e-3))
