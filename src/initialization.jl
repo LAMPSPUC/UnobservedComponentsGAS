@@ -260,6 +260,9 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
         output_initial_values["fixed_param"] = aux_fixed_params[idx_fixed_params]
     end
 
+    println("---------------Dentro do initialization ----------------")
+    println(idx_time_varying_params)
+
     if length(idx_time_varying_params) > 1
         for i in eachindex(time_varying_params)
             if i != minimum(idx_time_varying_params)
