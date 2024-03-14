@@ -420,7 +420,7 @@ function create_output_fit(model::Ml, parameters::Matrix{Gl} ,y::Vector{Fl}, X::
     return Output(fit_in_sample, fitted_params, components, selected_variables, residuals, information_criteria, penalty_factor, String(Symbol(termination_status(model))))
 
 end
-
+  
 # function auto_gas(gas_model::GASModel, y::Vector{Fl}, steps_ahead::Int64; d_values::Vector{Float64} = [0.0, 0.5, 1.0],
 #     robust_prop::Float64 = 0.7, number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
 #     initial_values::Union{Dict{String, Any}, Missing} = missing, num_scenarious::Int64 = 500, 
@@ -708,7 +708,6 @@ end
 #         end
 
 #     end
-
 #     return best_output, gas_model, forec
 # end
 
