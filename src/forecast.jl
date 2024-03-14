@@ -1,7 +1,17 @@
-"
-Returns a dictionary with the fitted hyperparameters and components, with null forecast.
-The components forecasts will be filled in the function predict_scenarios.
-"
+"""
+# get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GASModel, output::Output, steps_ahead::Int64, num_scenarios::Int64)
+
+Creates a dictionary containing hyperparameters and fitted components along with null forecasts for a GAS model.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `output::Output`: The output structure containing the fitted values, residuals, and information criteria.
+- `steps_ahead::Int64`: The number of steps ahead for the forecast.
+- `num_scenarios::Int64`: The number of scenarios for the forecast.
+
+## Returns
+- `dict_hyperparams_and_fitted_components`: A dictionary containing hyperparameters and fitted components with null forecasts that will be filled in the function predict_scenarios.
+"""
 function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GASModel, output::Output, steps_ahead::Int64, num_scenarios::Int64)
 
     @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
@@ -105,10 +115,20 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     return dict_hyperparams_and_fitted_components
 end
 
-"
-Returns a dictionary with the fitted hyperparameters and components, with null forecast. Used when the model considers explanatory variables.
-The components forecasts will be filled in the function predict_scenarios.
-"
+"""
+# get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GASModel, output::Output, X_forecast::Matrix{Fl}, steps_ahead::Int64, num_scenarios::Int64)
+
+Creates a dictionary that includes hyperparameters, fitted components, null forecasts, and incorporates the effects of explanatory variables for a GAS model.
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `output::Output`: The output structure containing the fitted values, residuals, and information criteria.
+- `X_forecast::Matrix{Fl}`: The matrix of explanatory variables for forecasting.
+- `steps_ahead::Int64`: The number of steps ahead for the forecast.
+- `num_scenarios::Int64`: The number of scenarios for the forecast.
+
+## Returns
+- `dict_hyperparams_and_fitted_components`: A dictionary containing hyperparameters, fitted components, forecasts, and explanatory variables.
+"""
 function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GASModel, output::Output, X_forecast::Matrix{Fl}, steps_ahead::Int64, num_scenarios::Int64) where {Fl}
     
     n_exp      = size(X_forecast, 2)
@@ -124,9 +144,23 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
 
 end
 
-"
-Updates the dict_hyperparams_and_fitted_components with the score scenario, for a specific time t.
-"
+"""
+# update_score!(dict_hyperparams_and_fitted_components::Dict{String, Any}, pred_y::Matrix{Float64}, d::Float64, dist_code::Int64, param::Int64, t::Int64, s::Int64)
+
+Updates the score predictions for the specified parameter, period of time and scenario in the dict_hyperparams_and_fitted_components object.
+
+## Arguments
+- `dict_hyperparams_and_fitted_components::Dict{String, Any}`: A dictionary containing hyperparameters, fitted components, and other relevant information.
+- `pred_y::Matrix{Float64}`: The matrix of predicted values for the time series data.
+- `d::Float64`: The degree of freedom parameter.
+- `dist_code::Int64`: The code representing the distribution used in the GAS model.
+- `param::Int64`: The index of the parameter for which the score is being updated.
+- `t::Int64`: The time step at which the score is being updated.
+- `s::Int64`: The scenario index.
+
+Return
+Updates the score predictions for the specified parameter, period of time and scenario in the dict_hyperparams_and_fitted_components object.
+"""
 function update_score!(dict_hyperparams_and_fitted_components::Dict{String, Any}, pred_y::Matrix{Float64}, d::Float64, dist_code::Int64, param::Int64, t::Int64, s::Int64)
 
     if size(dict_hyperparams_and_fitted_components["params"])[1] == 2
@@ -141,18 +175,40 @@ function update_score!(dict_hyperparams_and_fitted_components::Dict{String, Any}
     end
 end
 
-"
-Updates the dict_hyperparams_and_fitted_components with the random walk scenario, for a specific time t.
-"
+"""
+# update_rw!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64)
+
+Updates the random walk component of a dictionary containing hyperparameters and fitted components.
+
+## Arguments
+- `dict_hyperparams_and_fitted_components::Dict{String, Any}`: A dictionary containing hyperparameters, fitted components, and other relevant information.
+- `param::Int64`: The index of the parameter for which the score is being updated.
+- `t::Int64`: The time step at which the score is being updated.
+- `s::Int64`: The scenario index.
+
+## Returns
+Updates the predictions of the random walk component for the specified parameter, time period, and scenario within the dict_hyperparams_and_fitted_components object.
+"""
 function update_rw!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64)
 
     dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] = dict_hyperparams_and_fitted_components["rw"]["value"][param, t - 1, s] + 
                                                                                         dict_hyperparams_and_fitted_components["rw"]["κ"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s] 
 end
 
-"
-Updates the dict_hyperparams_and_fitted_components with the random walk and slope scenarios, for a specific time t.
-"
+"""
+# update_rws!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64)
+
+Updates the random walk component of a dictionary containing hyperparameters and fitted components.
+
+## Arguments
+- `dict_hyperparams_and_fitted_components::Dict{String, Any}`: A dictionary containing hyperparameters, fitted components, and other relevant information.
+- `param::Int64`: The index of the parameter for which the score is being updated.
+- `t::Int64`: The time step at which the score is being updated.
+- `s::Int64`: The scenario index.
+
+## Returns
+Updates the predictions of the random walk  plus slope component for the specified parameter, time period, and scenario within the dict_hyperparams_and_fitted_components object.
+"""
 function update_rws!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64)
     
     dict_hyperparams_and_fitted_components["rws"]["b"][param, t, s] = dict_hyperparams_and_fitted_components["rws"]["b"][param, t - 1, s] + 
@@ -164,9 +220,23 @@ function update_rws!(dict_hyperparams_and_fitted_components::Dict{String, Any}, 
 
 end
 
-"
-Updates the dict_hyperparams_and_fitted_components with the seasonality scenarios, for a specific time t.
-"
+"""
+# update_S!(dict_hyperparams_and_fitted_components::Dict{String, Any}, num_harmonic::Vector{Int64}, diff_T::Int64, param::Int64, t::Int64, s::Int64)
+
+Updates the seasonality component predictions for the specified parameter, time period, and scenario in the `dict_hyperparams_and_fitted_components` object.
+
+## Arguments
+- `dict_hyperparams_and_fitted_components::Dict{String, Any}`: A dictionary containing hyperparameters, fitted components, and other relevant information.
+- `num_harmonic::Vector{Int64}`: A vector specifying the number of harmonics for each parameter.
+- `diff_T::Int64`: An integer representing the difference between the current time period and the base time period for seasonality calculations.
+- `param::Int64`: An integer indicating the index of the parameter for which the seasonality component is being updated.
+- `t::Int64`: An integer indicating the time step at which the seasonality component is being updated.
+- `s::Int64`: An integer indicating the scenario index.
+
+## Returns
+Updates the seasonality component predictions for the specified parameter, time period, and scenario in the `dict_hyperparams_and_fitted_components` object.
+"""
+# Testar se a função precisa mesmo do diff_T  na sazo deterministica. Eu acho que não pq ja passamos o t = T + t
 function update_S!(dict_hyperparams_and_fitted_components::Dict{String, Any}, num_harmonic::Vector{Int64}, diff_T::Int64, param::Int64, t::Int64, s::Int64)
 
     if length(size( dict_hyperparams_and_fitted_components["seasonality"]["γ"])) == 4
@@ -188,18 +258,41 @@ function update_S!(dict_hyperparams_and_fitted_components::Dict{String, Any}, nu
     end
 end
 
-"
-Updates the dict_hyperparams_and_fitted_components with the autoregressive scenarios, for a specific time t.
-"
+"""
+# update_AR!(dict_hyperparams_and_fitted_components::Dict{String, Any}, order::Vector{Vector{Int64}}, param::Int64, t::Int64, s::Int64)
+
+Updates the autoregressive (AR) component predictions for the specified parameter, time period, and scenario in the `dict_hyperparams_and_fitted_components` object.
+
+## Arguments
+- `dict_hyperparams_and_fitted_components::Dict{String, Any}`: A dictionary containing hyperparameters, fitted components, and other relevant information.
+- `order::Vector{Vector{Int64}}`: A vector of vectors specifying the orders of the autoregressive process for each parameter.
+- `param::Int64`: An integer indicating the index of the parameter for which the AR component is being updated.
+- `t::Int64`: An integer indicating the time step at which the AR component is being updated.
+- `s::Int64`: An integer indicating the scenario index.
+
+## Returns
+Updates the autoregressive (AR) component predictions for the specified parameter, time period, and scenario in the `dict_hyperparams_and_fitted_components` object.
+"""
 function update_AR!(dict_hyperparams_and_fitted_components::Dict{String, Any}, order::Vector{Vector{Int64}} , param::Int64, t::Int64, s::Int64)
 
     dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s] = sum(dict_hyperparams_and_fitted_components["ar"]["ϕ"][:, param][p] * dict_hyperparams_and_fitted_components["ar"]["value"][param, t - p, s] for p in order[param]) + 
                                                                                 dict_hyperparams_and_fitted_components["ar"]["κ"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s]
 end
 
-"
-Updates the dict_hyperparams_and_fitted_components with the distribution parameters scenarios, for a specific time t.
-"
+"""
+# update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64)
+
+Updates predictions for the specified parameter for a given time period and scenario in the `dict_hyperparams_and_fitted_components` object.
+
+## Arguments
+- `dict_hyperparams_and_fitted_components::Dict{String, Any}`: A dictionary containing hyperparameters, fitted components, and other relevant information.
+- `param::Int64`: An integer indicating the index of the parameter for which the predictions are being updated.
+- `t::Int64`: An integer indicating the time step at which the predictions are being updated.
+- `s::Int64`: An integer indicating the scenario index.
+
+## Returns
+Updates predictions for the specified parameter for a given time period and scenario in the `dict_hyperparams_and_fitted_components` object.
+"""
 function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64)
 
     dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
@@ -211,8 +304,21 @@ function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any
 end
 
 "
-Updates the dict_hyperparams_and_fitted_components with the distribution parameters scenarios, for a specific time t, with exogenous variables.
-"
+# update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any}, X_forecast::Matrix{Fl}, period_X::Int64, param::Int64, t::Int64, s::Int64) where Fl
+
+Updates predictions for the specified parameter for a given time period and scenario in the `dict_hyperparams_and_fitted_components` object., incorporating the effects of explanatory variables for forecasting.
+
+## Arguments
+- `dict_hyperparams_and_fitted_components::Dict{String, Any}`: A dictionary containing hyperparameters, fitted components, and other relevant information.
+- `X_forecast::Matrix{Fl}`: A matrix of explanatory variables for forecasting.
+- `period_X::Int64`: An integer indicating the period in the explanatory variables matrix `X_forecast` to be used for forecasting.
+- `param::Int64`: An integer indicating the index of the parameter for which the predictions are being updated.
+- `t::Int64`: An integer indicating the time step at which the predictions are being updated.
+- `s::Int64`: An integer indicating the scenario index.
+
+## Returns
+Updates the parameter predictions for the specified parameter, time period, and scenario in the `dict_hyperparams_and_fitted_components` object, incorporating the effects of explanatory variables for forecasting.
+"""
 function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any}, X_forecast::Matrix{Fl}, period_X::Int64, param::Int64, t::Int64, s::Int64) where Fl
 
     n_exp = size(X_forecast, 2)
@@ -225,9 +331,22 @@ function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any
                                                                     sum(dict_hyperparams_and_fitted_components["explanatories"][j] * X_forecast[period_X, j] for j in 1:n_exp)
 end
 
-"
-Simulates scenarios considering the uncertaintity in the dynamics.
-"
+"""
+# simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitted_components::Dict{String, Any}, y::Vector{Float64}, steps_ahead::Int64, num_scenarios::Int64)
+
+Simulates future values of a time series using the specified GAS model and fitted components.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `output::Output`: The output structure containing the fitted values, residuals, and information criteria.
+- `dict_hyperparams_and_fitted_components::Dict{String, Any}`: A dictionary containing hyperparameters, fitted components, and other relevant information.
+- `y::Vector{Float64}`: The vector of observed values for the time series data.
+- `steps_ahead::Int64`: An integer indicating the number of steps ahead to simulate.
+- `num_scenarios::Int64`: An integer indicating the number of scenarios to simulate.
+
+## Returns
+- `pred_y::Matrix{Float64}`: A matrix containing the simulated values for the time series data. Each column represents a scenario, and each row represents a time step, including the fitted values and the specified number of steps ahead.
+"""
 function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitted_components::Dict{String, Any}, y::Vector{Float64}, steps_ahead::Int64, num_scenarios::Int64)
     
     @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
@@ -294,9 +413,23 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
     return pred_y
 end
 
-"
-Simulates scenarios considering the uncertaintity in the dynamics. Case with exogenous variables.
-"
+"""
+# simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitted_components::Dict{String, Any}, y::Vector{Float64}, X_forecast::Matrix{Fl}, steps_ahead::Int64, num_scenarios::Int64) where {Fl}
+
+Simulates future values of a time series using the specified GAS model, fitted components, and explanatory variables for forecasting.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `output::Output`: The output structure containing the fitted values, residuals, and information criteria.
+- `dict_hyperparams_and_fitted_components::Dict{String, Any}`: A dictionary containing hyperparameters, fitted components, and other relevant information.
+- `y::Vector{Float64}`: The vector of observed values for the time series data.
+- `X_forecast::Matrix{Fl}`: The matrix of explanatory variables for forecasting.
+- `steps_ahead::Int64`: An integer indicating the number of steps ahead to simulate.
+- `num_scenarios::Int64`: An integer indicating the number of scenarios to simulate.
+
+## Returns
+- `pred_y::Matrix{Float64}`: A matrix containing the simulated values for the time series data. Each column represents a scenario, and each row represents a time step, including the fitted values and the specified number of steps ahead.
+"""
 function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitted_components::Dict{String, Any}, y::Vector{Float64}, X_forecast::Matrix{Fl}, steps_ahead::Int64, num_scenarios::Int64) where {Fl}
     
     @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
@@ -358,9 +491,24 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
     return pred_y
 end
 
-"
-Returns the point forecast as the mean of the scenarios and the specified probabilistic intervals.
-"
+"""
+# get_mean_and_intervals_prediction(pred_y::Matrix{Fl}, steps_ahead::Int64, probabilistic_intervals::Vector{Float64}) where Fl
+
+Calculates the mean and intervals of predictions from simulated scenarios.
+
+## Arguments
+- `pred_y::Matrix{Fl}`: A matrix containing simulated values for the time series data. Each column represents a scenario, and each row represents a time step, including the fitted values and the specified number of steps ahead.
+- `steps_ahead::Int64`: An integer indicating the number of steps ahead for the predictions.
+- `probabilistic_intervals::Vector{Float64}`: A vector of floats indicating the probabilistic intervals to be computed.
+
+## Returns
+- `dict_forec::Dict{String, Any}`: A dictionary containing the mean prediction and intervals for the simulated scenarios. It has the following structure:
+  - `mean`: A vector containing the mean prediction for each time step.
+  - `scenarios`: A matrix containing the simulated scenarios, where each column represents a scenario.
+  - `intervals`: A dictionary containing the upper and lower bounds of the interval for each probabilistic level. Each probabilistic level is represented by a string key indicating the percentage, and its value is another dictionary with the following structure:
+    - `upper`: A vector containing the interval's upper bound for each time step.
+    - `lower`: A vector containing the interval's  lower bound for each time step.
+"""
 function get_mean_and_intervals_prediction(pred_y::Matrix{Fl}, steps_ahead::Int64, probabilistic_intervals::Vector{Float64}) where Fl
     
     forec           = zeros(steps_ahead)
@@ -393,7 +541,25 @@ function get_mean_and_intervals_prediction(pred_y::Matrix{Fl}, steps_ahead::Int6
 end
 
 "
-Performs the forecast of the GAS model.
+# predict(gas_model::GASModel, output::Output, y::Vector{Float64}, steps_ahead::Int64, num_scenarios::Int64; probabilistic_intervals::Vector{Float64} = [0.8, 0.95])
+
+Predicts future values of a time series using the specified GAS model.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `output::Output`: The output structure containing the fitted values, residuals, and information criteria.
+- `y::Vector{Float64}`: The vector of observed values for the time series data.
+- `steps_ahead::Int64`: An integer indicating the number of steps ahead to predict.
+- `num_scenarios::Int64`: An integer indicating the number of scenarios to simulate.
+- `probabilistic_intervals::Vector{Float64}`: A vector of floats indicating the probabilistic intervals to be computed. Default is `[0.8, 0.95]`.
+
+## Returns
+- `dict_forec::Dict{String, Any}`: A dictionary containing the mean prediction and intervals for the simulated scenarios. It has the following structure:
+  - `mean`: A vector containing the mean prediction for each time step.
+  - `scenarios`: A matrix containing the simulated scenarios, where each column represents a scenario.
+  - `intervals`: A dictionary containing the upper and lower bounds of the interval for each probabilistic level. Each probabilistic level is represented by a string key indicating the percentage, and its value is another dictionary with the following structure:
+    - `upper`: A vector containing the interval's upper bound for each time step.
+    - `lower`: A vector containing the interval's  lower bound for each time step.
 "
 function predict(gas_model::GASModel, output::Output, y::Vector{Float64}, steps_ahead::Int64, num_scenarios::Int64; probabilistic_intervals::Vector{Float64} = [0.8, 0.95])
     
@@ -415,9 +581,28 @@ function predict(gas_model::GASModel, output::Output, y::Vector{Float64}, steps_
     return dict_forec
 end
 
-"
-Performs the forecast of the GAS model for the casa with exogenous variables
-"
+"""
+# predict(gas_model::GASModel, output::Output, y::Vector{Float64}, X_forecast::Matrix{Fl}, steps_ahead::Int64, num_scenarios::Int64; probabilistic_intervals::Vector{Float64} = [0.8, 0.95]) where {Ml, Fl}
+
+Predicts future values of a time series using the specified GAS model and explanatory variables for forecasting.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `output::Output`: The output structure containing the fitted values, residuals, and information criteria.
+- `y::Vector{Float64}`: The vector of observed values for the time series data.
+- `X_forecast::Matrix{Fl}`: The matrix of explanatory variables for forecasting.
+- `steps_ahead::Int64`: An integer indicating the number of steps ahead to predict.
+- `num_scenarios::Int64`: An integer indicating the number of scenarios to simulate.
+- `probabilistic_intervals::Vector{Float64}`: A vector of floats indicating the probabilistic intervals to be computed. Default is `[0.8, 0.95]`.
+
+## Returns
+- `dict_forec::Dict{String, Any}`: A dictionary containing the mean prediction and intervals for the simulated scenarios. It has the following structure:
+  - `mean`: A vector containing the mean prediction for each time step.
+  - `scenarios`: A matrix containing the simulated scenarios, where each column represents a scenario.
+  - `intervals`: A dictionary containing the upper and lower bounds of the interval for each probabilistic level. Each probabilistic level is represented by a string key indicating the percentage, and its value is another dictionary with the following structure:
+    - `upper`: A vector containing the interval's upper bound for each time step.
+    - `lower`: A vector containing the interval's  lower bound for each time step.
+"""
 function predict(gas_model::GASModel, output::Output, y::Vector{Float64}, X_forecast::Matrix{Fl}, steps_ahead::Int64, num_scenarios::Int64; probabilistic_intervals::Vector{Float64} = [0.8, 0.95]) where {Ml, Fl}
     
     new_output = deepcopy(output)

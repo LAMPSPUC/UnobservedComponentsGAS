@@ -1,8 +1,31 @@
+"""
+# get_idxs_time_varying_params(time_varying_params::Vector{Bool})
+
+Returns the indices of time-varying parameters.
+
+## Arguments
+- `time_varying_params::Vector{Bool}`: A vector indicating whether each parameter is time-varying (`true`) or fixed (`false`).
+
+## Returns
+- `idxs::Vector{Int}`: A vector containing the indices of time-varying parameters.
+"""
 get_idxs_time_varying_params(time_varying_params::Vector{Bool}) = findall(i -> i == true, time_varying_params)
 
-"
-Returns a dictionary with the fitted hyperparameters and components.
-"
+"""
+# get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Matrix{Fl}})
+
+Returns the fitted values and components of the specified GAS model.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `model::Ml`: The optimization model with fitted parameters and components.
+- `X::Union{Missing, Matrix{Fl}}`: Explanatory variables used in the model. Set to `missing` if not provided.
+
+## Returns
+- `fit_in_sample::Vector{Fl}`: A vector containing the fitted values in the sample.
+- `fitted_params::Dict{String, Vector{Float64}}`: A dictionary containing the fitted parameters for each time-varying component. Each key represents a parameter, and its value is a vector of fitted values.
+- `components::Dict{String, Any}`: A dictionary containing the components of the model. Each key represents a parameter, and its value is another dictionary containing the components' details.
+"""
 function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Matrix{Fl}}) where {Ml,  Fl} 
     
     @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
@@ -89,7 +112,18 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
 
 end
 
-"Compute the Standard Residuals of the fitted model"
+"""
+# get_std_residuals(y::Vector{Fl}, fit_in_sample::Vector{Fl})
+
+Calculates the standardized residuals of a time series' model.
+
+## Arguments
+- `y::Vector{Fl}`: The vector of observed values for the time series data.
+- `fit_in_sample::Vector{Fl}`: The vector of fitted values in the sample.
+
+## Returns
+- `std_res::Vector{Fl}`: A vector containing the standardized residuals.
+"""
 function get_std_residuals(y::Vector{Fl}, fit_in_sample::Vector{Fl}) where Fl
     residuals = y .- fit_in_sample
     std_res = (residuals .- mean(residuals)) / std(residuals)
@@ -97,7 +131,19 @@ function get_std_residuals(y::Vector{Fl}, fit_in_sample::Vector{Fl}) where Fl
     return std_res
 end
 
-"Compute the Conditional Score Residuals of the fitted model"
+"""
+# get_cs_residuals(y::Vector{Fl}, fitted_params::Dict{String, Vector{Float64}}, dist_code::Int64)
+
+Calculates the conditional score (CS) residuals for a time series based on the fitted parameters of a GAS model.
+
+## Arguments
+- `y::Vector{Fl}`: The vector of observed values for the time series data.
+- `fitted_params::Dict{String, Vector{Float64}}`: A dictionary containing the fitted parameters of the GAS model. Each key represents a parameter name, and the corresponding value is a vector of fitted values for each time period.
+- `dist_code::Int64`: An integer representing the code of the distribution used in the GAS model.
+
+## Returns
+- `cs_residuals::Matrix{Fl}`: A matrix containing the conditional score (CS) residuals. Each row corresponds to a time period, and each column represents a different parameter.
+"""
 function get_cs_residuals(y::Vector{Fl}, fitted_params::Dict{String, Vector{Float64}}, dist_code::Int64) where Fl
     
     T = length(y)
@@ -124,7 +170,19 @@ function get_cs_residuals(y::Vector{Fl}, fitted_params::Dict{String, Vector{Floa
     return cs_residuals
 end
 
-"Compute the Quantile Residuals of the fitted model"
+"""
+# get_quantile_residuals(y::Vector{Fl}, fitted_params::Dict{String, Vector{Float64}}, dist_code::Int64)
+
+Calculates the quantile residuals for a time series based on the fitted parameters of a GAS model.
+
+## Arguments
+- `y::Vector{Fl}`: The vector of observed values for the time series data.
+- `fitted_params::Dict{String, Vector{Float64}}`: A dictionary containing the fitted parameters of the GAS model. Each key represents a parameter name, and the corresponding value is a vector of fitted values for each time period.
+- `dist_code::Int64`: An integer representing the code of the distribution used in the GAS model.
+
+## Returns
+- `q_residuals::Vector{Fl}`: A vector containing the quantile residuals for each time period.
+"""
 function get_quantile_residuals(y::Vector{Fl}, fitted_params::Dict{String, Vector{Float64}}, dist_code::Int64) where Fl
     
     dist_name  = DICT_CODE[dist_code]
@@ -147,9 +205,23 @@ function get_quantile_residuals(y::Vector{Fl}, fitted_params::Dict{String, Vecto
     return q_residuals
 end
 
-"
-Returns the residuals of the fitted model.
-"
+"""
+# get_residuals(y::Vector{Float64}, fit_in_sample::Vector{Float64}, fitted_params::Dict{String, Vector{Float64}}, dist_code::Int64)
+
+Calculates various types of residuals for a time series based on the fitted parameters of a GAS model.
+
+## Arguments
+- `y::Vector{Float64}`: The vector of observed values for the time series data.
+- `fit_in_sample::Vector{Float64}`: The vector of fitted values obtained in the in-sample fitting process.
+- `fitted_params::Dict{String, Vector{Float64}}`: A dictionary containing the fitted parameters of the GAS model. Each key represents a parameter name, and the corresponding value is a vector of fitted values for each time period.
+- `dist_code::Int64`: An integer representing the code of the distribution used in the GAS model.
+
+## Returns
+- `dict_residuals::Dict{String, Union{Vector{Float64}, Matrix{Float64}}}`: A dictionary containing various types of residuals.
+  - `std_residuals`: A vector of standardized residuals.
+  - `cs_residuals`: A matrix of conditional score residuals.
+  - `q_residuals`: A vector of quantile residuals.
+"""
 function get_residuals(y::Vector{Float64}, fit_in_sample::Vector{Float64}, fitted_params::Dict{String, Vector{Float64}}, dist_code::Int64)
 
     # Getting std residuals
@@ -170,9 +242,20 @@ function get_residuals(y::Vector{Float64}, fit_in_sample::Vector{Float64}, fitte
     
 end
 
-"
-Calculates the AIC information criteria.
-"
+"""
+# aic(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, dist::ScoreDrivenDistribution) where {Ml, Fl, Gl}
+
+Calculates the Akaike Information Criterion (AIC) for a given GAS model.
+
+## Arguments
+- `model::Ml`: The optimization model used for fitting the GAS model.
+- `parameters::Matrix{Gl}`: A matrix containing the estimated parameters of the GAS model. Each row represents a time period, and each column represents a parameter.
+- `y::Vector{Fl}`: The vector of observed values for the time series data.
+- `dist::ScoreDrivenDistribution`: The distribution used in the GAS model.
+
+## Returns
+- `aic::Gl`: The Akaike Information Criterion (AIC) value.
+"""
 function aic(model::Ml,  parameters::Matrix{Gl}, y::Vector{Fl}, dist::ScoreDrivenDistribution) where {Ml, Fl, Gl}
 
     #num_params = get_num_params(dist)
@@ -190,9 +273,20 @@ function aic(model::Ml,  parameters::Matrix{Gl}, y::Vector{Fl}, dist::ScoreDrive
     return -2 * log_likelihood + 2 * num_parameters
 end
 
-"
-Calculates the BIC information criteria.
-"
+"""
+# bic(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, dist::ScoreDrivenDistribution) where {Ml, Fl, Gl}
+
+Calculates the Bayesian Information Criterion (BIC) for a given GAS model.
+
+## Arguments
+- `model::Ml`: The optimization model used for fitting the GAS model.
+- `parameters::Matrix{Gl}`: A matrix containing the estimated parameters of the GAS model. Each row represents a time period, and each column represents a parameter.
+- `y::Vector{Fl}`: The vector of observed values for the time series data.
+- `dist::ScoreDrivenDistribution`: The distribution used in the GAS model.
+
+## Returns
+- `bic::Gl`: The Bayesian Information Criterion (BIC) value.
+"""
 function bic(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, dist::ScoreDrivenDistribution) where {Ml, Fl, Gl}
     
     #num_params = get_num_params(dist)
@@ -209,9 +303,20 @@ function bic(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, dist::ScoreDriven
     return -2 * log_likelihood + num_parameters * log(length(y[2:end]))
 end
 
-"
-Calculates the AICc information criteria.
-"
+"""
+# aicc(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, dist::ScoreDrivenDistribution) where {Ml, Fl, Gl}
+
+Calculates the corrected Akaike Information Criterion (AICc) for a given GAS model.
+
+## Arguments
+- `model::Ml`: The optimization model used for fitting the GAS model.
+- `parameters::Matrix{Gl}`: A matrix containing the estimated parameters of the GAS model. Each row represents a time period, and each column represents a parameter.
+- `y::Vector{Fl}`: The vector of observed values for the time series data.
+- `dist::ScoreDrivenDistribution`: The distribution used in the GAS model.
+
+## Returns
+- `aicc::Gl`: The corrected Akaike Information Criterion (AICc) value.
+"""
 function aicc(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, dist::ScoreDrivenDistribution) where {Ml, Fl, Gl}
 
     #num_params = get_num_params(dist)
@@ -223,9 +328,23 @@ function aicc(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, dist::ScoreDrive
     return AIC + (2 *  num_parameters * ( num_parameters + 1)) / (length(y[2:end]) -  num_parameters - 1)
 end
 
-"
-Returns a dictionary with the information criteria AIC, BIC and AICc.
-"
+"""
+# get_information_criteria(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, dist::ScoreDrivenDistribution) where {Ml, Fl, Gl}
+
+Calculates various information criteria for assessing the fit of a GAS model.
+
+## Arguments
+- `model::Ml`: The optimization model used for fitting the GAS model.
+- `parameters::Matrix{Gl}`: A matrix containing the estimated parameters of the GAS model. Each row represents a time period, and each column represents a parameter.
+- `y::Vector{Fl}`: The vector of observed values for the time series data.
+- `dist::ScoreDrivenDistribution`: The distribution used in the GAS model.
+
+## Returns
+- `dict::Dict{String, Float64}`: A dictionary containing the calculated information criteria.
+  - `"aic"`: Akaike Information Criterion (AIC) value.
+  - `"bic"`: Bayesian Information Criterion (BIC) value.
+  - `"aicc"`: Corrected Akaike Information Criterion (AICc) value.
+"""
 function get_information_criteria(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, dist::ScoreDrivenDistribution) where {Ml, Fl, Gl}
 
     dict = Dict{String, Float64}()
@@ -237,14 +356,36 @@ function get_information_criteria(model::Ml, parameters::Matrix{Gl}, y::Vector{F
     return dict
 end
 
-"
-Check if a fitte model find a optimal or presented Invalid model or numeric error
-"
+"""
+# is_valid_model(output::Output) -> Bool
+
+Checks whether the output of a GAS model represents an optimal model or if it indicates an invalid model or a numeric error.
+
+## Arguments
+- `output::Output`: The output structure containing information about the fitted model.
+
+## Returns
+- `valid::Bool`: A boolean indicating whether the model is valid (`true`) or not (`false`).
+"""
 function is_valid_model(output::Output)
 
     return output.model_status ∉ ["INVALID_MODEL", "NUMERIC_ERROR", "TIME_LIMIT"]
 end
 
+"""
+# fit_AR_model(y::Vector{Fl}, order::Vector{Int64})
+
+Fits an autoregressive (AR) model to the provided time series data.
+
+## Arguments
+- `y::Vector{Fl}`: A vector containing the observed values for the time series data.
+- `order::Vector{Int64}`: A vector specifying the order of the AR model.
+
+## Returns
+- `y_hat::Vector{Fl}`: The fitted values generated by the AR model.
+- `ϕ::Vector{Fl}`: The estimated coefficients of the AR model.
+- `c::Fl`: The intercept term of the AR model.
+"""
 function fit_AR_model(y::Vector{Fl}, order::Vector{Int64}) where Fl
 
     T         = length(y)
@@ -266,6 +407,20 @@ function fit_AR_model(y::Vector{Fl}, order::Vector{Int64}) where Fl
     return JuMP.value.(y_hat), JuMP.value.(ϕ), JuMP.value(c)
 end
 
+"""
+# fit_harmonics(y::Vector{Fl}, seasonal_period::Int64, stochastic::Bool) -> Tuple{Vector{Fl}, Vector{Fl}}
+
+Fits harmonic components to the provided time series data to capture seasonality.
+
+## Arguments
+- `y::Vector{Fl}`: A vector containing the observed values for the time series data.
+- `seasonal_period::Int64`: An integer representing the seasonal period of the data.
+- `stochastic::Bool`: A boolean indicating whether the model is stochastic.
+
+## Returns
+- `γ::Vector{Fl}`: The estimated coefficients of the cosine terms in the harmonic model.
+- `γ_star::Vector{Fl}`: The estimated coefficients of the sine terms in the harmonic model.
+"""
 function fit_harmonics(y::Vector{Fl}, seasonal_period::Int64, stochastic::Bool) where {Fl}
 
     T = length(y)

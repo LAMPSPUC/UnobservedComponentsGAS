@@ -1,6 +1,24 @@
-"
-Defines the specified GAS model as a optimization problem
-"
+"""
+# create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missing, Int64};
+                number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
+                initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+
+Creates a generalized autoregressive score (GAS) model based on the given model's specifications and data.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing model's specifications.
+- `y::Vector{Fl}`: The time series data to be modeled.
+- `fixed_ν::Union{Missing, Int64}`: The fixed degrees of freedom parameter for the GAS model.
+- `number_max_iterations::Int64`: The maximum number of iterations for optimization. Default is 30000.
+- `max_optimization_time::Float64`: The maximum CPU time allowed for optimization. Default is 180.0 seconds.
+- `initial_values::Union{Dict{String, Any}, Missing}`: Initial values for the model parameters. Default is `missing`.
+- `tol::Float64`: Tolerance for optimization convergence. Default is 0.005.
+
+## Returns
+- `model`: The created JuMP model representing the GAS model.
+- `parameters`: The parameters included in the model.
+- `initial_values`: The initial values for the model parameters.
+"""
 function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missing, Int64};
     number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
 
@@ -58,9 +76,28 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missin
     return model, parameters, initial_values
 end
 
-"
-Defines the specified GAS model with exogenous variables as a optimization problem
-"
+"""
+# create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_ν::Union{Missing, Int64};
+                number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
+                initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+
+Creates a generalized autoregressive score (GAS) model with explanatory variables based on the given model's specifications and data.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `y::Vector{Fl}`: The dependent variable time series data to be modeled.
+- `X::Matrix{Fl}`: The matrix containing explanatory variables.
+- `fixed_ν::Union{Missing, Int64}`: The fixed degrees of freedom parameter for the GAS model.
+- `number_max_iterations::Int64`: The maximum number of iterations for optimization. Default is 30000.
+- `max_optimization_time::Float64`: The maximum CPU time allowed for optimization. Default is 180.0 seconds.
+- `initial_values::Union{Dict{String, Any}, Missing}`: Initial values for the model parameters. Default is `missing`.
+- `tol::Float64`: Tolerance for optimization convergence. Default is 0.005.
+
+## Returns
+- `model`: The created JuMP model representing the GAS model with explanatory variables.
+- `parameters`: The parameters included in the model.
+- `initial_values`: The initial values for the model parameters.
+"""
 function create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_ν::Union{Missing, Int64};
     number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
 
@@ -114,16 +151,38 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_�
         register(model, :log_pdf, 3, DICT_LOGPDF[dist_name]; autodiff = true)
     end
 
-    # if log_normal_flag
-    #     gas_model.dist = LogNormalDistribution()
-    # end
+    if log_normal_flag
+        gas_model.dist = LogNormalDistribution()
+    end
 
     return model, parameters, initial_values
 end
 
-"
-Evaluate if the model is based on t distribution or not and call the correct function to fit the model
-"
+"""
+# fit(gas_model::GASModel, y::Vector{Fl}; 
+      α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
+      number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
+      initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+
+Fits a generalized autoregressive score (GAS) model to the given time series data.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `y::Vector{Fl}`: The dependent variable time series data to be modeled.
+- `α::Float64`: The coefficient of the convex combination that guide the regularization of the κ parameters. Default is 0.5.
+- `robust_prop::Float64`: The proportion of data used for robust optimization. Default is 0.7.
+- `number_max_iterations::Int64`: The maximum number of iterations for optimization. Default is 30000.
+- `max_optimization_time::Float64`: The maximum CPU time allowed for optimization. Default is 180.0 seconds.
+- `initial_values::Union{Dict{String, Any}, Missing}`: Initial values for the model parameters. Default is `missing`.
+- `tol::Float64`: Tolerance for optimization convergence. Default is 0.005.
+
+## Returns
+- `fitted_model`: The fitted GAS model.
+
+## Details
+- If the distribution of the GAS model is `tLocationScaleDistribution`, it fits the model using local search to optimize the degrees of freedom parameter (ν).
+- Otherwise, it creates a GAS model based on the specifications and fits it to the data.
+"""
 function fit(gas_model::GASModel, y::Vector{Fl}; 
                 α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
                 number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
@@ -146,9 +205,32 @@ function fit(gas_model::GASModel, y::Vector{Fl};
     return fitted_model
 end
 
-"
-Evaluate if the model is based on t distribution or not and call the correct function to fit the model, with exogenous variables
-"
+"""
+# fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; 
+      α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
+      number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
+      initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+
+Fits a generalized autoregressive score (GAS) model with explanatory variables to the given time series data.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `y::Vector{Fl}`: The dependent variable time series data to be modeled.
+- `X::Matrix{Fl}`: The matrix containing explanatory variables.
+- `α::Float64`: The coefficient of the convex combination that guides the regularization of the κ parameters. Default is 0.5.
+- `robust_prop::Float64`: The proportion of data used for robust optimization. Default is 0.7.
+- `number_max_iterations::Int64`: The maximum number of iterations for optimization. Default is 30000.
+- `max_optimization_time::Float64`: The maximum CPU time allowed for optimization. Default is 180.0 seconds.
+- `initial_values::Union{Dict{String, Any}, Missing}`: Initial values for the model parameters. Default is `missing`.
+- `tol::Float64`: Tolerance for optimization convergence. Default is 0.005.
+
+## Returns
+- `fitted_model`: The fitted GAS model.
+
+## Details
+- If the distribution of the GAS model is `tLocationScaleDistribution`, it fits the model using local search to optimize the degrees of freedom parameter (ν).
+- Otherwise, it creates a GAS model based on the specifications and fits it to the data.
+"""
 function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; 
                 α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
                 number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing,tol::Float64 = 0.005) where Fl
@@ -171,9 +253,28 @@ function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl};
 
 end
 
-"
-Fits the specified GAS model.
-"
+"""
+# fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; 
+      α::Float64 = 0.5, robust_prop::Float64 = 0.7) where {Fl, Ml, Gl}
+
+Fits a generalized autoregressive score (GAS) model to the given time series data using a pre-defined JuMP model.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `y::Vector{Fl}`: The dependent variable time series data to be modeled.
+- `model::Ml`: The pre-defined JuMP model to be used for optimization.
+- `parameters::Matrix{Gl}`: The matrix containing parameters to be optimized.
+- `initial_values::Dict{String, Any}`: Initial values for the model parameters.
+- `α::Float64`: The coefficient of the convex combination that guides the regularization of the κ parameters. Default is 0.5.
+- `robust_prop::Float64`: The proportion of data used for robust optimization. Default is 0.7.
+
+## Returns
+- `fitted_model`: The fitted GAS model.
+
+## Details
+- If the distribution of the GAS model is `LogNormalDistribution`, it transforms the dependent variable data to natural logarithms.
+- Includes the objective function, initializes variables, optimizes the model, and returns the fitted GAS model.
+"""
 function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.5, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
 
     if typeof(gas_model.dist) == LogNormalDistribution
@@ -207,9 +308,29 @@ function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{G
     return create_output_fit(model, parameters, y, missing, missing, gas_model, α)
 end
 
-"
-Fits the specified GAS model, with exogenous variables.
-"
+"""
+# fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; 
+      α::Float64 = 0.5, robust_prop::Float64 = 0.7) where {Fl, Ml, Gl}
+
+Fits a generalized autoregressive score (GAS) model with explanatory variables to the given time series data using a pre-defined JuMP model.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `y::Vector{Fl}`: The dependent variable time series data to be modeled.
+- `X::Matrix{Fl}`: The matrix of explanatory variables.
+- `model::Ml`: The pre-defined JuMP model to be used for optimization.
+- `parameters::Matrix{Gl}`: The matrix containing parameters to be optimized.
+- `initial_values::Dict{String, Any}`: Initial values for the model parameters.
+- `α::Float64`: The coefficient of the convex combination that guides the regularization of the κ parameters. Default is 0.5.
+- `robust_prop::Float64`: The proportion of data used for robust optimization. Default is 0.7.
+
+## Returns
+- `fitted_model`: The fitted GAS model.
+
+## Details
+- If the distribution of the GAS model is `LogNormalDistribution`, it transforms the dependent variable data to natural logarithms.
+- Includes the objective function, initializes variables, optimizes the model, and returns the fitted GAS model.
+"""
 function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.5, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
 
     if typeof(gas_model.dist) == LogNormalDistribution
@@ -244,303 +365,24 @@ function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, param
     return create_output_fit(model, parameters, y, X, missing, gas_model, α)
 end
 
-"
-Runs the automatic GAS. Finds the best value of α for d = 0, then find the best d for that fixed value of α.
-"
-function auto_gas(gas_model::GASModel, y::Vector{Fl}, steps_ahead::Int64; d_values::Vector{Float64} = [0.0, 0.5, 1.0],
-    robust_prop::Float64 = 0.7, number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
-    initial_values::Union{Dict{String, Any}, Missing} = missing, num_scenarious::Int64 = 500, 
-    probabilistic_intervals::Vector{Float64} = [0.8, 0.95], validation_horizont::Int64 = 12) where Fl
+"""
+# create_output_fit(model::Ml, parameters::Matrix{Gl} ,y::Vector{Fl}, X::Union{Missing, Matrix{Fl}}, selected_variables::Union{Missing, Vector{Int64}},  
+                            gas_model::GASModel, penalty_factor::Float64) where {Ml, Gl, Fl}
 
-    if typeof(gas_model.dist) == tLocationScaleDistribution
+Creates an output structure containing the fitted values, residuals, and information criteria of a GAS model.
 
-        new_gas_model = deepcopy(gas_model)
-        new_gas_model.dist = NormalDistribution()
-        new_gas_model.time_varying_params = new_gas_model.time_varying_params[1:2]
-    else
-        new_gas_model = deepcopy(gas_model)
-    end
+## Arguments
+- `model::Ml`: The fitted optimization model.
+- `parameters::Matrix{Gl}`: The optimized parameters of the GAS model.
+- `y::Vector{Fl}`: The dependent variable time series data.
+- `X::Union{Missing, Matrix{Fl}}`: The matrix of explanatory variables. Default is `missing`.
+- `selected_variables::Union{Missing, Vector{Int64}}`: The indices of selected variables. Default is `missing`.
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `penalty_factor::Float64`: The penalty factor used for regularization.
 
-    @info("Finding optimal value of α")
-
-    y_train = y[1:end-validation_horizont]
-    y_val   = y[end-(validation_horizont-1):end]
-
-    metrics  = []
-    alpha    =[]
-    times = []
-    aicc_aux = []
-    aiccs = []
-
-    if !ismissing(initial_values)
-        new_initial_values = get_part_initial_values(initial_values, validation_horizont)
-    else
-        new_initial_values = deepcopy(initial_values)
-    end
-    
-    for d in d_values
-        println("Testando d = $d")
- 
-        alfa = []
-
-        new_gas_model.d = d
-
-        model, parameters, first_initial_values = create_model(new_gas_model, y_train, missing; number_max_iterations = number_max_iterations,  
-                                max_optimization_time = max_optimization_time, initial_values = new_initial_values, tol = 0.005);
-        
-        new_initial_values = first_initial_values
-
-        function get_metric(α::Float64)
-            
-            α = round(α; digits = 3)
-            println("Testando α = $α")
-            push!(alfa, α)
-
-            output = fit(new_gas_model, y_train, model, parameters, new_initial_values; α = α, robust_prop = robust_prop)
-            # @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust = new_gas_model
-
-            # dist_code =  get_dist_code(dist)
-
-            # T = length(y_train)
-           
-            
-            # include_objective_function!(model, parameters, log.(y_train), T, robust, dist_code; α = α, robust_prop = robust_prop);
-            
-
-            # initialize_components!(model, new_initial_values, new_gas_model);
-            # optimize!(model)
-
-            # println(new_gas_model.dist)
-
-            # output = create_output_fit(model, parameters, y_train, missing, missing, new_gas_model, α)
-
-            #println("Funçao obj: ",objective_value(model))
-    
-            if is_valid_model(output) && typeof(new_gas_model.dist) != LogNormalDistribution
-                new_initial_values = create_output_initialization_from_fit(output, new_gas_model)
-            else
-               new_initial_values = first_initial_values 
-            end
-
-            try
-                forec = predict(new_gas_model, output, y_train, validation_horizont, 100; probabilistic_intervals = [0.95])
-                println("RMSE: ", sqrt(mean((y_val .- forec["mean"]).^2)))
-                
-                push!(aicc_aux, output.information_criteria["aicc"])
-
-                return sqrt(mean((y_val .- forec["mean"]).^2)) #output.information_criteria["aicc"] #sqrt(mean((y_val .- forec["mean"]).^2))
-            catch
-                return Inf
-            end
-        end
-
-        Random.seed!(123)
-        time = @elapsed optimization_result = Optim.optimize(get_metric, 0.0, 1.0, GoldenSection(); time_limit = 0.1, r_tol = 0.01, abs_tol = 0.001, iterations = 50)
-    
-        push!(alpha, optimization_result.minimizer[1])
-        push!(metrics, Optim.minimum(optimization_result))
-        push!(times, time)
-        push!(aiccs, aicc_aux)
-
-    end
-    println("d = 0.0 => $(times[1]/60) minutos")
-    println("d = 0.5 => $(times[2]/60) minutos")
-    println("d = 1.0 => $(times[3]/60) minutos")
-    println(metrics)
-    println(alpha)
-    sorted_idx = sortperm(metrics)
-    gas_model.d = d_values[sorted_idx[1]]
- 
-    println("Fitando modelo com d = $(gas_model.d)!!")
-
-    best_output = fit(gas_model, y;  α = alpha[sorted_idx[1]], robust_prop = robust_prop, max_optimization_time = max_optimization_time, 
-                     number_max_iterations = number_max_iterations, initial_values = initial_values, tol = 0.000001)
-    
-    forec = predict(gas_model, best_output, y, steps_ahead, num_scenarious; probabilistic_intervals = probabilistic_intervals)
-
-    historic_ampl = maximum(y) - minimum(y)
-
-    if abs(minimum(forec["intervals"]["95"]["lower"]) - maximum(forec["mean"])) > 1.1*historic_ampl || abs(maximum(forec["intervals"]["95"]["upper"]) - minimum(forec["mean"])) > 1.1*historic_ampl
-        gas_model.d = d_values[sorted_idx[2]]
-
-        println("Fitando modelo com d = $(gas_model.d)!!")
- 
-        best_output = fit(gas_model, y;  α = alpha[sorted_idx[2]], robust_prop = robust_prop, max_optimization_time = max_optimization_time, 
-                     number_max_iterations = number_max_iterations, initial_values = initial_values, tol = 0.000001)
-
-        forec = predict(gas_model, best_output, y, steps_ahead, num_scenarious; probabilistic_intervals = probabilistic_intervals)
-
-        if abs(minimum(forec["intervals"]["95"]["lower"]) - maximum(forec["mean"])) > 1.1*historic_ampl || abs(maximum(forec["intervals"]["95"]["upper"]) - minimum(forec["mean"])) > 1.1*historic_ampl
-            gas_model.d = d_values[sorted_idx[3]]
-
-            println("Fitando modelo com d = $(gas_model.d)!!")
-    
-            best_output = fit(gas_model, y; α = alpha[sorted_idx[3]], robust_prop = robust_prop, max_optimization_time = max_optimization_time, 
-                        number_max_iterations = number_max_iterations, initial_values = initial_values, tol = 0.000001)
-
-            forec = predict(gas_model, best_output, y,steps_ahead, num_scenarious; probabilistic_intervals = probabilistic_intervals)
-
-            if abs(minimum(forec["intervals"]["95"]["lower"]) - maximum(forec["mean"])) > 1.1*historic_ampl || abs(maximum(forec["intervals"]["95"]["upper"]) - minimum(forec["mean"])) > 1.1*historic_ampl
-                gas_model.d = d_values[sorted_idx[1]]
-    
-                println("Fitando modelo com d = $(gas_model.d)!!")
-                best_output = fit(gas_model, y;  α = alpha[sorted_idx[1]], robust_prop = robust_prop, max_optimization_time = max_optimization_time, 
-                                number_max_iterations = number_max_iterations, initial_values = initial_values, tol = 0.000001)
-                
-                forec = predict(gas_model, best_output, y, steps_ahead, num_scenarious; probabilistic_intervals = probabilistic_intervals)   
-            end          
-        end
-    end
-
-    return best_output, gas_model, forec#, tested_alfa, metrics#, graficos
-
-end
-
-
-function auto_gas(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, X_forecast::Matrix{Fl}, steps_ahead::Int64;  
-    d_values::Vector{Float64} = [0.0, 0.5, 1.0],
-    robust_prop::Float64 = 0.7, number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
-    initial_values::Union{Dict{String, Any}, Missing} = missing, num_scenarious::Int64 = 500,
-    probabilistc_interals::Vector{Float64} = [0.8, 0.95], validation_horizont::Int64 = 12) where Fl
-
-    if typeof(gas_model.dist) == tLocationScaleDistribution
-        new_gas_model = deepcopy(gas_model)
-        new_gas_model.dist = NormalDistribution()
-        new_gas_model.time_varying_params = new_gas_model.time_varying_params[1:2]
-    else
-        new_gas_model = deepcopy(gas_model)
-    end
-
-    @info("Finding optimal value of α")
-
-    y_train = y[1:end-validation_horizont]
-    y_val   = y[end-(validation_horizont-1):end]
-
-    X_train = X[1:end-validation_horizont, :]
-    X_val   = X[end-(validation_horizont-1):end, :]
-
-    metrics  = []
-    alpha    = []
-    times = []
-
-    if !ismissing(initial_values)
-        new_initial_values = get_part_initial_values(initial_values)
-    else
-        new_initial_values = deepcopy(initial_values)
-    end
-
-    for d in d_values
-
-        new_gas_model.d = d
-
-        model, parameters, first_initial_values  = create_model(new_gas_model, y_train, X_train, missing;number_max_iterations = number_max_iterations,  
-                                               max_optimization_time = max_optimization_time, initial_values = new_initial_values, tol = 0.005);
-
-        new_initial_values = first_initial_values 
-
-        function get_metric(α::Float64)
-
-            @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust = new_gas_model
-
-            dist_code =  get_dist_code(dist)
-
-            T = length(y_train)
-
-            α = round(α; digits = 3)
-            println("Testando α = $α")
-            
-            println(new_gas_model.dist)
-
-            output = fit(new_gas_model, y_train, X_train, model, parameters, new_initial_values; α = α, robust_prop = robust_prop)
-            
-            # include_objective_function!(model, parameters, y_train, T, robust, dist_code; α = α, robust_prop = robust_prop);
-            # initialize_components!(model, new_initial_values, new_gas_model);
-            # optimize!(model)
-
-            # output = create_output_fit(model, parameters, y_train, X_train, missing, new_gas_model, α)
-            # println("Funçao obj: ",objective_value(model))
-    
-            if is_valid_model(output) && typeof(new_gas_model.dist) != LogNormalDistribution
-                new_initial_values = create_output_initialization_from_fit(output, new_gas_model)
-            else
-               new_initial_values = first_initial_values 
-            end
-
-            println(output.model_status)
-
-            try 
-                forec = predict(new_gas_model, output, y_train, X_val, validation_horizont, 100; probabilistic_intervals = [0.95])
-                println("RMSE: ", sqrt(mean((y_val .- forec["mean"]).^2)))
-
-                return sqrt(mean((y_val .- forec["mean"]).^2))
-            catch
-                return Inf
-            end
-        end
-
-        time = @elapsed optimization_result = Optim.optimize(get_metric, 0.0, 1.0, GoldenSection(); r_tol = 0.01, abs_tol = 0.001, iterations = 50)
-    
-        push!(alpha, optimization_result.minimizer[1])
-        push!(metrics, Optim.minimum(optimization_result))
-        push!(times, time)
-
-    end
-
-    println("d = 0.0 => $(times[1]/60) minutos")
-    println("d = 0.5 => $(times[2]/60) minutos")
-    println("d = 1.0 => $(times[3]/60) minutos")
-    println(metrics)
-    println(alpha)
-    sorted_idx = sortperm(metrics)
-    gas_model.d = d_values[sorted_idx[1]]
- 
-    println("Fitando modelo com d = $(gas_model.d)!!")
-    best_output = fit(gas_model, y, X; α = alpha[sorted_idx[1]], robust_prop = robust_prop, max_optimization_time = max_optimization_time, 
-                     number_max_iterations = number_max_iterations, initial_values = initial_values, tol = 0.000001)
-    
-    forec = predict(gas_model, best_output, y, X_forecast, steps_ahead, num_scenarious; probabilistic_intervals = probabilistc_interals)
-   
-    historic_ampl = maximum(y) - minimum(y)
-   
-    if abs(minimum(forec["intervals"]["95"]["lower"]) - maximum(forec["mean"])) > 1.1*historic_ampl || abs(maximum(forec["intervals"]["95"]["upper"]) - minimum(forec["mean"])) > 1.1*historic_ampl
-        gas_model.d = d_values[sorted_idx[2]]
-
-        println("Fitando modelo com d = $(gas_model.d)!!")
- 
-        best_output = fit(gas_model, y, X; α = alpha[sorted_idx[2]], robust_prop = robust_prop, max_optimization_time = max_optimization_time, 
-                     number_max_iterations = number_max_iterations, initial_values = initial_values, tol = 0.000001)
-
-        forec = predict(gas_model, best_output, y, X_forecast, steps_ahead, num_scenarious; probabilistic_intervals = probabilistc_interals)
-
-    
-        if abs(minimum(forec["intervals"]["95"]["lower"]) - maximum(forec["mean"])) > 1.1*historic_ampl || abs(maximum(forec["intervals"]["95"]["upper"]) - minimum(forec["mean"])) > 1.1*historic_ampl
-            gas_model.d = d_values[sorted_idx[3]]
-            println("Fitando modelo com d = $(gas_model.d)!!")
-    
-            best_output = fit(gas_model, y, X;  α = alpha[sorted_idx[3]], robust_prop = robust_prop, max_optimization_time = max_optimization_time, 
-                        number_max_iterations = number_max_iterations, initial_values = initial_values, tol = 0.000001)
-
-            forec = predict(gas_model, best_output, y, X_forecast, steps_ahead, num_scenarious; probabilistic_intervals = probabilistc_interals)
-                       
-            if abs(minimum(forec["intervals"]["95"]["lower"]) - maximum(forec["mean"])) > 1.1*historic_ampl || abs(maximum(forec["intervals"]["95"]["upper"]) - minimum(forec["mean"])) > 1.1*historic_ampl
-                gas_model.d = d_values[sorted_idx[1]]
-    
-                println("Fitando modelo com d = $(gas_model.d)!!")
-                best_output = fit(gas_model, y, X;  α = alpha[sorted_idx[1]], robust_prop = robust_prop, max_optimization_time = max_optimization_time, 
-                                number_max_iterations = number_max_iterations, initial_values = initial_values, tol = 0.000001)
-                
-                forec = predict(gas_model, best_output, y, X_forecast, steps_ahead, num_scenarious; probabilistic_intervals = probabilistc_interals)
-            end
-        end
-
-    end
-
-    return best_output, gas_model, forec
-end
-
-"
-Creates the output struct after fitiing the model.
-"
+## Returns
+- `Output`: A structure containing the fitted values, residuals, and information criteria.
+"""
 function create_output_fit(model::Ml, parameters::Matrix{Gl} ,y::Vector{Fl}, X::Union{Missing, Matrix{Fl}}, selected_variables::Union{Missing, Vector{Int64}},  
                             gas_model::GASModel, penalty_factor::Float64) where {Ml, Gl, Fl}
 
@@ -578,3 +420,295 @@ function create_output_fit(model::Ml, parameters::Matrix{Gl} ,y::Vector{Fl}, X::
     return Output(fit_in_sample, fitted_params, components, selected_variables, residuals, information_criteria, penalty_factor, String(Symbol(termination_status(model))))
 
 end
+
+# function auto_gas(gas_model::GASModel, y::Vector{Fl}, steps_ahead::Int64; d_values::Vector{Float64} = [0.0, 0.5, 1.0],
+#     robust_prop::Float64 = 0.7, number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
+#     initial_values::Union{Dict{String, Any}, Missing} = missing, num_scenarious::Int64 = 500, 
+#     probabilistic_intervals::Vector{Float64} = [0.8, 0.95], validation_horizont::Int64 = 12) where Fl
+
+#     if typeof(gas_model.dist) == tLocationScaleDistribution
+
+#         new_gas_model = deepcopy(gas_model)
+#         new_gas_model.dist = NormalDistribution()
+#         new_gas_model.time_varying_params = new_gas_model.time_varying_params[1:2]
+#     else
+#         new_gas_model = deepcopy(gas_model)
+#     end
+
+#     @info("Finding optimal value of α")
+
+#     y_train = y[1:end-validation_horizont]
+#     y_val   = y[end-(validation_horizont-1):end]
+
+#     metrics  = []
+#     alpha    =[]
+#     times = []
+#     aicc_aux = []
+#     aiccs = []
+
+#     if !ismissing(initial_values)
+#         new_initial_values = get_part_initial_values(initial_values, validation_horizont)
+#     else
+#         new_initial_values = deepcopy(initial_values)
+#     end
+    
+#     for d in d_values
+#         println("Testando d = $d")
+ 
+#         alfa = []
+
+#         new_gas_model.d = d
+
+#         model, parameters, first_initial_values = create_model(new_gas_model, y_train, missing; number_max_iterations = number_max_iterations,  
+#                                 max_optimization_time = max_optimization_time, initial_values = new_initial_values, tol = 0.005);
+        
+#         new_initial_values = first_initial_values
+
+#         function get_metric(α::Float64)
+            
+#             α = round(α; digits = 3)
+#             println("Testando α = $α")
+#             push!(alfa, α)
+
+#             output = fit(new_gas_model, y_train, model, parameters, new_initial_values; α = α, robust_prop = robust_prop)
+#             # @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust = new_gas_model
+
+#             # dist_code =  get_dist_code(dist)
+
+#             # T = length(y_train)
+           
+            
+#             # include_objective_function!(model, parameters, log.(y_train), T, robust, dist_code; α = α, robust_prop = robust_prop);
+            
+
+#             # initialize_components!(model, new_initial_values, new_gas_model);
+#             # optimize!(model)
+
+#             # println(new_gas_model.dist)
+
+#             # output = create_output_fit(model, parameters, y_train, missing, missing, new_gas_model, α)
+
+#             #println("Funçao obj: ",objective_value(model))
+    
+#             if is_valid_model(output) && typeof(new_gas_model.dist) != LogNormalDistribution
+#                 new_initial_values = create_output_initialization_from_fit(output, new_gas_model)
+#             else
+#                new_initial_values = first_initial_values 
+#             end
+
+#             try
+#                 forec = predict(new_gas_model, output, y_train, validation_horizont, 100; probabilistic_intervals = [0.95])
+#                 println("RMSE: ", sqrt(mean((y_val .- forec["mean"]).^2)))
+                
+#                 push!(aicc_aux, output.information_criteria["aicc"])
+
+#                 return sqrt(mean((y_val .- forec["mean"]).^2)) #output.information_criteria["aicc"] #sqrt(mean((y_val .- forec["mean"]).^2))
+#             catch
+#                 return Inf
+#             end
+#         end
+
+#         Random.seed!(123)
+#         time = @elapsed optimization_result = Optim.optimize(get_metric, 0.0, 1.0, GoldenSection(); time_limit = 0.1, r_tol = 0.01, abs_tol = 0.001, iterations = 50)
+    
+#         push!(alpha, optimization_result.minimizer[1])
+#         push!(metrics, Optim.minimum(optimization_result))
+#         push!(times, time)
+#         push!(aiccs, aicc_aux)
+
+#     end
+#     println("d = 0.0 => $(times[1]/60) minutos")
+#     println("d = 0.5 => $(times[2]/60) minutos")
+#     println("d = 1.0 => $(times[3]/60) minutos")
+#     println(metrics)
+#     println(alpha)
+#     sorted_idx = sortperm(metrics)
+#     gas_model.d = d_values[sorted_idx[1]]
+ 
+#     println("Fitando modelo com d = $(gas_model.d)!!")
+
+#     best_output = fit(gas_model, y;  α = alpha[sorted_idx[1]], robust_prop = robust_prop, max_optimization_time = max_optimization_time, 
+#                      number_max_iterations = number_max_iterations, initial_values = initial_values, tol = 0.000001)
+    
+#     forec = predict(gas_model, best_output, y, steps_ahead, num_scenarious; probabilistic_intervals = probabilistic_intervals)
+
+#     historic_ampl = maximum(y) - minimum(y)
+
+#     if abs(minimum(forec["intervals"]["95"]["lower"]) - maximum(forec["mean"])) > 1.1*historic_ampl || abs(maximum(forec["intervals"]["95"]["upper"]) - minimum(forec["mean"])) > 1.1*historic_ampl
+#         gas_model.d = d_values[sorted_idx[2]]
+
+#         println("Fitando modelo com d = $(gas_model.d)!!")
+ 
+#         best_output = fit(gas_model, y;  α = alpha[sorted_idx[2]], robust_prop = robust_prop, max_optimization_time = max_optimization_time, 
+#                      number_max_iterations = number_max_iterations, initial_values = initial_values, tol = 0.000001)
+
+#         forec = predict(gas_model, best_output, y, steps_ahead, num_scenarious; probabilistic_intervals = probabilistic_intervals)
+
+#         if abs(minimum(forec["intervals"]["95"]["lower"]) - maximum(forec["mean"])) > 1.1*historic_ampl || abs(maximum(forec["intervals"]["95"]["upper"]) - minimum(forec["mean"])) > 1.1*historic_ampl
+#             gas_model.d = d_values[sorted_idx[3]]
+
+#             println("Fitando modelo com d = $(gas_model.d)!!")
+    
+#             best_output = fit(gas_model, y; α = alpha[sorted_idx[3]], robust_prop = robust_prop, max_optimization_time = max_optimization_time, 
+#                         number_max_iterations = number_max_iterations, initial_values = initial_values, tol = 0.000001)
+
+#             forec = predict(gas_model, best_output, y,steps_ahead, num_scenarious; probabilistic_intervals = probabilistic_intervals)
+
+#             if abs(minimum(forec["intervals"]["95"]["lower"]) - maximum(forec["mean"])) > 1.1*historic_ampl || abs(maximum(forec["intervals"]["95"]["upper"]) - minimum(forec["mean"])) > 1.1*historic_ampl
+#                 gas_model.d = d_values[sorted_idx[1]]
+    
+#                 println("Fitando modelo com d = $(gas_model.d)!!")
+#                 best_output = fit(gas_model, y;  α = alpha[sorted_idx[1]], robust_prop = robust_prop, max_optimization_time = max_optimization_time, 
+#                                 number_max_iterations = number_max_iterations, initial_values = initial_values, tol = 0.000001)
+                
+#                 forec = predict(gas_model, best_output, y, steps_ahead, num_scenarious; probabilistic_intervals = probabilistic_intervals)   
+#             end          
+#         end
+#     end
+
+#     return best_output, gas_model, forec#, tested_alfa, metrics#, graficos
+
+# end
+
+
+# function auto_gas(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, X_forecast::Matrix{Fl}, steps_ahead::Int64;  
+#     d_values::Vector{Float64} = [0.0, 0.5, 1.0],
+#     robust_prop::Float64 = 0.7, number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
+#     initial_values::Union{Dict{String, Any}, Missing} = missing, num_scenarious::Int64 = 500,
+#     probabilistc_interals::Vector{Float64} = [0.8, 0.95], validation_horizont::Int64 = 12) where Fl
+
+#     if typeof(gas_model.dist) == tLocationScaleDistribution
+#         new_gas_model = deepcopy(gas_model)
+#         new_gas_model.dist = NormalDistribution()
+#         new_gas_model.time_varying_params = new_gas_model.time_varying_params[1:2]
+#     else
+#         new_gas_model = deepcopy(gas_model)
+#     end
+
+#     @info("Finding optimal value of α")
+
+#     y_train = y[1:end-validation_horizont]
+#     y_val   = y[end-(validation_horizont-1):end]
+
+#     X_train = X[1:end-validation_horizont, :]
+#     X_val   = X[end-(validation_horizont-1):end, :]
+
+#     metrics  = []
+#     alpha    = []
+#     times = []
+
+#     if !ismissing(initial_values)
+#         new_initial_values = get_part_initial_values(initial_values)
+#     else
+#         new_initial_values = deepcopy(initial_values)
+#     end
+
+#     for d in d_values
+
+#         new_gas_model.d = d
+
+#         model, parameters, first_initial_values  = create_model(new_gas_model, y_train, X_train, missing;number_max_iterations = number_max_iterations,  
+#                                                max_optimization_time = max_optimization_time, initial_values = new_initial_values, tol = 0.005);
+
+#         new_initial_values = first_initial_values 
+
+#         function get_metric(α::Float64)
+
+#             @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust = new_gas_model
+
+#             dist_code =  get_dist_code(dist)
+
+#             T = length(y_train)
+
+#             α = round(α; digits = 3)
+#             println("Testando α = $α")
+            
+#             println(new_gas_model.dist)
+
+#             output = fit(new_gas_model, y_train, X_train, model, parameters, new_initial_values; α = α, robust_prop = robust_prop)
+            
+#             # include_objective_function!(model, parameters, y_train, T, robust, dist_code; α = α, robust_prop = robust_prop);
+#             # initialize_components!(model, new_initial_values, new_gas_model);
+#             # optimize!(model)
+
+#             # output = create_output_fit(model, parameters, y_train, X_train, missing, new_gas_model, α)
+#             # println("Funçao obj: ",objective_value(model))
+    
+#             if is_valid_model(output) && typeof(new_gas_model.dist) != LogNormalDistribution
+#                 new_initial_values = create_output_initialization_from_fit(output, new_gas_model)
+#             else
+#                new_initial_values = first_initial_values 
+#             end
+
+#             println(output.model_status)
+
+#             try 
+#                 forec = predict(new_gas_model, output, y_train, X_val, validation_horizont, 100; probabilistic_intervals = [0.95])
+#                 println("RMSE: ", sqrt(mean((y_val .- forec["mean"]).^2)))
+
+#                 return sqrt(mean((y_val .- forec["mean"]).^2))
+#             catch
+#                 return Inf
+#             end
+#         end
+
+#         time = @elapsed optimization_result = Optim.optimize(get_metric, 0.0, 1.0, GoldenSection(); r_tol = 0.01, abs_tol = 0.001, iterations = 50)
+    
+#         push!(alpha, optimization_result.minimizer[1])
+#         push!(metrics, Optim.minimum(optimization_result))
+#         push!(times, time)
+
+#     end
+
+#     println("d = 0.0 => $(times[1]/60) minutos")
+#     println("d = 0.5 => $(times[2]/60) minutos")
+#     println("d = 1.0 => $(times[3]/60) minutos")
+#     println(metrics)
+#     println(alpha)
+#     sorted_idx = sortperm(metrics)
+#     gas_model.d = d_values[sorted_idx[1]]
+ 
+#     println("Fitando modelo com d = $(gas_model.d)!!")
+#     best_output = fit(gas_model, y, X; α = alpha[sorted_idx[1]], robust_prop = robust_prop, max_optimization_time = max_optimization_time, 
+#                      number_max_iterations = number_max_iterations, initial_values = initial_values, tol = 0.000001)
+    
+#     forec = predict(gas_model, best_output, y, X_forecast, steps_ahead, num_scenarious; probabilistic_intervals = probabilistc_interals)
+   
+#     historic_ampl = maximum(y) - minimum(y)
+   
+#     if abs(minimum(forec["intervals"]["95"]["lower"]) - maximum(forec["mean"])) > 1.1*historic_ampl || abs(maximum(forec["intervals"]["95"]["upper"]) - minimum(forec["mean"])) > 1.1*historic_ampl
+#         gas_model.d = d_values[sorted_idx[2]]
+
+#         println("Fitando modelo com d = $(gas_model.d)!!")
+ 
+#         best_output = fit(gas_model, y, X; α = alpha[sorted_idx[2]], robust_prop = robust_prop, max_optimization_time = max_optimization_time, 
+#                      number_max_iterations = number_max_iterations, initial_values = initial_values, tol = 0.000001)
+
+#         forec = predict(gas_model, best_output, y, X_forecast, steps_ahead, num_scenarious; probabilistic_intervals = probabilistc_interals)
+
+    
+#         if abs(minimum(forec["intervals"]["95"]["lower"]) - maximum(forec["mean"])) > 1.1*historic_ampl || abs(maximum(forec["intervals"]["95"]["upper"]) - minimum(forec["mean"])) > 1.1*historic_ampl
+#             gas_model.d = d_values[sorted_idx[3]]
+#             println("Fitando modelo com d = $(gas_model.d)!!")
+    
+#             best_output = fit(gas_model, y, X;  α = alpha[sorted_idx[3]], robust_prop = robust_prop, max_optimization_time = max_optimization_time, 
+#                         number_max_iterations = number_max_iterations, initial_values = initial_values, tol = 0.000001)
+
+#             forec = predict(gas_model, best_output, y, X_forecast, steps_ahead, num_scenarious; probabilistic_intervals = probabilistc_interals)
+                       
+#             if abs(minimum(forec["intervals"]["95"]["lower"]) - maximum(forec["mean"])) > 1.1*historic_ampl || abs(maximum(forec["intervals"]["95"]["upper"]) - minimum(forec["mean"])) > 1.1*historic_ampl
+#                 gas_model.d = d_values[sorted_idx[1]]
+    
+#                 println("Fitando modelo com d = $(gas_model.d)!!")
+#                 best_output = fit(gas_model, y, X;  α = alpha[sorted_idx[1]], robust_prop = robust_prop, max_optimization_time = max_optimization_time, 
+#                                 number_max_iterations = number_max_iterations, initial_values = initial_values, tol = 0.000001)
+                
+#                 forec = predict(gas_model, best_output, y, X_forecast, steps_ahead, num_scenarious; probabilistic_intervals = probabilistc_interals)
+#             end
+#         end
+
+#     end
+
+#     return best_output, gas_model, forec
+# end
+
