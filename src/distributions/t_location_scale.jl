@@ -149,7 +149,7 @@ function get_dist_code(dist::tLocationScaleDistribution)
     return 2
 end
 
-"
+"""
 get_num_params(dist::tLocationScaleDistribution)
 
 # Get the number of parameters associated with the tLocationScaleDistribution.
@@ -161,7 +161,7 @@ get_num_params(dist::tLocationScaleDistribution)
 # Returns
 - The number of parameters associated with the tLocationScaleDistribution. (In this case, it always returns 3.)
 
-"
+"""
 function get_num_params(dist::tLocationScaleDistribution)
     return 3
 end
@@ -244,7 +244,7 @@ function check_positive_constrainst(dist::tLocationScaleDistribution)
     return [false, true, true]
 end
 
-"
+"""
 get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::tLocationScaleDistribution, seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}) where Fl
 
     # Compute initial parameters for the tLocationScaleDistribution model based on the provided data and settings.
@@ -261,7 +261,7 @@ get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::tLoca
         - 1: Initial values for the location parameter, which can be fixed or time-varying.
         - 2: Initial values for the scale parameter, which can be fixed or time-varying.
         - 3: Initial values for the degrees of freedom parameter, which can be fixed or time-varying.
-"
+"""
 function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::tLocationScaleDistribution, seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}) where Fl
 
     T         = length(y)
@@ -325,7 +325,7 @@ function get_seasonal_var(y::Vector{Fl},seasonal_period::Int64, dist::tLocationS
 end
  
 
-"
+"""
 find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}; 
                                           α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
                                           number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
@@ -347,7 +347,7 @@ find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl};
     - best_model: The most accurate estimated model, determined through comparison of information criteria (AICc).
     - best_ν: The value of the degrees of freedom parameter employed in the best model.
     
-"
+"""
 function find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}; 
                                           α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
                                           number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
@@ -441,7 +441,7 @@ function find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}, X
     return best_model, best_ν
 end
 
-"
+"""
 fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl};
                                             tol::Float64 = 0.01, α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
                                             number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
@@ -462,7 +462,6 @@ fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl};
     # Returns
     - best_model: The best-fitted model based on the t-location-scale distribution after the local search is determined by comparing information criteria (AICc).
 """
-
 function fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl};
                                             tol::Float64 = 0.01, α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
                                             number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl, Dl}

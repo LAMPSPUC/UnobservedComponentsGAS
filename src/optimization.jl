@@ -68,7 +68,8 @@ Calculates the score function for the optimization model based on the GAS model 
 - `dist::ScoreDrivenDistribution`: The distribution used in the GAS model.
 
 ## Returns
-- `s::Vector{Vector}`: A vector containing scores for each time-varying parameter of the specified model. Each element of this vector is itself a vector containing the score values for the respective time-varying parameter across all considered time periods."""
+- `s::Vector{Vector}`: A vector containing scores for each time-varying parameter of the specified model. Each element of this vector is itself a vector containing the score values for the respective time-varying parameter across all considered time periods.
+"""
 function compute_score(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, d::Float64, time_varying_params::Vector{Bool}, T::Int64, dist::ScoreDrivenDistribution) where {Ml, Gl, Fl}
 
     idx_time_varying_params = get_idxs_time_varying_params(time_varying_params)
@@ -96,7 +97,7 @@ function compute_score(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, d::Floa
     return s
 end
 
-"
+"""
 # include_explanatory_variables!(model::Ml, X::Matrix{Fl}) where {Ml, Fl}
 
 Adds explanatory variables' effects as decision variables to the optimization model.
@@ -108,7 +109,7 @@ Adds explanatory variables' effects as decision variables to the optimization mo
 
 ## Returns
 This function modifies the optimization model `model` by including the decision variables for explanatory variables' effects.
-"
+"""
 function include_explanatory_variables!(model::Ml, X::Matrix{Fl}) where {Ml, Fl}
 
     T, p = size(X)
@@ -160,7 +161,7 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
 
 end
 
-"
+"""
 # include_objective_function!(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, T::Int64, robust::Union{Float64, Bool}, dist_code::Int64; α::Float64 = 0.5, robust_prop::Float64 = 0.7) where {Ml, Gl, Fl}
 
 Includes the objective function in the optimization model based on the GAS model specifications.
@@ -177,7 +178,7 @@ Includes the objective function in the optimization model based on the GAS model
 
 ## Returns
 This function modifies the optimization model `model` by including the objective function based on the GAS model specifications.
-"
+"""
 function include_objective_function!(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, T::Int64, robust::Union{Float64, Bool}, dist_code::Int64; α::Float64 = 0.5, robust_prop::Float64 = 0.7) where {Ml, Gl, Fl}
     
     dist_name = DICT_CODE[dist_code]

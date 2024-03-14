@@ -386,7 +386,7 @@ function include_component_in_dynamic(model::Ml, component::Symbol, has_componen
     end
 end
 
-"
+"""
 # include_explanatories_in_dynamic(model::Ml, X::Union{Missing, Matrix{Float64}}, has_explanatories::Bool, t::Int64, idx_param::Int64) where Ml
 
 Returns the expression of explanatory variables' effect in the dynamic equation of the model if explanatory variables are present, otherwise returns 0.
@@ -400,8 +400,7 @@ Returns the expression of explanatory variables' effect in the dynamic equation 
 
 ## Returns
 - Returns the expression of the explanatory variables' effect in the dynamic equation of the model at the given time index and parameter index, or 0 if explanatory variables are not present in the model.
-
-"
+"""
 function include_explanatories_in_dynamic(model::Ml, X::Union{Missing, Matrix{Float64}}, has_explanatories::Bool, t::Int64, idx_param::Int64) where Ml
 
     if has_explanatories

@@ -303,7 +303,7 @@ function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any
                                                                                 
 end
 
-"
+"""
 # update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any}, X_forecast::Matrix{Fl}, period_X::Int64, param::Int64, t::Int64, s::Int64) where Fl
 
 Updates predictions for the specified parameter for a given time period and scenario in the `dict_hyperparams_and_fitted_components` object., incorporating the effects of explanatory variables for forecasting.
@@ -540,7 +540,7 @@ function get_mean_and_intervals_prediction(pred_y::Matrix{Fl}, steps_ahead::Int6
     return dict_forec
 end
 
-"
+"""
 # predict(gas_model::GASModel, output::Output, y::Vector{Float64}, steps_ahead::Int64, num_scenarios::Int64; probabilistic_intervals::Vector{Float64} = [0.8, 0.95])
 
 Predicts future values of a time series using the specified GAS model.
@@ -560,7 +560,7 @@ Predicts future values of a time series using the specified GAS model.
   - `intervals`: A dictionary containing the upper and lower bounds of the interval for each probabilistic level. Each probabilistic level is represented by a string key indicating the percentage, and its value is another dictionary with the following structure:
     - `upper`: A vector containing the interval's upper bound for each time step.
     - `lower`: A vector containing the interval's  lower bound for each time step.
-"
+"""
 function predict(gas_model::GASModel, output::Output, y::Vector{Float64}, steps_ahead::Int64, num_scenarios::Int64; probabilistic_intervals::Vector{Float64} = [0.8, 0.95])
     
     new_output = deepcopy(output)
