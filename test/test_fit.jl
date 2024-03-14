@@ -1,7 +1,10 @@
 @testset "Fit" begin
     
+    "FALTAM TESTES RELATIVOS ÀS EXPLICATIVAS"
+    
     T = 100
     y = rand(T)
+    X = [2*y y/2 rand(T)]
     # path = "data\\"
     #path = "test\\data\\"
 
@@ -52,8 +55,9 @@
     model_normal, parameters_normal, initial_values_normal          = UnobservedComponentsGAS.create_model(gas_model_normal, y, missing)
     model_lognormal, parameters_lognormal, initial_values_lognormal = UnobservedComponentsGAS.create_model(gas_model_lognormal, y, missing)
     model_t, parameters_t, initial_values_t                         = UnobservedComponentsGAS.create_model(gas_model_t, y, 1)
-    # Create model with explanatory series
-
+    # Create model with explanatory series -> ERRO POR CAUSA DA AUSENCIA DO PACOTE DO ANDRÉ
+    # model_normal_X, parameters_normal_X, initial_values_normal_X = UnobservedComponentsGAS.create_model(gas_model_normal, y, X, missing)
+    # model_t_X, parameters_t_X, initial_values_t_X                = UnobservedComponentsGAS.create_model(gas_model_t, y, X, 1)
     
     @test(size(parameters_normal)    == (T,2))
     @test(size(parameters_lognormal) == (T,2))
@@ -67,15 +71,22 @@
     
 
     @info(" --- Testing fit functions")
-    fitted_model_normal    = UnobservedComponentsGAS.fit(gas_model_normal, y)
-    fitted_model_lognormal = UnobservedComponentsGAS.fit(gas_model_lognormal, y)
-    fitted_model_t         = UnobservedComponentsGAS.fit(gas_model_t, y)
+    fitted_model_normal      = UnobservedComponentsGAS.fit(gas_model_normal, y)
+    fitted_model_lognormal   = UnobservedComponentsGAS.fit(gas_model_lognormal, y)
+    fitted_model_t           = UnobservedComponentsGAS.fit(gas_model_t, y)
+
+    # ERRO POR CAUSA DO PACOTE DO ANDRÉ
+    # fitted_model_normal_X    = UnobservedComponentsGAS.fit(gas_model_normal_X, y)
+    # fitted_model_lognormal_X = UnobservedComponentsGAS.fit(gas_model_lognormal_X, y)
+    # fitted_model_t_X         = UnobservedComponentsGAS.fit(gas_model_t_X, y)
+
 
     # "Test if termination_status is correct"
     possible_status = ["LOCALLY_SOLVED", "INVALID_MODEL", "ALMOST_LOCALLY_SOLVED"]
     @test(fitted_model_normal.model_status in possible_status)
     @test(fitted_model_lognormal.model_status in possible_status)
     @test(fitted_model_t.model_status in possible_status)
+    
 
     # "Test if selected_variables is missing "
     @test(ismissing(fitted_model_normal.selected_variables))
