@@ -132,7 +132,7 @@ Extracts the autoregressive (AR) orders for each parameter from the given dictio
 function get_AR_order(ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}})
     
     num_params = length(ar)
-    order      = Vector{Union{Int64, Nothing}}[]
+    order      = Union{Vector{Int64}, Vector{Nothing}}[]
 
     for i in 1:num_params
         if typeof(ar[i]) == Int64
@@ -166,7 +166,7 @@ function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Dict{Int64, Int64
     order      = get_AR_order(ar)
 
     max_order     = maximum(vcat(order...)) # Maximum lag in the model
-    unique_orders = filter(x -> x !isnothing(x), unique(vcat(order...)))#[findall(i -> i != 0.0, vcat(order...))]
+    unique_orders = filter(x -> !isnothing(x), unique(vcat(order...)))#[findall(i -> i != 0.0, vcat(order...))]
     
     @variable(model, AR[1:T, idx_params])
     @variable(model, ϕ[1:max_order, idx_params])
@@ -268,6 +268,7 @@ function get_num_harmonic_and_seasonal_period(seasonality::Union{Dict{Int64, Int
         else
             push!(seasonal_period, nothing)
             push!(num_harmonic, nothing)
+        end
     end
     
     return num_harmonic, seasonal_period
