@@ -1,3 +1,103 @@
+# Fit and return the predictive state of a StateSpaceModel
+function fit_and_get_preditive_state(model::M) where M
+    StateSpaceModels.fit!(model)
+    return StateSpaceModels.get_predictive_state(model)
+end
+
+# Case without explanatory
+function define_state_space_model(y::Vector{Float64}, has_level::Bool, has_slope::Bool, 
+                                has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool)
+
+    T                   = length(y)
+    initial_level       = zeros(T)
+    initial_slope       = zeros(T)
+    initial_seasonality = zeros(T)
+    initial_γ           = zeros(1)
+    initial_γ_star      = zeros(1)
+    if has_seasonality
+        #Basic structural
+        ss_model                  = BasicStructural(y, seasonal_period)
+        pred_state                = fit_and_get_preditive_state(ss_model)
+        for t in 1:T
+            initial_seasonality[t] = -sum(pred_state[t+1, end-(seasonal_period-2):end])
+        end
+        initial_γ, initial_γ_star = fit_harmonics(initial_seasonality, seasonal_period, stochastic)
+
+        if has_level && has_slope
+            initial_level = pred_state[2:end,1]
+            initial_slope = pred_state[2:end,2]
+        elseif has_level && !has_slope
+            initial_level = pred_state[2:end,1] + pred_state[2:end,2]
+        end
+    else
+        if has_level && has_slope
+            #Local Linear Trend
+            ss_model   = LocalLinearTrend(y)
+            pred_state = fit_and_get_preditive_state(ss_model)
+            initial_level = pred_state[2:end,1]
+            initial_slope = pred_state[2:end,2]
+        elseif has_level && !has_slope
+            # Local Level
+            ss_model   = LocalLevel(y)
+            pred_state = fit_and_get_preditive_state(ss_model)
+            initial_level = pred_state[2:end,1]
+        end
+    end
+    res = StateSpaceModels.get_innovations(ss_model)[:, 1]
+    return Dict("level" => initial_level,"slope" => initial_slope,"seasonality" => initial_seasonality,
+            "γ" => initial_γ,"γ_star" => initial_γ_star,"explanatory" => missing,"res" => res)
+end
+
+# Case with explanatory
+function define_state_space_model(y::Vector{Float64}, X::Union{Matrix{Float64}, Missing}, has_level::Bool, has_slope::Bool, 
+                                has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool)
+
+    T                   = length(y)
+    N                   = size(X, 2)
+    initial_level       = zeros(T)
+    initial_slope       = zeros(T)
+    initial_seasonality = zeros(T)
+    initial_γ           = zeros(1)
+    initial_γ_star      = zeros(1)
+    explanatory_coefs   = zeros(N)
+    
+    if has_seasonality
+        #Basic structural
+        ss_model   = BasicStructuralExplanatory(y, seasonal_period, X)
+        pred_state = fit_and_get_preditive_state(ss_model)
+        for t in 1:T
+            initial_seasonality[t] = -sum(pred_state[t+1, end-(seasonal_period+N-2):end-N])
+        end
+        initial_γ, initial_γ_star = fit_harmonics(initial_seasonality, seasonal_period, stochastic)
+
+        if has_level && has_slope
+            initial_level = pred_state[2:end,1]
+            initial_slope = pred_state[2:end,2]
+        elseif has_level && !has_slope
+            initial_level = pred_state[2:end,1] + pred_state[2:end,2]
+        end
+    else
+        if has_level && has_slope 
+            # Since there is no LocalLinearTrendExplanatory ...
+            ss_model   = BasicStructuralExplanatory(y, 12, X)
+            pred_state = fit_and_get_preditive_state(ss_model)
+            initial_level = pred_state[2:end,1]
+            initial_slope = pred_state[2:end,2]
+        elseif has_level && !has_slope
+            # Local Level
+            ss_model   = LocalLevelExplanatory(y, X)
+            pred_state = fit_and_get_preditive_state(ss_model)
+            initial_level = pred_state[2:end,1]
+        end
+    end
+    res               = StateSpaceModels.get_innovations(ss_model)[:, 1]
+    explanatory_coefs = ss_model.hyperparameters.constrained_values[end-N+1:end]
+
+    return Dict("level" => initial_level,"slope" => initial_slope,"seasonality" => initial_seasonality,
+                "γ" => initial_γ,"γ_star" => initial_γ_star,"explanatory" => explanatory_coefs,"res" => res)
+end
+
+
 function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missing}, has_level::Bool, has_slope::Bool, has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool, order::Union{Vector{Int64}, Vector{Nothing}}, max_order::Int64)
 
     #T = length(y)
@@ -5,49 +105,14 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
 
     if has_level || has_slope || has_seasonality
 
-        if has_level && !has_slope
-            trend = "local level"
-        elseif has_level && has_slope
-            trend = "local linear trend"
+        if has_explanatories
+            ss_components = define_state_space_model(y, X, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
+        else
+            ss_components = define_state_space_model(y, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
         end
-
-        if has_seasonality && stochastic
-            seasonal = "stochastic "*string(seasonal_period)
-        elseif has_seasonality && !stochastic
-            seasonal = "deterministic "*string(seasonal_period)
-        end
-        
-        state_space_model = StateSpaceModels.UnobservedComponents(Float64.(y) ; trend = trend ,seasonal = seasonal) 
-        # if has_explanatories
-        StateSpaceModels.fit!(state_space_model)
-
-        #pred_state = StateSpaceModels.get_predictive_state(state_space_model)
-        
-        # inov = StateSpaceModels.get_innovations(state_space_model)
-        # fit_1 = y .- vec(inov)
-        # fit_2 = sum(a[:, i] for i in 1:13)[2:end] .+ inov[:, 1]
-
-        # plot(fit_1)
-        # plot!(fit_2)
-
-
-        # kf = kalman_filter(state_space_model)
-
-        # p1 = plot(y[15:end], label = "serie") #serie
-        # p2 = plot(a[15:end, 1], label="level") #level
-        # p3 = plot(a[15:end, 2], label = "slope") #slope
-        # p4 = plot(s[15:end], label = "seasonal")
-        # plot(p1,p2,p3,p4, layout=(4,1))
-
-        # plot(state_space_model, kf)
-        # s = zeros(length(y))
-        # for t in  1:144
-        #     s[t] = -sum(a[t, 3:end])
-        # end
 
         if !isnothing(order[1])
-            #res = y .- output.fit
-            res = StateSpaceModels.get_innovations(state_space_model)[:, 1]
+            res = ss_components["res"]
             fit_ar_model, ar_coefs, ar_intercept = fit_AR_model(res, order)
 
             initial_ar = fit_ar_model
@@ -73,14 +138,12 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
         initial_intercept = ar_intercept
     end
 
-    pred_state = StateSpaceModels.get_predictive_state(state_space_model)
-
     if has_slope && has_level
-        initial_rws   = pred_state[2:end,1]#output.components["level"]["values"]
-        initial_slope = pred_state[2:end,2]#output.components["slope"]["values"]
+        initial_rws   = ss_components["level"]
+        initial_slope = ss_components["slope"]
         initial_rw    = zeros(length(y))
     elseif !has_slope && has_level
-        initial_rw = pred_state[2:end,1]#output.components["level"]["values"]
+        initial_rw = ss_components["level"]
         initial_rws  = zeros(length(y))
         initial_slope = zeros(length(y))
     elseif !has_slope && !has_level
@@ -90,46 +153,14 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
     end
 
     if has_seasonality
-        initial_seasonality = zeros(length(y))
-        for t in  1:length(y)
-            initial_seasonality[t] = -sum(pred_state[t+1, end-(seasonal_period-2):end])
-        end
-        # initial_seasonality = output.components["seasonality"]["values"]
-        initial_γ, initial_γ_star = fit_harmonics(initial_seasonality, seasonal_period, stochastic)
+        initial_seasonality = ss_components["seasonality"]
+        initial_γ           = ss_components["γ"]
+        initial_γ_star      = ss_components["γ_star"]
     else
         initial_seasonality = zeros(length(y))
-        initial_γ = zeros(1)
-        initial_γ_star = zeros(1)
+        initial_γ           = zeros(1)
+        initial_γ_star      = zeros(1)
     end
-
-    # initial_values = Dict{String}{Any}()
-    # # initial_values["param"] = y
-
-    # if has_level && has_slope
-    #     initial_values["rws"] = Dict{String}{Any}()
-    #     initial_values["rws"]["values"] = output.components["level"]["values"]
-    #     #initial_values["level"]["κ"] =  haskey(output.variances,"ξ") ? output.variances["ξ"] > 0.0 ? sqrt(output.variances["ξ"]) : 0.02 : 0.02
-    #     initial_values["rws"]["κ"] = 0.02
-
-    #     initial_values["slope"] = Dict{String}{Any}()
-    #     initial_values["slope"]["values"] = has_slope ? output.components["slope"]["values"] : zeros(T)
-    #     #initial_values["slope"]["κ"] = haskey(output.variances, "ζ") ? output.variances["ζ"] > 0.0 ? sqrt(output.variances["ζ"]) : 0.02 : 0.02
-    #     initial_values["slope"]["κ"] = 0.02
-    # end
-
-    # if has_level && !has_slope
-    #     initial_values["rw"] = Dict{String}{Any}()
-    #     initial_values["rw"]["values"] = has_slope ? output.components["level"]["values"] : zeros(T)
-    #     #initial_values["slope"]["κ"] = haskey(output.variances, "ζ") ? output.variances["ζ"] > 0.0 ? sqrt(output.variances["ζ"]) : 0.02 : 0.02
-    #     initial_values["rw"]["κ"] = 0.02
-    # end
-
-    # if has_seasonality
-    #     initial_values["seasonality"] = Dict{String}{Any}()
-    #     initial_values["seasonality"]["values"] = has_seasonality ? output.components["seasonality"]["values"] : zeros(T)
-    #     #initial_values["seasonality"]["κ"] =  haskey(output.variances, "ω") ? output.variances["ω"] > 0.0 ? sqrt(output.variances["ω"]) : 0.02 : 0.02
-    #     initial_values["seasonality"]["κ"] = 0.02
-    # end
 
     selected_explanatories = missing
 
@@ -156,18 +187,7 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
     initial_values["ar"]["κ"]               = 0.02
 
     if has_explanatories
-
-        explanatory_idx = collect(output.components["explanatory"]["idx"])
-        # selected_explanatories = []
-        # for i in eachindex(explanatory_idx)
-        #     if explanatory_idx[i] in output.selected_variables
-        #         push!(selected_explanatories, i)
-        #     end
-        # end
-
-        initial_values["explanatories"] = output.coefs[explanatory_idx]#[selected_explanatories]
-
-        #X = X[:, selected_explanatories]
+        initial_values["explanatories"] = ss_components["explanatory"]
     end
 
     return initial_values#, X, selected_explanatories
