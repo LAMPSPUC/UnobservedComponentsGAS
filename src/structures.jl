@@ -1,17 +1,29 @@
 abstract type ScoreDrivenDistribution end
 
-"
-Specify the structure of the GAS model.
-    dist: Conditional distribution to be considered
-    time_varying_params: Vector of boolean that specify if the parameters is time-varying of not.
-    d: Equal to 0.0, 0.5 or 1.0.
-    random_walk: Dictionary that tells, for each time-varying parameter, if a random walk dynamic should be considered.
-    random_walk_slope: Dictionary that tells, for each time-varying parameter, if a random walk dynamic with slope should be considered.
-    ar: Dictionary that tells, for each time-varying parameter, if an autoregressive dynamic should be considered, with which lags.
-    seasonality: Dictionary the tells, for each time-varying parameter, if seasonality should be considered, with which frequency.
+"""
+# GASModel
 
-    PS: The dictionaries can be empty.
-"
+A mutable struct representing a Generalized Autoregressive Score (GAS) model.
+
+## Fields
+- `dist::ScoreDrivenDistribution`: The score-driven distribution used in the GAS model.
+- `time_varying_params::Vector{Bool}`: A vector indicating which parameters are time-varying.
+- `d::Union{Float64, Missing}`: The degree of freedom parameter. It can be a float or missing.
+- `random_walk::Dict{Int64, Bool}`: A dictionary indicating whether random walk components are included for each parameter. It can be empty.
+- `random_walk_slope::Dict{Int64, Bool}`: A dictionary indicating whether random walk slope components are included for each parameter. It can be empty.
+- `ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}}`: A dictionary indicating the autoregressive (AR) components included for each parameter. It can be empty.
+- `seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}`: A dictionary indicating whether seasonality components are included for each parameter. It can be empty.
+- `robust::Bool`: A boolean indicating whether the model is robust.
+- `stochastic::Bool`: A boolean indicating whether the model is stochastic.
+
+## Constructor
+- `GASModel(dist::ScoreDrivenDistribution, time_varying_params::Vector{Bool}, d::Union{Float64, Missing}, random_walk::Dict{Int64, Bool}, random_walk_slope::Dict{Int64, Bool}, ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}}, seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}, robust::Bool, stochastic::Bool)`: Constructs a new `GASModel` object with the specified parameters.
+
+## Description
+This struct represents a GAS model, which is a statistical model used for time series forecasting. It contains information about the distribution used, whether parameters are time-varying, the presence of various components like random walk, random walk slope, autoregressive (AR) components, and seasonality. Additionally, it indicates whether the model is robust and stochastic.
+
+The dictionaries `random_walk`, `random_walk_slope`, `ar`, and `seasonality` can be empty, which indicates that the corresponding components are not included in the model.
+"""
 mutable struct GASModel
     dist::ScoreDrivenDistribution
     time_varying_params::Vector{Bool}

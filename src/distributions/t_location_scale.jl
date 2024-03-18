@@ -1,48 +1,107 @@
-"
-Defines a Normal distribution with mean μ and variance σ².
-"
+"""
+mutable struct tLocationScaleDistribution
+
+    A mutable struct for representing the tLocationScale distribution.
+
+    # Fields
+    - `μ::Union{Missing, Float64}`: Mean parameter.
+    - `σ²::Union{Missing, Float64}`: Variance parameter.
+    - `ν::Union{Missing, Int64}`: Degrees of freedom parameter.
+"""
 mutable struct tLocationScaleDistribution <: ScoreDrivenDistribution
     μ::Union{Missing, Float64}
     σ²::Union{Missing, Float64}
     ν::Union{Missing, Int64}
 end
 
-"
-Outer constructor for the t location scale distribution.
-"
+"""
+tLocationScaleDistribution()
+
+Outer constructor for the tLocationScale distribution, with no arguments specified.
+    
+    # Returns
+    - The tLocationScaleDistribution struct with both fields set to missing.
+"""
 function tLocationScaleDistribution()
     return tLocationScaleDistribution(missing, missing, missing)
 end
 
-"
-Evaluate the score of a t location scale distribution with mean μ, scale parameter σ² and ν degrees of freedom, in observation y.
-"
+"""
+score_tlocationscale(μ, σ², ν,  y) 
+
+# Compute the score vector of the Student's t-location-scale distribution, considering the specified parameters and observation.
+    
+    # Arguments
+
+    - `μ`: The value of the location parameter.
+    - `σ²`: The value of the scale parameter.
+    - `ν`: The degrees of freedom parameter.
+    - `y`: The value of the observation.
+    
+    # Returns
+    - A vector of type Float64, where the first element corresponds to the score related to the location parameter, and the second element corresponds to the score related to the scale parameter.
+    
+"""
 function score_tlocationscale(μ, σ², ν,  y) 
   
     return [((ν + 1) * (y - μ)) / ((y - μ)^2 + σ² * ν), -(ν * (σ² - (y - μ)^2)) / (2 * σ² * (ν * σ² + (y - μ)^2))]
 end
 
-"
-Evaluate the fisher information of a t location scale distribution with mean μ, scale parameter σ² and ν degrees of freedom.
-"
+"""
+fisher_information_tlocationscale(μ, σ², ν)
+
+# Compute the Fisher information matrix of the Student's t-location-scale distribution, considering the specified parameters.
+    
+# Arguments
+
+- `μ`: The value of the location parameter.
+- `σ²`: The value of the scale parameter.
+- `ν`: The degrees of freedom parameter.
+
+# Returns
+- A 2x2 matrix of type Float64 representing the Fisher information matrix. 
+  The diagonal elements correspond to the Fisher information related to the location parameter and the scale parameter, respectively.
+  Off-diagonal elements are zero.
+"""
 function fisher_information_tlocationscale(μ, σ², ν)
     return [((ν + 1.0)/(σ² * (ν + 3.0))) 0.0 ; 0.0 (ν / ((2 * σ²^2) * (ν + 3.0)))]
 end
 
-"
-Evaluate the log pdf of a t location scale distribution with mean μ, scale parameter σ² and ν degrees of freedom, in observation y.
-"
+"""
+logpdf_tlocationscale(μ, σ², ν, y)
+
+# Compute the logarithm of the probability density function (PDF) of the Student's t-location-scale distribution, considering the specified parameters and observation.
+    
+    # Arguments
+
+    - `μ`: The value of the location parameter.
+    - `σ²`: The value of the scale parameter.
+    - `ν`: The degrees of freedom parameter.
+    - `y`: The value of the observation.
+    
+    # Returns
+    - The logarithm of the probability density function (PDF) of the Student's t-location-scale distribution evaluated at the specified observation.
+    
+"""
 function logpdf_tlocationscale(μ, σ², ν, y)
 
     return logpdf_tlocationscale([μ, σ², ν], y)
 end
 
-"
-Evaluate the log pdf of a t location scale distribution with mean μ, scale parameter σ² and ν degrees of freedom, in observation y.
-    param[1] = μ
-    param[2] = σ²
-    param[3] = ν
-"
+"""
+logpdf_tlocationscale(param, y)
+
+# Compute the logarithm of the probability density function (PDF) of the Student's t-location-scale distribution, considering the specified parameters and observation.
+    
+    # Arguments
+
+    - `param`: A vector containing the parameters of the distribution in the following order: [location parameter, scale parameter, degrees of freedom parameter].
+    - `y`: The value of the observation.
+    
+    # Returns
+    - The logarithm of the probability density function (PDF) of the Student's t-location-scale distribution evaluated at the specified observation, using the provided parameters.
+    
+"""
 function logpdf_tlocationscale(param, y)
 
     if param[2] < 0
@@ -56,32 +115,71 @@ function logpdf_tlocationscale(param, y)
     return log(gamma((param[3] + 1)/2)) - log(gamma(param[3]/2)) - (1/2)*log(π*param[3]*param[2]) - (param[3] + 1)/2 * log(1 + ((y - param[1])^2)/(param[3]*param[2]))
 end
 
-"Evaluate the CDF t location scale distribution with mean μ, scale parameter σ² and ν degrees of freedom, in observation y"
+"""
+# Compute the cumulative distribution function (CDF) of the Student's t-location-scale distribution, given the specified parameters and observation.
+    
+# Arguments
+
+- `param`: A vector containing the distribution parameters in the following order: [location parameter, scale parameter, degrees of freedom parameter].
+- `y`: The observed value.
+
+# Returns
+- The cumulative probability up to `y` according to the Student's t-location-scale distribution with the provided parameters.
+
+"""
 function cdf_tlocationscale(param::Vector{Float64}, y::Fl) where Fl
 
     return Distributions.cdf(TDist(param[3]), (y - param[1]) / sqrt(param[2]))
 end
 
-"
-Returns the code of the t location scale distribution. Is the key of DICT_CODE.
-"
+"""
+get_dist_code(dist::tLocationScaleDistribution)
+
+# Get the distribution code corresponding to the tLocationScale distribution.
+    
+# Arguments
+
+- `dist`: The tLocationScaleDistribution object.
+
+# Returns
+- The distribution code corresponding to the tLocationScale distribution. (In this case, it always returns 2.)
+
+"""
 function get_dist_code(dist::tLocationScaleDistribution)
     return 2
 end
 
-"
-Returns the number of parameters of the t location scale distribution.
-"
+"""
+get_num_params(dist::tLocationScaleDistribution)
+
+# Get the number of parameters associated with the tLocationScaleDistribution.
+    
+# Arguments
+
+- `dist`: The tLocationScaleDistribution object.
+
+# Returns
+- The number of parameters associated with the tLocationScaleDistribution. (In this case, it always returns 3.)
+
+"""
 function get_num_params(dist::tLocationScaleDistribution)
     return 3
 end
 
-"
-Simulates a value from a given t location scale distribution.
-    param[1] = μ
-    param[2] = σ²
-    param[3] = ν 
-"
+"""
+sample_dist(param::Vector{Fl}, dist::tLocationScaleDistribution) where Fl
+    
+    # Sample from the tLocationScaleDistribution using the provided parameters.
+    
+    # Arguments
+
+    - `param`: A vector containing the distribution parameters in the following order: [location parameter, scale parameter, degrees of freedom parameter].
+    - `dist`: The tLocationScaleDistribution object.
+    
+    # Returns
+    - A random sample drawn from the tLocationScaleDistribution with the provided parameters.
+    
+"""
 function sample_dist(param::Vector{Fl}, dist::tLocationScaleDistribution) where Fl
     
     if param[2] < 0
@@ -91,9 +189,19 @@ function sample_dist(param::Vector{Fl}, dist::tLocationScaleDistribution) where 
     return param[1] + sqrt(param[2]) * rand(TDist(param[3]), 1)[1]
 end
 
-"
-Fits a t-Student distribution and returns the degrees of freedom value.
-"
+"""
+find_ν(y::Vector{Fl}, dist::tLocationScaleDistribution) where Fl
+
+    # Estimate the degrees of freedom parameter (ν) for the tLocationScaleDistribution given the observed data.
+    
+    # Arguments
+
+    - `y`: A vector of observations.
+    - `dist`: The tLocationScaleDistribution object.
+    
+    # Returns
+    - The estimated degrees of freedom parameter (ν).
+"""
 function find_ν(y::Vector{Fl}, dist::tLocationScaleDistribution) where Fl
 
     T = length(y)
@@ -117,26 +225,50 @@ function find_ν(y::Vector{Fl}, dist::tLocationScaleDistribution) where Fl
 
     optimize!(model)
 
-    return Int64(round(value(ν))), value(σ²)
+    return Int64(round(value(ν)))
 end
 
-"
-Indicates which parameters of the t location scale distribution must be positive.
-"
+"""
+check_positive_constrainst(dist::tLocationScaleDistribution)
+
+ Indicates which parameter of the t-LocationScale distribution must be positive.
+    
+    # Arguments
+
+    - `dist::tLocationScaleDistribution`: The structure that represents the t-LocationScale distribution.
+    
+    # Returns
+    - A boolean vector indicating that the scale and degrees of freedom parameters must be positive, while the location parameter does not necessarily need to be positive.
+"""
 function check_positive_constrainst(dist::tLocationScaleDistribution)
     return [false, true, true]
 end
 
-"
-Returns a dictionary with the initial values of the parameters of the t location scale distribution that will be used in the model initialization.
-"
+"""
+get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::tLocationScaleDistribution, seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}) where Fl
+
+    # Compute initial parameters for the tLocationScaleDistribution model based on the provided data and settings.
+    
+    # Arguments
+
+    - `y`: A vector of observations.
+    - `time_varying_params`: A boolean vector indicating whether each parameter is time-varying.
+    - `dist`: The tLocationScaleDistribution object.
+    - `seasonality`: A dictionary indicating the presence of seasonal components in the time-varying parameter's dynamic.
+    
+    # Returns
+    - initial_params:Dict{Int64, Any}: A dictionary containing the initial values for each parameter of the t-LocationScal distribution model.
+        - 1: Initial values for the location parameter, which can be fixed or time-varying.
+        - 2: Initial values for the scale parameter, which can be fixed or time-varying.
+        - 3: Initial values for the degrees of freedom parameter, which can be fixed or time-varying.
+"""
 function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::tLocationScaleDistribution, seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}) where Fl
 
     T         = length(y)
     dist_code = get_dist_code(dist)
     seasonal_period = get_num_harmonic_and_seasonal_period(seasonality)[2]
 
-    initial_params = Dict()
+    initial_params = Dict{Int64, Any}()
 
     if time_varying_params[1]
         initial_params[1] = y
@@ -159,7 +291,21 @@ function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, di
     return initial_params
 end
 
+"""
+get_seasonal_var(y::Vector{Fl}, seasonal_period::Int64, dist::tLocationScaleDistribution) where Fl
 
+    # Compute seasonal variances for the tLocationScaleDistribution model based on the provided data.
+    
+    # Arguments
+
+    - `y::Vector{Fl}`: A vector of observations.
+    - `seasonal_period::Int64`: The length of the seasonal period.
+    - `dist::tLocationScaleDistribution`: The tLocationScaleDistribution object.
+    
+    # Returns
+    - seasonal_variances::Vector{Fl}: A vector containing the seasonal variances computed based on the provided data.
+    
+"""
 function get_seasonal_var(y::Vector{Fl},seasonal_period::Int64, dist::tLocationScaleDistribution) where Fl
     num_periods = ceil(Int, length(y) / seasonal_period)
     seasonal_variances = zeros(Fl, length(y))
@@ -179,10 +325,30 @@ function get_seasonal_var(y::Vector{Fl},seasonal_period::Int64, dist::tLocationS
 end
  
 
-"
-Compare the two forms of initialize the ν parameter and return the fitted model and the ν with best performace in terms of AICC
-"
-function find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}; dates::Union{Nothing, Vector{Dl}} = nothing,
+"""
+find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}; 
+                                          α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
+                                          number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
+                                          initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl}
+
+    # Finds the optimal initial model for local search by considering two possible values for ν, using the GAS model and the provided data.
+    
+    # Arguments
+
+    - `gas_model::GASModel`: The GAS model.
+    - `y::Vector{Fl}`: A vector of observations.
+    - `α::Float64`: (Optional) The alpha value for the GAS model.
+    - `robust_prop::Float64`: (Optional) The proportion of data to use for robust fitting.
+    - `number_max_iterations::Int64`: (Optional) The maximum number of iterations for optimization.
+    - `max_optimization_time::Float64`: (Optional) The maximum time allowed for optimization.
+    - `initial_values::Union{Dict{String, Any}, Missing}`: (Optional) Initial parameter values for the optimization process.
+    
+    # Returns
+    - best_model: The most accurate estimated model, determined through comparison of information criteria (AICc).
+    - best_ν: The value of the degrees of freedom parameter employed in the best model.
+    
+"""
+function find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}; 
                                           α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
                                           number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
                                           initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl, Dl}
@@ -190,7 +356,7 @@ function find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}; d
     T    = length(y)
     dist = gas_model.dist
 
-    optimal_ν, _ = find_ν(y, dist)
+    optimal_ν = find_ν(y, dist)
     heuristic_ν  = T - 1
 
     opt_model, opt_parameters, initial_values = create_model(gas_model, y, optimal_ν;  number_max_iterations = number_max_iterations,
@@ -217,17 +383,38 @@ function find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}; d
     return best_model, best_ν
 end 
 
-"
-Compare the two forms of initialize the ν parameter and return the fitted model and the ν with best performace in terms of AICC, with exogenous variables
-"
-function find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; dates::Union{Nothing, Vector{Dl}} = nothing, 
+"""
+find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; 
+                                          α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
+                                          number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
+                                          initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl, Dl}
+
+    # Finds the optimal initial model for local search by considering two possible values for ν, using the GAS model and the provided data and exogenous variables.
+    
+    # Arguments
+
+    - `gas_model::GASModel`: The GAS model object.
+    - `y::Vector{Fl}`: A vector of observations.
+    - `X::Matrix{Fl}`: A matrix of exogenous variables.
+    - `α::Float64`: (Optional) The alpha value for the GAS model.
+    - `robust_prop::Float64`: (Optional) The proportion of data to use for robust fitting.
+    - `number_max_iterations::Int64`: (Optional) The maximum number of iterations for optimization.
+    - `max_optimization_time::Float64`: (Optional) The maximum time allowed for optimization.
+    - `initial_values::Union{Dict{String, Any}, Missing}`: (Optional) Initial parameter values for the optimization process.
+    
+    # Returns
+    - best_model: The most accurate estimated model, determined through comparison of information criteria (AICc).
+    - best_ν: The value of the degrees of freedom parameter employed in the best model.
+
+"""
+function find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; 
                                           α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
                                           number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
                                           initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl, Dl}
     T    = length(y)
     dist = gas_model.dist
 
-    optimal_ν, _ = find_ν(y, dist)
+    optimal_ν = find_ν(y, dist)
     heuristic_ν  = T - 1
 
     opt_model, opt_parameters, initial_values = create_model(gas_model, y, X, optimal_ν;  number_max_iterations = number_max_iterations,
@@ -254,10 +441,28 @@ function find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}, X
     return best_model, best_ν
 end
 
-"
-Use a local search method to find the best value of ν considering the AICC metric. 
-"
-function fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl}; dates::Union{Nothing, Vector{Dl}} = nothing,
+"""
+fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl};
+                                            tol::Float64 = 0.01, α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
+                                            number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
+                                            initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl, Dl}
+
+    # Fits a t-location-scale distribution using local search, aiming to optimize the degrees of freedom parameter (ν) by comparing information criteria (AICc).
+    # Arguments
+
+    - `gas_model::GASModel`: The GAS model object.
+    - `y::Vector{Fl}`: A vector of observations.
+    - `tol::Float64`: (Optional) The tolerance level for stopping the local search.
+    - `α::Float64`: (Optional) The regularization value for the GAS model.
+    - `robust_prop::Float64`: (Optional) The proportion of data to use for robust fitting.
+    - `number_max_iterations::Int64`: (Optional) The maximum number of iterations for optimization.
+    - `max_optimization_time::Float64`: (Optional) The maximum time allowed for optimization.
+    - `initial_values::Union{Dict{String, Any}, Missing}`: (Optional) Initial parameter values for the optimization process.
+    
+    # Returns
+    - best_model: The best-fitted model based on the t-location-scale distribution after the local search is determined by comparing information criteria (AICc).
+"""
+function fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl};
                                             tol::Float64 = 0.01, α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
                                             number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl, Dl}
 
@@ -337,12 +542,34 @@ function fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl}; dat
     return best_model#, historic_aicc
 end
 
-"
-Use a local search method to find the best value of ν considering the AICC metric, with exogenous variables. 
-"
-function fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; dates::Union{Nothing, Vector{Dl}} = nothing,
-    tol::Float64 = 0.01, α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
-    number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl, Dl}
+"""
+fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl};
+                                         tol::Float64 = 0.01, α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
+                                         number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
+                                          initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl}
+
+Fits a t-location-scale distribution with exogenous variables using local search, aiming to optimize the degrees of freedom parameter (ν) by comparing information criteria (AICc).
+
+## Arguments
+
+- `gas_model::GASModel`: The GAS model to be used for fitting the t-location-scale distribution.
+- `y::Vector{Fl}`: Vector of observations.
+- `X::Matrix{Fl}`: Matrix of additional regressors (optional).
+- `tol::Float64 = 0.01`: Tolerance level for terminating the local search.
+- `α::Float64 = 0.5`: Significance level for the robust fitting procedure.
+- `robust_prop::Float64 = 0.7`: Proportion of data to be used in the robust fitting procedure.
+- `number_max_iterations::Int64 = 30000`: Maximum number of iterations for the optimization procedure.
+- `max_optimization_time::Float64 = 180.0`: Maximum time allowed for the optimization procedure.
+- `initial_values::Union{Dict{String, Any}, Missing} = missing`: Initial values for optimization (optional).
+
+## Returns
+
+- best_model: The best-fitted model based on the t-location-scale distribution after the local search is determined by comparing information criteria (AICc).
+"""
+function fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl};
+                                         tol::Float64 = 0.01, α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
+                                         number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
+                                          initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl}
 
     T    = length(y)
     dist = gas_model.dist

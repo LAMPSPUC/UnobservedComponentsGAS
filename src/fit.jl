@@ -1,6 +1,24 @@
-"
-Defines the specified GAS model as a optimization problem
-"
+"""
+# create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missing, Int64};
+                number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
+                initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+
+Creates a generalized autoregressive score (GAS) model based on the given model's specifications and data.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing model's specifications.
+- `y::Vector{Fl}`: The time series data to be modeled.
+- `fixed_ν::Union{Missing, Int64}`: The fixed degrees of freedom parameter for the GAS model.
+- `number_max_iterations::Int64`: The maximum number of iterations for optimization. Default is 30000.
+- `max_optimization_time::Float64`: The maximum CPU time allowed for optimization. Default is 180.0 seconds.
+- `initial_values::Union{Dict{String, Any}, Missing}`: Initial values for the model parameters. Default is `missing`.
+- `tol::Float64`: Tolerance for optimization convergence. Default is 0.005.
+
+## Returns
+- `model`: The created JuMP model representing the GAS model.
+- `parameters`: The parameters included in the model.
+- `initial_values`: The initial values for the model parameters.
+"""
 function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missing, Int64};
     number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
 
@@ -58,9 +76,28 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missin
     return model, parameters, initial_values
 end
 
-"
-Defines the specified GAS model with exogenous variables as a optimization problem
-"
+"""
+# create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_ν::Union{Missing, Int64};
+                number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
+                initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+
+Creates a generalized autoregressive score (GAS) model with explanatory variables based on the given model's specifications and data.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `y::Vector{Fl}`: The dependent variable time series data to be modeled.
+- `X::Matrix{Fl}`: The matrix containing explanatory variables.
+- `fixed_ν::Union{Missing, Int64}`: The fixed degrees of freedom parameter for the GAS model.
+- `number_max_iterations::Int64`: The maximum number of iterations for optimization. Default is 30000.
+- `max_optimization_time::Float64`: The maximum CPU time allowed for optimization. Default is 180.0 seconds.
+- `initial_values::Union{Dict{String, Any}, Missing}`: Initial values for the model parameters. Default is `missing`.
+- `tol::Float64`: Tolerance for optimization convergence. Default is 0.005.
+
+## Returns
+- `model`: The created JuMP model representing the GAS model with explanatory variables.
+- `parameters`: The parameters included in the model.
+- `initial_values`: The initial values for the model parameters.
+"""
 function create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_ν::Union{Missing, Int64};
     number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
 
@@ -114,16 +151,38 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_�
         register(model, :log_pdf, 3, DICT_LOGPDF[dist_name]; autodiff = true)
     end
 
-    # if log_normal_flag
-    #     gas_model.dist = LogNormalDistribution()
-    # end
+    if log_normal_flag
+        gas_model.dist = LogNormalDistribution()
+    end
 
     return model, parameters, initial_values
 end
 
-"
-Evaluate if the model is based on t distribution or not and call the correct function to fit the model
-"
+"""
+# fit(gas_model::GASModel, y::Vector{Fl}; 
+      α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
+      number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
+      initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+
+Fits a generalized autoregressive score (GAS) model to the given time series data.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `y::Vector{Fl}`: The dependent variable time series data to be modeled.
+- `α::Float64`: The coefficient of the convex combination that guide the regularization of the κ parameters. Default is 0.5.
+- `robust_prop::Float64`: The proportion of data used for robust optimization. Default is 0.7.
+- `number_max_iterations::Int64`: The maximum number of iterations for optimization. Default is 30000.
+- `max_optimization_time::Float64`: The maximum CPU time allowed for optimization. Default is 180.0 seconds.
+- `initial_values::Union{Dict{String, Any}, Missing}`: Initial values for the model parameters. Default is `missing`.
+- `tol::Float64`: Tolerance for optimization convergence. Default is 0.005.
+
+## Returns
+- `fitted_model`: The fitted GAS model.
+
+## Details
+- If the distribution of the GAS model is `tLocationScaleDistribution`, it fits the model using local search to optimize the degrees of freedom parameter (ν).
+- Otherwise, it creates a GAS model based on the specifications and fits it to the data.
+"""
 function fit(gas_model::GASModel, y::Vector{Fl}; 
                 α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
                 number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
@@ -146,9 +205,32 @@ function fit(gas_model::GASModel, y::Vector{Fl};
     return fitted_model
 end
 
-"
-Evaluate if the model is based on t distribution or not and call the correct function to fit the model, with exogenous variables
-"
+"""
+# fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; 
+      α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
+      number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
+      initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+
+Fits a generalized autoregressive score (GAS) model with explanatory variables to the given time series data.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `y::Vector{Fl}`: The dependent variable time series data to be modeled.
+- `X::Matrix{Fl}`: The matrix containing explanatory variables.
+- `α::Float64`: The coefficient of the convex combination that guides the regularization of the κ parameters. Default is 0.5.
+- `robust_prop::Float64`: The proportion of data used for robust optimization. Default is 0.7.
+- `number_max_iterations::Int64`: The maximum number of iterations for optimization. Default is 30000.
+- `max_optimization_time::Float64`: The maximum CPU time allowed for optimization. Default is 180.0 seconds.
+- `initial_values::Union{Dict{String, Any}, Missing}`: Initial values for the model parameters. Default is `missing`.
+- `tol::Float64`: Tolerance for optimization convergence. Default is 0.005.
+
+## Returns
+- `fitted_model`: The fitted GAS model.
+
+## Details
+- If the distribution of the GAS model is `tLocationScaleDistribution`, it fits the model using local search to optimize the degrees of freedom parameter (ν).
+- Otherwise, it creates a GAS model based on the specifications and fits it to the data.
+"""
 function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; 
                 α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
                 number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing,tol::Float64 = 0.005) where Fl
@@ -171,9 +253,28 @@ function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl};
 
 end
 
-"
-Fits the specified GAS model.
-"
+"""
+# fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; 
+      α::Float64 = 0.5, robust_prop::Float64 = 0.7) where {Fl, Ml, Gl}
+
+Fits a generalized autoregressive score (GAS) model to the given time series data using a pre-defined JuMP model.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `y::Vector{Fl}`: The dependent variable time series data to be modeled.
+- `model::Ml`: The pre-defined JuMP model to be used for optimization.
+- `parameters::Matrix{Gl}`: The matrix containing parameters to be optimized.
+- `initial_values::Dict{String, Any}`: Initial values for the model parameters.
+- `α::Float64`: The coefficient of the convex combination that guides the regularization of the κ parameters. Default is 0.5.
+- `robust_prop::Float64`: The proportion of data used for robust optimization. Default is 0.7.
+
+## Returns
+- `fitted_model`: The fitted GAS model.
+
+## Details
+- If the distribution of the GAS model is `LogNormalDistribution`, it transforms the dependent variable data to natural logarithms.
+- Includes the objective function, initializes variables, optimizes the model, and returns the fitted GAS model.
+"""
 function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.5, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
 
     if typeof(gas_model.dist) == LogNormalDistribution
@@ -207,9 +308,29 @@ function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{G
     return create_output_fit(model, parameters, y, missing, missing, gas_model, α)
 end
 
-"
-Fits the specified GAS model, with exogenous variables.
-"
+"""
+# fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; 
+      α::Float64 = 0.5, robust_prop::Float64 = 0.7) where {Fl, Ml, Gl}
+
+Fits a generalized autoregressive score (GAS) model with explanatory variables to the given time series data using a pre-defined JuMP model.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `y::Vector{Fl}`: The dependent variable time series data to be modeled.
+- `X::Matrix{Fl}`: The matrix of explanatory variables.
+- `model::Ml`: The pre-defined JuMP model to be used for optimization.
+- `parameters::Matrix{Gl}`: The matrix containing parameters to be optimized.
+- `initial_values::Dict{String, Any}`: Initial values for the model parameters.
+- `α::Float64`: The coefficient of the convex combination that guides the regularization of the κ parameters. Default is 0.5.
+- `robust_prop::Float64`: The proportion of data used for robust optimization. Default is 0.7.
+
+## Returns
+- `fitted_model`: The fitted GAS model.
+
+## Details
+- If the distribution of the GAS model is `LogNormalDistribution`, it transforms the dependent variable data to natural logarithms.
+- Includes the objective function, initializes variables, optimizes the model, and returns the fitted GAS model.
+"""
 function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.5, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
 
     if typeof(gas_model.dist) == LogNormalDistribution
@@ -244,9 +365,62 @@ function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, param
     return create_output_fit(model, parameters, y, X, missing, gas_model, α)
 end
 
-# "
-# Runs the automatic GAS. Finds the best value of α for d = 0, then find the best d for that fixed value of α.
-# "
+"""
+# create_output_fit(model::Ml, parameters::Matrix{Gl} ,y::Vector{Fl}, X::Union{Missing, Matrix{Fl}}, selected_variables::Union{Missing, Vector{Int64}},  
+                            gas_model::GASModel, penalty_factor::Float64) where {Ml, Gl, Fl}
+
+Creates an output structure containing the fitted values, residuals, and information criteria of a GAS model.
+
+## Arguments
+- `model::Ml`: The fitted optimization model.
+- `parameters::Matrix{Gl}`: The optimized parameters of the GAS model.
+- `y::Vector{Fl}`: The dependent variable time series data.
+- `X::Union{Missing, Matrix{Fl}}`: The matrix of explanatory variables. Default is `missing`.
+- `selected_variables::Union{Missing, Vector{Int64}}`: The indices of selected variables. Default is `missing`.
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `penalty_factor::Float64`: The penalty factor used for regularization.
+
+## Returns
+- `Output`: A structure containing the fitted values, residuals, and information criteria.
+"""
+function create_output_fit(model::Ml, parameters::Matrix{Gl} ,y::Vector{Fl}, X::Union{Missing, Matrix{Fl}}, selected_variables::Union{Missing, Vector{Int64}},  
+                            gas_model::GASModel, penalty_factor::Float64) where {Ml, Gl, Fl}
+
+    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+
+    dist_code  = get_dist_code(dist)
+    num_params = get_num_params(dist)
+
+    order  = []
+    for i in 1:num_params
+        if typeof(ar[i]) == Int64
+            push!(order, collect(1:ar[i]))
+        elseif typeof(ar[i]) == Vector{Int64}
+            push!(order, ar[i])
+        end
+    end
+
+    if isempty(order)
+        first_idx = 2
+    else 
+        first_idx = maximum(vcat(order...)) + 1
+    end
+
+    information_criteria = get_information_criteria(model, parameters, y, dist)
+
+    fit_in_sample, fitted_params, components = get_fitted_values(gas_model, model,  X)
+
+    if typeof(dist) == LogNormalDistribution
+        fit_in_sample, fitted_params = convert_to_exp_scale(fit_in_sample, fitted_params)
+        residuals = get_residuals(exp.(y), fit_in_sample, fitted_params, dist)
+    else
+        residuals = get_residuals(y, fit_in_sample, fitted_params, dist)
+    end
+
+    return Output(fit_in_sample, fitted_params, components, selected_variables, residuals, information_criteria, penalty_factor, String(Symbol(termination_status(model))))
+
+end
+  
 # function auto_gas(gas_model::GASModel, y::Vector{Fl}, steps_ahead::Int64; d_values::Vector{Float64} = [0.0, 0.5, 1.0],
 #     robust_prop::Float64 = 0.7, number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
 #     initial_values::Union{Dict{String, Any}, Missing} = missing, num_scenarious::Int64 = 500, 
@@ -534,47 +708,6 @@ end
 #         end
 
 #     end
-
 #     return best_output, gas_model, forec
 # end
 
-"
-Creates the output struct after fitiing the model.
-"
-function create_output_fit(model::Ml, parameters::Matrix{Gl} ,y::Vector{Fl}, X::Union{Missing, Matrix{Fl}}, selected_variables::Union{Missing, Vector{Int64}},  
-                            gas_model::GASModel, penalty_factor::Float64) where {Ml, Gl, Fl}
-
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
-
-    dist_code  = get_dist_code(dist)
-    num_params = get_num_params(dist)
-
-    order  = []
-    for i in 1:num_params
-        if typeof(ar[i]) == Int64
-            push!(order, collect(1:ar[i]))
-        elseif typeof(ar[i]) == Vector{Int64}
-            push!(order, ar[i])
-        end
-    end
-
-    if isempty(order)
-        first_idx = 2
-    else 
-        first_idx = maximum(vcat(order...)) + 1
-    end
-
-    information_criteria = get_information_criteria(model, parameters, y, dist)
-
-    fit_in_sample, fitted_params, components = get_fitted_values(gas_model, model,  X)
-
-    if typeof(dist) == LogNormalDistribution
-        fit_in_sample, fitted_params = convert_to_exp_scale(fit_in_sample, fitted_params)
-        residuals = get_residuals(exp.(y), fit_in_sample, fitted_params, dist_code)
-    else
-        residuals = get_residuals(y, fit_in_sample, fitted_params, dist_code)
-    end
-
-    return Output(fit_in_sample, fitted_params, components, selected_variables, residuals, information_criteria, penalty_factor, String(Symbol(termination_status(model))))
-
-end

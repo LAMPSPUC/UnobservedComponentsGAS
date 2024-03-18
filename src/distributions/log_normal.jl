@@ -1,21 +1,48 @@
-"
-Defines a Log Normal distribution with mean μ and variance σ².
-"
+
+"""
+mutable struct LogNormalDistribution
+
+    A mutable struct for representing the Log Normal distribution.
+
+    # Fields
+    - `μ::Union{Missing, Float64}`: Mean parameter.
+    - `σ²::Union{Missing, Float64}`: Variance parameter.
+"""
+
 mutable struct LogNormalDistribution <: ScoreDrivenDistribution
     μ::Union{Missing, Float64}
     σ²::Union{Missing, Float64}
 end
 
-"
-Outer constructor for the Normal distribution.
-"
+
+"""
+LogNormalDistribution()
+
+Outer constructor for the Log-Normal distribution, with no arguments specified.
+    
+    # Returns
+    - The LogNormalDistribution struct with both fields set to missing.
+"""
 function LogNormalDistribution()
     return LogNormalDistribution(missing, missing)
 end
 
-"
-Convert the fit in sample and the fitted params to the series scale.
-"
+"""
+convert_to_exp_scale(fit_in_sample::Vector{Fl}, fitted_params::Dict{String, Vector{Float64}}) where Fl
+
+Convert the fit-in-sample vector and the dictionary of fitted parameters, which were originally computed in the Normal distribution scale, to the LogNormal distribution scale.
+    
+    # Arguments
+
+    - `fit_in_sample::Vector{Fl}`: Model's fit-in-sample.
+    - `fitted_params::Dict{String, Vector{Float64}}`: Dictionary mapping the estimated parameters of the distribution to their respective indices, for example, "param_1".
+    
+    # Returns
+    - new_fit_in_sample: Vector{Float64}: The vector of the fit-in-sample in the LogNormal distribution scale.
+    - new_fitted_params: Dict{String, Vector{Float64}}: Dictionary containing the values of the parameters in the LogNormal distribution scale.
+        - "param_1": Vector containing the mean parameter of the LogNormal distribution. 
+        - "param_2": Vector containing the variance parameter of the LogNormal distribution.
+"""
 function convert_to_exp_scale(fit_in_sample::Vector{Fl}, fitted_params::Dict{String, Vector{Float64}}) where Fl
      
     new_fit_in_sample = exp.(fit_in_sample .+ fitted_params["param_2"]./2)
@@ -27,9 +54,20 @@ function convert_to_exp_scale(fit_in_sample::Vector{Fl}, fitted_params::Dict{Str
     return new_fit_in_sample, new_fitted_params
 end
 
-"
-Convert the fitted params to the log scale.
-"
+"""
+convert_to_log_scale(fitted_params::Dict{String, Vector{Float64}})
+
+Convert the dictionary of fitted parameters, which were originally in the LogNormal distribution scale, to the Normal distribution scale.
+    
+    # Arguments
+
+    - `fitted_params::Dict{String, Vector{Float64}}`: Dictionary mapping the estimated parameters of the distribution to their respective indices, for example, "param_1".
+    
+    # Returns
+    - new_fitted_params: Dict{String, Vector{Float64}}: Dictionary containing the values of the parameters in the LogNormal distribution scale.
+        - "param_1": Vector containing the mean parameter of the Normal distribution. 
+        - "param_2": Vector containing the variance parameter of the Normal distribution.
+"""
 function convert_to_log_scale(fitted_params::Dict{String, Vector{Float64}})
 
     new_fitted_params = Dict{String, Vector{Float64}}()
@@ -39,41 +77,86 @@ function convert_to_log_scale(fitted_params::Dict{String, Vector{Float64}})
     return new_fitted_params
 end
 
+"""
+convert_forecast_to_exp_scale(dict_forec::Dict{String, Any})
+
+Convert the dictionary of forecasts, originally in the Normal distribution scale, to the LogNormal distribution scale.
+    
+    # Arguments
+
+    - `dict_forec::Dict{String, Any}`: Dictionary mapping the predicted values to their corresponding indices.
+    
+    # Returns
+    - new_dict_forec: Dict{String, Any}: Dictionary containing the predicted values in the LogNormal distribution scale.
+        - "intervals": Dictionary containing vectors representing the upper and lower bounds of predictive intervals at a specified confidence level.
+        - "mean": Vector containing the average of the simulated predicted values.
+        - "scenarios": Matrix containing all the simulated predicted values.
+"""
+
 function convert_forecast_to_exp_scale(dict_forec::Dict{String, Any})
 
-    dict_forec["mean"] = exp.( dict_forec["mean"])
+    new_dict_forec = deepcopy(dict_forec)
+    new_dict_forec["mean"] = exp.(dict_forec["mean"])
 
     for s in 1:size(dict_forec["scenarios"], 2)
-        dict_forec["scenarios"][:, s] = exp.(dict_forec["scenarios"][:, s])
+        new_dict_forec["scenarios"][:, s] = exp.(dict_forec["scenarios"][:, s])
     end
 
     for k in keys(dict_forec["intervals"])
-        dict_forec["intervals"][k]["lower"] = exp.(dict_forec["intervals"][k]["lower"])
-        dict_forec["intervals"][k]["upper"] = exp.(dict_forec["intervals"][k]["upper"])
+        new_dict_forec["intervals"][k]["lower"] = exp.(dict_forec["intervals"][k]["lower"])
+        new_dict_forec["intervals"][k]["upper"] = exp.(dict_forec["intervals"][k]["upper"])
     end
     
-    return dict_forec
+    return new_dict_forec
 end
 
-"
-Returns the code of the Normal distribution. Is the key of DICT_CODE.
-"
+"""
+get_dist_code(dist::LogNormalDistribution)
+
+ Provide the code representing the Normal distribution, as the lognormal model is estimated based on the Gaussian one.
+    
+    # Arguments
+
+    - `dist::LogNormalDistribution`: The structure that represents the LogNormal distribution.
+    
+    # Returns
+    - The distribution code corresponding to the Normal distribution. (In this case, it always returns 1.)
+"""
 function get_dist_code(dist::LogNormalDistribution)
     return 1
 end
 
-"
-Returns the number of parameters of the Normal distribution.
-"
+"""
+get_num_params(dist::LogNormalDistribution)
+
+Provide the number of parameters for a LogNormal distribution.
+    
+    # Arguments
+
+    - `dist::LogNormalDistribution`: The structure that represents the LogNormal distribution.
+    
+    # Returns
+    - Int64(2)
+"""
 function get_num_params(dist::LogNormalDistribution)
     return 2
 end
 
-"
-Simulates a value from a given Normal distribution.
-    param[1] = μ
-    param[2] = σ² 
-"
+"""
+sample_dist(param::Vector{Float64}, dist::LogNormalDistribution)
+
+ Sample a random realization from a Normal distribution with the specified parameters.
+    
+    # Arguments
+
+    -``param::Vector{Float64}`: A vector containing the parameters of the Normal distribution associated with the LogNormal distribution of interest.
+        - param[1] = μ
+        - param[2] = σ²
+    - `dist::LogNormalDistribution`: The structure that represents the LogNormal distribution.
+    
+    # Returns
+    - A realization of N(param[1], √param[2])
+"""
 function sample_dist(param::Vector{Float64}, dist::LogNormalDistribution)
 
     if param[2] < 0.0

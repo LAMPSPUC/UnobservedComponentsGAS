@@ -1,4 +1,4 @@
-function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missing}, has_level::Bool, has_slope::Bool, has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool, order::Vector{Int64}, max_order::Int64)
+function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missing}, has_level::Bool, has_slope::Bool, has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool, order::Union{Vector{Int64}, Vector{Nothing}}, max_order::Int64)
 
     #T = length(y)
     has_explanatories = !ismissing(X) ? true : false
@@ -45,7 +45,7 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
         #     s[t] = -sum(a[t, 3:end])
         # end
 
-        if order != [0]
+        if !isnothing(order[1])
             #res = y .- output.fit
             res = StateSpaceModels.get_innovations(state_space_model)[:, 1]
             fit_ar_model, ar_coefs, ar_intercept = fit_AR_model(res, order)
@@ -183,7 +183,7 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
     idx_fixed_params        = setdiff(1:num_params, idx_time_varying_params)
     T                       = length(y)
     order                   = get_AR_order(ar)
-    max_order               = maximum(vcat(order...))
+    max_order               = has_AR(ar) ? maximum(vcat(order...)) : 0
 
     initial_params = get_initial_params(y, time_varying_params, dist, seasonality)
 
@@ -323,7 +323,7 @@ function create_output_initialization_from_fit(output::Output, gas_model::GASMod
     T             = length(fitted_params["param_1"])
 
     order                   = get_AR_order(ar)
-    max_order               = maximum(vcat(order...))
+    max_order               = has_AR(ar) ? maximum(vcat(order...)) : 0#maximum(vcat(order...))
 
     output_initial_values       = Dict()
     initial_time_varying_params = zeros(length(fitted_params["param_1"]), num_params) 

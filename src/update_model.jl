@@ -1,3 +1,18 @@
+"""
+# update_fitted_params_and_components_dict(gas_model::GASModel, output::Output, new_y::Vector{Fl}, new_X::Union{Missing, Matrix{Float64}}; initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl}
+
+Updates the fitted parameters and components dictionary based on new data.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `output::Output`: The output structure containing the fitted values, residuals, and information criteria.
+- `new_y::Vector{Fl}`: The vector of new observed values for the time series data.
+- `new_X::Union{Missing, Matrix{Float64}}`: The matrix of new explanatory variables. Use `missing` if no new explanatory variables are available.
+- `initial_values::Union{Dict{String, Any}, Missing}`: Optional. A dictionary containing initial values for updating parameters. Default is `missing`.
+
+## Returns
+- `new_output::Output`: The updated output structure containing the modified fitted parameters and components.
+"""
 function update_fitted_params_and_components_dict(gas_model::GASModel, output::Output, new_y::Vector{Fl}, new_X::Union{Missing, Matrix{Float64}};
                                                     initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl}
 
