@@ -323,7 +323,7 @@ function create_output_initialization_from_fit(output::Output, gas_model::GASMod
     T             = length(fitted_params["param_1"])
 
     order                   = get_AR_order(ar)
-    max_order               = maximum(vcat(order...))
+    max_order               = has_AR(ar) ? maximum(vcat(order...)) : 0#maximum(vcat(order...))
 
     output_initial_values       = Dict()
     initial_time_varying_params = zeros(length(fitted_params["param_1"]), num_params) 

@@ -95,8 +95,8 @@ Convert the dictionary of forecasts, originally in the Normal distribution scale
 
 function convert_forecast_to_exp_scale(dict_forec::Dict{String, Any})
 
-    new_dict_forec = Dict{String, Any}()
-    new_dict_forec["mean"] = exp.( dict_forec["mean"])
+    new_dict_forec = deepcopy(dict_forec)
+    new_dict_forec["mean"] = exp.(dict_forec["mean"])
 
     for s in 1:size(dict_forec["scenarios"], 2)
         new_dict_forec["scenarios"][:, s] = exp.(dict_forec["scenarios"][:, s])

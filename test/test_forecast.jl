@@ -41,7 +41,7 @@
     dist_lognormal      = UnobservedComponentsGAS.LogNormalDistribution()
     gas_model_lognormal = UnobservedComponentsGAS.GASModel(dist_lognormal, [true, false], 1.0, Dict(1=>false), 
                                                 Dict(1 => true),  Dict(1 => 1), 
-                                                Dict(1 => 12), false, true)
+                                                Dict(1 => 12), false, false)
 
     fitted_model_lognormal = UnobservedComponentsGAS.fit(gas_model_lognormal, y_lognormal)
     forecast_lognormal     = UnobservedComponentsGAS.predict(gas_model_lognormal, fitted_model_lognormal, y_lognormal, steps_ahead, num_scenarious)

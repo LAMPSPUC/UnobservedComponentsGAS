@@ -412,9 +412,9 @@ function create_output_fit(model::Ml, parameters::Matrix{Gl} ,y::Vector{Fl}, X::
 
     if typeof(dist) == LogNormalDistribution
         fit_in_sample, fitted_params = convert_to_exp_scale(fit_in_sample, fitted_params)
-        residuals = get_residuals(exp.(y), fit_in_sample, fitted_params, dist_code)
+        residuals = get_residuals(exp.(y), fit_in_sample, fitted_params, dist)
     else
-        residuals = get_residuals(y, fit_in_sample, fitted_params, dist_code)
+        residuals = get_residuals(y, fit_in_sample, fitted_params, dist)
     end
 
     return Output(fit_in_sample, fitted_params, components, selected_variables, residuals, information_criteria, penalty_factor, String(Symbol(termination_status(model))))

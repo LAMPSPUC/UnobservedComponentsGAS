@@ -222,7 +222,10 @@ Calculates various types of residuals for a time series based on the fitted para
   - `cs_residuals`: A matrix of conditional score residuals.
   - `q_residuals`: A vector of quantile residuals.
 """
-function get_residuals(y::Vector{Float64}, fit_in_sample::Vector{Float64}, fitted_params::Dict{String, Vector{Float64}}, dist_code::Int64)
+function get_residuals(y::Vector{Float64}, fit_in_sample::Vector{Float64}, fitted_params::Dict{String, Vector{Float64}}, dist::ScoreDrivenDistribution)
+
+    # Getting dist
+    dist == LogNormalDistribution ? dist_code = get_dist_code(NormalDistribution) : dist_code = get_dist_code(dist)
 
     # Getting std residuals
     std_res = get_std_residuals(y, fit_in_sample)
@@ -231,8 +234,12 @@ function get_residuals(y::Vector{Float64}, fit_in_sample::Vector{Float64}, fitte
     cs_residuals = get_cs_residuals(y, fitted_params, dist_code)
 
     # Getting Quantile Residuals
-    q_residuals = get_quantile_residuals(y, fitted_params, dist_code)
-
+    if dist == LogNormalDistribution
+        q_residuals = get_quantile_residuals(log.(y), fitted_params, dist_code)
+    else
+        q_residuals = get_quantile_residuals(y, fitted_params, dist_code)
+    end
+    
     dict_residuals = Dict{String, Union{Vector{Float64}, Matrix{Float64}}}()
     dict_residuals["std_residuals"] = std_res
     dict_residuals["cs_residuals"]  = cs_residuals

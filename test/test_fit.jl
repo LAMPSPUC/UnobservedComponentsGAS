@@ -2,11 +2,11 @@
     
     "FALTAM TESTES RELATIVOS ÀS EXPLICATIVAS"
     
-    T = 100
-    y = rand(T)
+    
+    time_series = CSV.read(joinpath(@__DIR__, "data/timeseries_lognormal_rws_d1.csv"), DataFrame)
+    y = time_series[:,1]
+    T = length(y)
     X = [2*y y/2 rand(T)]
-    # path = "data\\"
-    #path = "test\\data\\"
 
     function build_gas_model(dist, d, rw, rws, ar, seasonality)
         typeof(dist) == UnobservedComponentsGAS.tLocationScaleDistribution ? time_varying = [true, false, false] : time_varying = [true, false]
@@ -168,27 +168,28 @@
     N = 10#size(time_series_lognormal, 2)
 
     # plot(Matrix(time_series_lognormal), label="")
-
+    
     σ2_values        = zeros(N)
     ν_values         = zeros(N)
     level_κ_values   = zeros(N)
     slope_κ_values   = zeros(N)
     intercept_values = zeros(N)
     fitted_values_lognormal = zeros(T,N)
+
     # ~ 80 sec to run
     for j in 1:N
-        y            = time_series_lognormal[:,j]
+        println("----------------N=$j------------------")
+        y            = time_series_lognormal[:,j+10]
         gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.LogNormalDistribution(), [true, false], 1.0, Dict(1=>false), 
                                                         Dict(1 => true),  Dict(1 => false), 
                                                         Dict(1 => 12), false, false)
-        fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
+        fitted_model = UnobservedComponentsGAS.fit(gas_model, y);
 
         σ2_values[j]        = fitted_model.fitted_params["param_2"][1]      
         level_κ_values[j]   = fitted_model.components["param_1"]["level"]["hyperparameters"]["κ"]
         slope_κ_values[j]   = fitted_model.components["param_1"]["slope"]["hyperparameters"]["κ"]
         intercept_values[j] = fitted_model.components["param_1"]["intercept"]
         fitted_values_lognormal[:,j] .= fitted_model.fit_in_sample
-        
     end
 
     fitted_values_lognormal = fitted_values_lognormal[:,.!isinf.(fitted_values_lognormal)[1,:]]

@@ -237,7 +237,7 @@ Updates the seasonality component predictions for the specified parameter, time 
 Updates the seasonality component predictions for the specified parameter, time period, and scenario in the `dict_hyperparams_and_fitted_components` object.
 """
 # Testar se a função precisa mesmo do diff_T  na sazo deterministica. Eu acho que não pq ja passamos o t = T + t
-function update_S!(dict_hyperparams_and_fitted_components::Dict{String, Any}, num_harmonic::Vector{Int64}, diff_T::Int64, param::Int64, t::Int64, s::Int64)
+function update_S!(dict_hyperparams_and_fitted_components::Dict{String, Any}, num_harmonic::Vector{Union{Nothing, Int64}}, diff_T::Int64, param::Int64, t::Int64, s::Int64)
 
     if length(size( dict_hyperparams_and_fitted_components["seasonality"]["γ"])) == 4
         for j in 1:num_harmonic[param]
@@ -273,7 +273,7 @@ Updates the autoregressive (AR) component predictions for the specified paramete
 ## Returns
 Updates the autoregressive (AR) component predictions for the specified parameter, time period, and scenario in the `dict_hyperparams_and_fitted_components` object.
 """
-function update_AR!(dict_hyperparams_and_fitted_components::Dict{String, Any}, order::Vector{Vector{Int64}} , param::Int64, t::Int64, s::Int64)
+function update_AR!(dict_hyperparams_and_fitted_components::Dict{String, Any}, order::Vector{Union{Vector{Int64}, Vector{Nothing}}} , param::Int64, t::Int64, s::Int64)
 
     dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s] = sum(dict_hyperparams_and_fitted_components["ar"]["ϕ"][:, param][p] * dict_hyperparams_and_fitted_components["ar"]["value"][param, t - p, s] for p in order[param]) + 
                                                                                 dict_hyperparams_and_fitted_components["ar"]["κ"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s]
