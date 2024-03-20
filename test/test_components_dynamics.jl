@@ -19,7 +19,7 @@
     @test(UnobservedComponentsGAS.has_AR(Dict(1=>1), 1))
     @test(!UnobservedComponentsGAS.has_AR(Dict(2=>false), 2))
 
-    @test(isequal(UnobservedComponentsGAS.get_AR_order(Dict(1=>2, 2=>0)), [[1, 2], []]))
+    @test(isequal(UnobservedComponentsGAS.get_AR_order(Dict(1=>2, 2=>0)), [[1, 2], [nothing]]))
     @test(isequal(UnobservedComponentsGAS.get_AR_order(Dict(1=>false, 2=>false)), [[nothing], [nothing]]))
     # OBS: quando passa false, retorna [0], mas quando passa 0, retorna [] ???
 
