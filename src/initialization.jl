@@ -15,19 +15,28 @@ function define_state_space_model(y::Vector{Float64}, has_level::Bool, has_slope
     initial_γ           = zeros(1)
     initial_γ_star      = zeros(1)
     if has_seasonality
-        #Basic structural
-        ss_model                  = BasicStructural(y, seasonal_period)
-        pred_state                = fit_and_get_preditive_state(ss_model)
-        for t in 1:T
-            initial_seasonality[t] = -sum(pred_state[t+1, end-(seasonal_period-2):end])
-        end
-        initial_γ, initial_γ_star = fit_harmonics(initial_seasonality, seasonal_period, stochastic)
+        if !has_level && !has_slope
+            ss_model = SeasonalNaive(y, seasonal_period)
+            StateSpaceModels.fit!(ss_model)
+            initial_seasonality = ss_model.y .- vcat(zeros(seasonal_period), ss_model.residuals)
+            res = ss_model.residuals
+            initial_γ, initial_γ_star = fit_harmonics(initial_seasonality, seasonal_period, stochastic)
+        else
+            #Basic structural
+            ss_model                  = BasicStructural(y, seasonal_period)
+            pred_state                = fit_and_get_preditive_state(ss_model)
+            for t in 1:T
+                initial_seasonality[t] = -sum(pred_state[t+1, end-(seasonal_period-2):end])
+            end
+            initial_γ, initial_γ_star = fit_harmonics(initial_seasonality, seasonal_period, stochastic)
 
-        if has_level && has_slope
-            initial_level = pred_state[2:end,1]
-            initial_slope = pred_state[2:end,2]
-        elseif has_level && !has_slope
-            initial_level = pred_state[2:end,1] + pred_state[2:end,2]
+            if has_level && has_slope
+                initial_level = pred_state[2:end,1]
+                initial_slope = pred_state[2:end,2]
+            elseif has_level && !has_slope
+                initial_level = pred_state[2:end,1] + pred_state[2:end,2]
+            end
+            res = StateSpaceModels.get_innovations(ss_model)[:, 1]
         end
     else
         if has_level && has_slope
@@ -42,8 +51,9 @@ function define_state_space_model(y::Vector{Float64}, has_level::Bool, has_slope
             pred_state = fit_and_get_preditive_state(ss_model)
             initial_level = pred_state[2:end,1]
         end
+        res = StateSpaceModels.get_innovations(ss_model)[:, 1]
     end
-    res = StateSpaceModels.get_innovations(ss_model)[:, 1]
+    
     return Dict("level" => initial_level,"slope" => initial_slope,"seasonality" => initial_seasonality,
             "γ" => initial_γ,"γ_star" => initial_γ_star,"explanatory" => missing,"res" => res)
 end
@@ -61,20 +71,32 @@ function define_state_space_model(y::Vector{Float64}, X::Union{Matrix{Float64}, 
     initial_γ_star      = zeros(1)
     explanatory_coefs   = zeros(N)
     
+    # Be aware that if we select just seasonal as the mean component with explanatories, 
+    ## there wont be a initial value for the explanatories coefs (it will be zero)
     if has_seasonality
-        #Basic structural
-        ss_model   = BasicStructuralExplanatory(y, seasonal_period, X)
-        pred_state = fit_and_get_preditive_state(ss_model)
-        for t in 1:T
-            initial_seasonality[t] = -sum(pred_state[t+1, end-(seasonal_period+N-2):end-N])
-        end
-        initial_γ, initial_γ_star = fit_harmonics(initial_seasonality, seasonal_period, stochastic)
+        if !has_level && !has_slope
+            ss_model = SeasonalNaive(y, seasonal_period)
+            StateSpaceModels.fit!(ss_model)
+            initial_seasonality = ss_model.y .- vcat(zeros(seasonal_period), ss_model.residuals)
+            explanatory_coefs   = zeros(N)
+            res = ss_model.residuals
+            initial_γ, initial_γ_star = fit_harmonics(initial_seasonality, seasonal_period, stochastic)
+        else
+         #Basic structural
+            ss_model   = BasicStructuralExplanatory(y, seasonal_period, X)
+            pred_state = fit_and_get_preditive_state(ss_model)
+            for t in 1:T
+                initial_seasonality[t] = -sum(pred_state[t+1, end-(seasonal_period+N-2):end-N])
+            end
+            initial_γ, initial_γ_star = fit_harmonics(initial_seasonality, seasonal_period, stochastic)
 
-        if has_level && has_slope
-            initial_level = pred_state[2:end,1]
-            initial_slope = pred_state[2:end,2]
-        elseif has_level && !has_slope
-            initial_level = pred_state[2:end,1] + pred_state[2:end,2]
+            if has_level && has_slope
+                initial_level = pred_state[2:end,1]
+                initial_slope = pred_state[2:end,2]
+            elseif has_level && !has_slope
+                initial_level = pred_state[2:end,1] + pred_state[2:end,2]
+            end
+            res = StateSpaceModels.get_innovations(ss_model)[:, 1]
         end
     else
         if has_level && has_slope 
@@ -89,8 +111,9 @@ function define_state_space_model(y::Vector{Float64}, X::Union{Matrix{Float64}, 
             pred_state = fit_and_get_preditive_state(ss_model)
             initial_level = pred_state[2:end,1]
         end
+        res = StateSpaceModels.get_innovations(ss_model)[:, 1]
     end
-    res               = StateSpaceModels.get_innovations(ss_model)[:, 1]
+    
     explanatory_coefs = ss_model.hyperparameters.constrained_values[end-N+1:end]
 
     return Dict("level" => initial_level,"slope" => initial_slope,"seasonality" => initial_seasonality,
@@ -111,6 +134,7 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
             ss_components = define_state_space_model(y, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
         end
 
+        println("------",order)
         if !isnothing(order[1])
             res = ss_components["res"]
             fit_ar_model, ar_coefs, ar_intercept = fit_AR_model(res, order)
@@ -203,7 +227,7 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
     idx_fixed_params        = setdiff(1:num_params, idx_time_varying_params)
     T                       = length(y)
     order                   = get_AR_order(ar)
-    max_order               = has_AR(ar) ? maximum(vcat(order...)) : 0
+    max_order               = has_AR(ar) ? max_order = maximum(filter(x -> !isnothing(x), vcat(order...))) : 0
 
     initial_params = get_initial_params(y, time_varying_params, dist, seasonality)
 
@@ -343,7 +367,7 @@ function create_output_initialization_from_fit(output::Output, gas_model::GASMod
     T             = length(fitted_params["param_1"])
 
     order                   = get_AR_order(ar)
-    max_order               = has_AR(ar) ? maximum(vcat(order...)) : 0#maximum(vcat(order...))
+    max_order               = has_AR(ar) ? maximum(filter(x -> !isnothing(x), vcat(order...))) : 0
 
     output_initial_values       = Dict()
     initial_time_varying_params = zeros(length(fitted_params["param_1"]), num_params) 

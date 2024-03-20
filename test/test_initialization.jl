@@ -102,4 +102,19 @@
     @test(all(output_initial_values["ar"]["values"] .!= 0))
     @test(all(output_initial_values["slope"]["values"] .!= zeros(T)))
     @test(all(output_initial_values["rws"]["values"] .!=  zeros(T)))
+
+    #Erro no state space models quando usamos 2 parametros
+    dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
+    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, true], 0.0, Dict(1=>false, 2=>false),  
+                                            Dict(1 => true, 2=>false),  Dict(1 => 1), 
+                                            Dict(1 => 12, 2 => 12), false, false)
+    fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
+    output_initial_values = UnobservedComponentsGAS.create_output_initialization_from_fit(fitted_model, gas_model)
+    
+    @test(all(output_initial_values["rw"]["values"] .== 0))
+    @test(all(output_initial_values["seasonality"]["values"] .!= 0))
+    @test(all(output_initial_values["ar"]["values"] .!= 0))
+    @test(all(output_initial_values["slope"]["values"] .!= zeros(T)))
+    @test(all(output_initial_values["rws"]["values"] .!=  zeros(T)))
+
 end

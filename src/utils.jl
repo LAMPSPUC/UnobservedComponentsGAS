@@ -406,8 +406,8 @@ function fit_AR_model(y::Vector{Fl}, order::Union{Vector{Int64}, Vector{Nothing}
     @variable(model, ϕ[order])
     @variable(model, y_hat[1:T])
 
-    println(order)
-    println(typeof(order))
+    # println(order)
+    # println(typeof(order))
     @constraint(model, [t = max_order+1:T], y_hat[t] == c + sum(ϕ[i]*y[t - i] for i in order))
    
     @objective(model, Min, sum((y .- y_hat).^2))
