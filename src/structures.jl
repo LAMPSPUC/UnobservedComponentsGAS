@@ -30,7 +30,7 @@ mutable struct GASModel
     d::Union{Float64, Missing}
     random_walk::Dict{Int64, Bool} 
     random_walk_slope::Dict{Int64, Bool} 
-    ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}}
+    ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}, Dict{Int64, Integer}}
     seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}
     robust::Bool
     stochastic::Bool
@@ -40,7 +40,7 @@ mutable struct GASModel
                         d::Union{Float64, Missing},
                         random_walk::Dict{Int64, Bool}, 
                         random_walk_slope::Dict{Int64, Bool}, 
-                        ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}},
+                        ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}, Dict{Int64, Integer}},
                         seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}},
                         robust::Bool, stochastic::Bool)
 
@@ -77,6 +77,8 @@ mutable struct GASModel
                 end
             end
         end
+        println(ar)
+        println(seasonality)
 
         return new(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic)   
     end

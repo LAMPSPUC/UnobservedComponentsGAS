@@ -51,7 +51,7 @@ Checks if the provided autoregressive (AR) dictionary indicates the presence of 
 ## Returns
 - `true` if there is at least one component with autoregressive structure, `false` otherwise.
 """
-has_AR(ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}}) = !all(isequal.(typeof.(values(ar)), Bool))
+has_AR(ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}, Dict{Int64, Integer}}) = !all(isequal.(typeof.(values(ar)), Bool))
 
 
 """
@@ -111,7 +111,7 @@ Checks if the specified parameter has an autoregressive (AR) component in the gi
 ## Returns
 - `true` if the specified parameter has an autoregressive (AR) component, `false` otherwise.
 """
-has_AR(ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}}, param::Int64) = typeof(ar[param]) == Bool || ar[param] == 0 ? false : true
+has_AR(ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}, Dict{Int64, Integer}}, param::Int64) = typeof(ar[param]) == Bool || ar[param] == 0 ? false : true
 
 """
 # get_AR_order(ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}})
@@ -129,22 +129,24 @@ Extracts the autoregressive (AR) orders for each parameter from the given dictio
 """
 
 # To do: Troquei o retorno da função caso não tenha AR para nothing. Lembrar de trocar isso nos if's de outras funções.
-function get_AR_order(ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}})
+function get_AR_order(ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}, Dict{Int64, Integer}})
     
     num_params = length(ar)
     order      = Union{Vector{Int64}, Vector{Nothing}}[]
 
     for i in 1:num_params
-        if typeof(ar[i]) == Int64
+
+        if ar[i] == 0 || isnothing(ar[i])
+            push!(order, [nothing])
+        elseif typeof(ar[i]) == Int64
             push!(order, Int64.(collect(1:ar[i])))
         elseif typeof(ar[i]) == Vector{Int64}
             push!(order, Int64.(ar[i]))
-        else
-            push!(order, [nothing])
         end
     end
     return order
 end
+
 
 """
 # add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}}) where {Ml, Fl}
@@ -160,12 +162,12 @@ Incorporate the autoregressive (AR) component into the dynamics of the specified
 ## Returns
 - Modifies the input model by adding autoregressive (AR) dynamics.
 """
-function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}}) where {Ml, Fl}
+function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}, Dict{Int64, Integer}}) where {Ml, Fl}
 
     idx_params = findall(i -> i != 0, ar) # Time-varying parameters with autoregressive dynamic
     order      = get_AR_order(ar)
 
-    max_order     = maximum(vcat(order...)) # Maximum lag in the model
+    max_order     = maximum(filter(x -> !isnothing(x), vcat(order...))) # Maximum lag in the model
     unique_orders = filter(x -> !isnothing(x), unique(vcat(order...)))#[findall(i -> i != 0.0, vcat(order...))]
     
     @variable(model, AR[1:T, idx_params])
