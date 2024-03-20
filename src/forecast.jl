@@ -61,7 +61,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     end
     
     dict_hyperparams_and_fitted_components["ar"]["value"]  = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
-    dict_hyperparams_and_fitted_components["ar"]["ϕ"]      = zeros(maximum(vcat(order...)), num_params)
+    dict_hyperparams_and_fitted_components["ar"]["ϕ"]      = zeros(maximum(filter(x -> !isnothing(x), vcat(order...))), num_params)
     dict_hyperparams_and_fitted_components["ar"]["κ"]      = zeros(num_params)
 
     for i in 1:num_params
