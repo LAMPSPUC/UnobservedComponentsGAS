@@ -9,8 +9,9 @@ Checks if there is any random walk component in the provided dictionary.
 ## Returns
     - `true` if there is at least one random walk component, `false` otherwise.
 """
-has_random_walk(random_walk::Dict{Int64, Bool}) = any(values(random_walk))
+#has_random_walk(random_walk::Dict{Int64, Bool}) = any(values(random_walk))
 
+has_level(level::Vector{String}) = any(.!isempty.(level))
 
 """
 has_random_walk_slope(random_walk_slope::Dict{Int64, Bool}) 
@@ -23,7 +24,7 @@ Checks if there is any random walk + slope dynamic in the provided dictionary.
 ## Returns
     - `true` if there is at least one component with a random walk + slope dynamic, `false` otherwise.
 """
-has_random_walk_slope(random_walk_slope::Dict{Int64, Bool}) = any(values(random_walk_slope))
+#has_random_walk_slope(random_walk_slope::Dict{Int64, Bool}) = any(values(random_walk_slope))
 
 
 """
@@ -37,7 +38,7 @@ Checks if there is any seasonal component in the provided dictionary.
 ## Returns
 - `true` if there is at least one component with seasonality, `false` otherwise.
 """
-has_seasonality(seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}) = !all(isequal.(typeof.(values(seasonality)), Bool))
+has_seasonality(seasonality::Union{String, Vector{String}}) = any(.!isempty.(seasonality))
 
 
 """
@@ -51,7 +52,7 @@ Checks if the provided autoregressive (AR) dictionary indicates the presence of 
 ## Returns
 - `true` if there is at least one component with autoregressive structure, `false` otherwise.
 """
-has_AR(ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}, Dict{Int64, Integer}}) = !all(isequal.(typeof.(values(ar)), Bool))
+has_AR(ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}) = !all(isequal.(typeof.(values(ar)), Bool))
 
 
 """
@@ -66,8 +67,8 @@ Checks if the specified parameter has a random walk component in the given dicti
 ## Returns
 - `true` if the specified parameter has a random walk component, `false` otherwise.
 """
-has_random_walk(random_walk::Dict{Int64, Bool}, param::Int64) = random_walk[param]
-
+#has_random_walk(random_walk::Dict{Int64, Bool}, param::Int64) = random_walk[param]
+has_level(level::Vector{String}, param::Int64) = !isempty(level[param])
 """
 # has_random_walk_slope(random_walk_slope::Dict{Int64, Bool}, param::Int64)
 
@@ -81,7 +82,7 @@ Checks if the specified parameter has a random walk with slope component in the 
 ## Returns
 - `true` if the specified parameter has a random walk with slope component, `false` otherwise.
 """
-has_random_walk_slope(random_walk_slope::Dict{Int64, Bool}, param::Int64) = random_walk_slope[param]
+# has_random_walk_slope(random_walk_slope::Dict{Int64, Bool}, param::Int64) = random_walk_slope[param]
 
 
 """
@@ -97,7 +98,7 @@ Checks if the specified parameter has a seasonality component in the given dicti
 ## Returns
 - `true` if the specified parameter has a seasonality component, `false` otherwise.
 """
-has_seasonality(seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}, param::Int64) = seasonality[param] != false 
+has_seasonality(seasonality::Union{String, Vector{String}}, param::Int64) = !isempty(seasonality[param]) 
 
 """
 # has_AR
@@ -111,7 +112,7 @@ Checks if the specified parameter has an autoregressive (AR) component in the gi
 ## Returns
 - `true` if the specified parameter has an autoregressive (AR) component, `false` otherwise.
 """
-has_AR(ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}, Dict{Int64, Integer}}, param::Int64) = typeof(ar[param]) == Bool || ar[param] == 0 ? false : true
+has_AR(ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}, param::Int64) = typeof(ar[param]) == Bool || ar[param] == 0 ? false : true
 
 """
 # get_AR_order(ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}})
@@ -129,14 +130,14 @@ Extracts the autoregressive (AR) orders for each parameter from the given dictio
 """
 
 # To do: Troquei o retorno da função caso não tenha AR para nothing. Lembrar de trocar isso nos if's de outras funções.
-function get_AR_order(ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}, Dict{Int64, Integer}})
+function get_AR_order(ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}})
     
     num_params = length(ar)
     order      = Union{Vector{Int64}, Vector{Nothing}}[]
 
     for i in 1:num_params
 
-        if ar[i] == 0 || isnothing(ar[i])
+        if ar[i] == 0 || ismissing(ar[i])
             push!(order, [nothing])
         elseif typeof(ar[i]) == Int64
             push!(order, Int64.(collect(1:ar[i])))
@@ -162,7 +163,7 @@ Incorporate the autoregressive (AR) component into the dynamics of the specified
 ## Returns
 - Modifies the input model by adding autoregressive (AR) dynamics.
 """
-function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}, Dict{Int64, Integer}}) where {Ml, Fl}
+function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}) where {Ml, Fl}
 
     idx_params = findall(i -> i != 0, ar) # Time-varying parameters with autoregressive dynamic
     order      = get_AR_order(ar)
@@ -243,6 +244,45 @@ function add_random_walk!(model::Ml, s::Vector{Fl}, T::Int64, random_walk::Dict{
     @constraint(model, [j in idx_params], 1e-4 ≤ κ_RW[j])
 end
 
+function add_ar1!(model::Ml, s::Vector{Fl}, T::Int64, ar1::Dict{Int64, Bool})
+
+    idx_params = findall(i -> i == true, ar1)
+
+    @variable(model, AR1[1:T, idx_params])
+    @variable(model, ϕ1[idx_params])
+    @variable(model, κ_AR1[idx_params])
+
+    @constraint(model, [i in idx_params], 1e-4 ≤ κ_AR1[i])
+    @constraint(model, [i in idx_params], -1 < ϕ_AR1[i] < 1)
+    @constraint(model, [t = 2:T, j in idx_params], AR1[t, j] == ϕ[j]*AR1[t-1, j] + κ_AR1[j] * s[j][t])
+end
+
+
+function add_level!(model::Ml, s::Vector{Fl}, T::Int64, level::Vector{String})
+    if "random walk" ∈ level 
+        random_walk = dict{Int64, Bool}()
+        for i in 1:length(level)
+            level[i] == "random walk" ? random_walk[i] = true : random_walk[i] = false
+        end
+
+        add_random_walk!(model, s, T, random_walk)
+    elseif "random walk slope" ∈ level 
+        random_walk_slope = dict{Int64, Bool}()
+        for i in 1:length(level)
+        level[i] == "random walk slope" ? random_walk_slope[i] = true : random_walk_slope[i] = false
+        end
+        
+        add_random_walk_slope!(model, s, T, random_walk_slope)
+    else
+        ar1 = dict{Int64, Bool}()
+        for i in 1:length(level)
+        level[i] == "ar(1)" ? ar1[i] = true : ar1[i] = false
+        end
+        
+        add_ar1!(model, s, T, ar1)
+    end
+end
+
 """
 # get_num_harmonic_and_seasonal_period(seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}})
 
@@ -291,9 +331,22 @@ Incorporates trigonometric seasonality into the specified model, considering the
 ## Returns
 - Modifies the input model by adding trigonometric seasonality.
 """
-function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}, stochastic::Bool=true) where {Ml, Fl}
+function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seasonality::Vector{String}) where {Ml, Fl}
     
-    num_harmonic, seasonal_period = UnobservedComponentsGAS.get_num_harmonic_and_seasonal_period(seasonality)
+    # seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}
+    seasonality_dict = Dict{Union{Dict{Int64, Int64}, Dict{Int64, Bool}}}()
+    stochastic       = false
+    for i in 1:length(seasonality)
+        if isempty(seasonality[i])
+            seasonality_dict[i] = false
+        else  
+            seasonal_type, seasonal_periods = split(seasonality[i])
+            seasonality_dict[i] = Int64(seasonal_periods)
+            seasonal_type == "stochastic" ? stochastic = true : stochastic = false
+        end
+    end
+    
+    num_harmonic, seasonal_period = UnobservedComponentsGAS.get_num_harmonic_and_seasonal_period(seasonality_dict)
 
     idx_params = findall(i -> i != false, seasonality) # Time-varying parameters with the seasonality dynamic
 
@@ -347,22 +400,26 @@ Incorporates various components into the specified model based on the configurat
 """
 function include_components!(model::Ml, s::Vector{Fl}, gas_model::GASModel, T::Int64) where {Ml, Fl}
 
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
 
-    if has_random_walk(random_walk)
-        add_random_walk!(model, s, T, random_walk)
+    # if has_random_walk(random_walk)
+    #     add_random_walk!(model, s, T, random_walk)
+    # end
+
+    # if has_random_walk_slope(random_walk_slope)
+    #     add_random_walk_slope!(model, s, T, random_walk_slope)
+    # end
+
+    if has_level(level)
+        add_level!(model, s, T, level)
     end
-
-    if has_random_walk_slope(random_walk_slope)
-        add_random_walk_slope!(model, s, T, random_walk_slope)
-    end
-
+    
     if has_AR(ar)
         add_AR!(model, s, T, ar)
     end
 
     if has_seasonality(seasonality)
-        add_trigonometric_seasonality!(model, s, T, seasonality, stochastic)
+        add_trigonometric_seasonality!(model, s, T, seasonality)
     end
 end
 
