@@ -133,7 +133,7 @@ This function modifies the optimization model `model` by including dynamic compo
 """
 function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASModel, X::Union{Matrix, Missing}, T::Int64) where {Ml, Gl}
 
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
     
     idx_time_varying_params = get_idxs_time_varying_params(time_varying_params) 
 
@@ -148,10 +148,10 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
         has_explanatory_param = has_explanatory && i == 1
 
         for t in 2:T
-            dynamic_aux[t] = model[:c][i] + 
-                             include_component_in_dynamic(model, :RW, has_random_walk(random_walk, i), t, i) +
-                             include_component_in_dynamic(model, :RWS, has_random_walk_slope(random_walk_slope, i), t, i) +
-                             #include_component_in_dynamic(model, :AR1, ) + 
+            dynamic_aux[t] = #model[:c][i] + 
+                             include_component_in_dynamic(model, :RW, has_random_walk(level, i), t, i) +
+                             include_component_in_dynamic(model, :RWS, has_random_walk_slope(level, i), t, i) +
+                             include_component_in_dynamic(model, :AR1_LEVEL, has_ar1_level(level, i), t, i ) + 
                              include_component_in_dynamic(model, :AR, has_AR(ar, i), t, i) +
                              include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i) + 
                              include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i)

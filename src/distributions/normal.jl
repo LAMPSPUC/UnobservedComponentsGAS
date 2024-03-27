@@ -212,7 +212,7 @@ Compute the initial values for the parameters of the Normal distribution that wi
         - 1: Initial values for the mean parameter, which can be fixed or time-varying.
         - 2: Initial values for the variance parameter, which can be fixed or time-varying.
 """
-function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::NormalDistribution, seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}) where Fl
+function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::NormalDistribution, seasonality::Dict{Int64, Union{Bool, Int64}}) where Fl
 
     #T         = length(y)
     #dist_code = get_dist_code(dist)

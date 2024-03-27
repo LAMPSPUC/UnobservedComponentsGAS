@@ -262,7 +262,7 @@ get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::tLoca
         - 2: Initial values for the scale parameter, which can be fixed or time-varying.
         - 3: Initial values for the degrees of freedom parameter, which can be fixed or time-varying.
 """
-function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::tLocationScaleDistribution, seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}) where Fl
+function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::tLocationScaleDistribution, seasonality::Dict{Int64, Union{Bool, Int64}}) where Fl
 
     T         = length(y)
     dist_code = get_dist_code(dist)

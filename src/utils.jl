@@ -28,7 +28,7 @@ Returns the fitted values and components of the specified GAS model.
 """
 function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Matrix{Fl}}) where {Ml,  Fl} 
     
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
 
     idx_params = get_idxs_time_varying_params(time_varying_params)
 
@@ -57,7 +57,7 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
         components["param_$i"] = Dict{String, Any}()
         components["param_$i"]["intercept"] = value(model[:c][i])
 
-        if has_random_walk(random_walk, i)
+        if has_random_walk(level, i)
             components["param_$i"]["level"]                    = Dict{String, Any}()
             components["param_$i"]["level"]["hyperparameters"] = Dict{String, Any}()
 
@@ -65,7 +65,16 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
             components["param_$i"]["level"]["hyperparameters"]["κ"] = value(model[:κ_RW][i])
         end
 
-        if has_random_walk_slope(random_walk_slope, i)
+        if has_ar1_level(level, i)
+            components["param_$i"]["ar1_level"]                    = Dict{String, Any}()
+            components["param_$i"]["ar1_level"]["hyperparameters"] = Dict{String, Any}()
+            
+            components["param_$i"]["ar1_level"]["value"]                = Vector(value.(model[:AR1_LEVEL][:, i]))
+            components["param_$i"]["ar1_level"]["hyperparameters"]["κ"] = value(model[:κ_AR1_LEVEL][i])
+            components["param_$i"]["ar1_level"]["hyperparameters"]["ϕ"] = value(model[:ϕ_AR1_LEVEL][i])
+        end
+
+        if has_random_walk_slope(level, i)
             components["param_$i"]["level"]                    = Dict{String, Any}()
             components["param_$i"]["level"]["hyperparameters"] = Dict{String, Any}()
             components["param_$i"]["slope"]                    = Dict{String, Any}()
@@ -78,6 +87,7 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
         end
 
         if has_seasonality(seasonality, i)
+            seasonality_dict, stochastic = get_seasonality_dict_and_stochastic(seasonality)
             components["param_$i"]["seasonality"]                    = Dict{String, Any}()
             components["param_$i"]["seasonality"]["hyperparameters"] = Dict{String, Any}()
 
@@ -473,3 +483,20 @@ function fit_harmonics(y::Vector{Fl}, seasonal_period::Int64, stochastic::Bool) 
     
 end
 
+"""
+Adicionar documentação 
+"""
+function get_seasonality_dict_and_stochastic(seasonality::Vector{String})
+    seasonality_dict = Dict{Int64, Union{Int64, Bool}}()
+    stochastic = false
+    for i in 1:length(seasonality)
+        if isempty(seasonality[i])
+            seasonality_dict[i] = false
+        else  
+            seasonal_type, seasonal_periods = split(seasonality[i])
+            seasonality_dict[i] = parse(Int64, seasonal_periods)
+            seasonal_type == "stochastic" ? stochastic = true : stochastic = false
+        end
+    end
+    return seasonality_dict, stochastic
+end

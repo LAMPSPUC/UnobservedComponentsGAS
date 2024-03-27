@@ -9,9 +9,7 @@ Checks if there is any random walk component in the provided dictionary.
 ## Returns
     - `true` if there is at least one random walk component, `false` otherwise.
 """
-#has_random_walk(random_walk::Dict{Int64, Bool}) = any(values(random_walk))
-
-has_level(level::Vector{String}) = any(.!isempty.(level))
+has_random_walk(level::Vector{String}) = any(level .== "random walk")
 
 """
 has_random_walk_slope(random_walk_slope::Dict{Int64, Bool}) 
@@ -24,8 +22,17 @@ Checks if there is any random walk + slope dynamic in the provided dictionary.
 ## Returns
     - `true` if there is at least one component with a random walk + slope dynamic, `false` otherwise.
 """
-#has_random_walk_slope(random_walk_slope::Dict{Int64, Bool}) = any(values(random_walk_slope))
+has_random_walk_slope(level::Vector{String}) = any(level .== "random walk slope")
 
+"""
+Incluir documentação
+"""
+has_ar1_level(level::Vector{String}) = any(level .== "ar(1)")
+
+"""
+Incluir documentação
+"""
+has_level(level::Vector{String}) = any(.!isempty.(level))
 
 """
 has_seasonality(seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}})
@@ -52,7 +59,8 @@ Checks if the provided autoregressive (AR) dictionary indicates the presence of 
 ## Returns
 - `true` if there is at least one component with autoregressive structure, `false` otherwise.
 """
-has_AR(ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}) = !all(isequal.(typeof.(values(ar)), Bool))
+has_AR(ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, 
+                Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}) = !all(ismissing.(ar))
 
 
 """
@@ -67,7 +75,12 @@ Checks if the specified parameter has a random walk component in the given dicti
 ## Returns
 - `true` if the specified parameter has a random walk component, `false` otherwise.
 """
-#has_random_walk(random_walk::Dict{Int64, Bool}, param::Int64) = random_walk[param]
+has_random_walk(level::Vector{String}, param::Int64) = level[param]== "random walk"
+
+
+"""
+Incluir documentação
+"""
 has_level(level::Vector{String}, param::Int64) = !isempty(level[param])
 """
 # has_random_walk_slope(random_walk_slope::Dict{Int64, Bool}, param::Int64)
@@ -82,8 +95,13 @@ Checks if the specified parameter has a random walk with slope component in the 
 ## Returns
 - `true` if the specified parameter has a random walk with slope component, `false` otherwise.
 """
-# has_random_walk_slope(random_walk_slope::Dict{Int64, Bool}, param::Int64) = random_walk_slope[param]
+has_random_walk_slope(level::Vector{String}, param::Int64) = level[param]== "random walk slope"
 
+
+"""
+Incluir documentação
+"""
+has_ar1_level(level::Vector{String}, param::Int64) = level[param] == "ar(1)"
 
 """
 # has_seasonality(seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}, param::Int64)
@@ -112,7 +130,8 @@ Checks if the specified parameter has an autoregressive (AR) component in the gi
 ## Returns
 - `true` if the specified parameter has an autoregressive (AR) component, `false` otherwise.
 """
-has_AR(ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}, param::Int64) = typeof(ar[param]) == Bool || ar[param] == 0 ? false : true
+has_AR(ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, 
+       Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}, param::Int64) = !all(ismissing.(ar[param]))
 
 """
 # get_AR_order(ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}})
@@ -137,7 +156,7 @@ function get_AR_order(ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Un
 
     for i in 1:num_params
 
-        if ar[i] == 0 || ismissing(ar[i])
+        if ismissing(ar[i]) || ar[i] == 0
             push!(order, [nothing])
         elseif typeof(ar[i]) == Int64
             push!(order, Int64.(collect(1:ar[i])))
@@ -165,7 +184,7 @@ Incorporate the autoregressive (AR) component into the dynamics of the specified
 """
 function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}) where {Ml, Fl}
 
-    idx_params = findall(i -> i != 0, ar) # Time-varying parameters with autoregressive dynamic
+    idx_params = findall(i -> !ismissing(i), ar) # Time-varying parameters with autoregressive dynamic
     order      = get_AR_order(ar)
 
     max_order     = maximum(filter(x -> !isnothing(x), vcat(order...))) # Maximum lag in the model
@@ -244,41 +263,44 @@ function add_random_walk!(model::Ml, s::Vector{Fl}, T::Int64, random_walk::Dict{
     @constraint(model, [j in idx_params], 1e-4 ≤ κ_RW[j])
 end
 
-function add_ar1!(model::Ml, s::Vector{Fl}, T::Int64, ar1::Dict{Int64, Bool})
+function add_ar1!(model::Ml, s::Vector{Fl}, T::Int64, ar1::Dict{Int64, Bool})  where {Fl, Ml}
 
     idx_params = findall(i -> i == true, ar1)
 
-    @variable(model, AR1[1:T, idx_params])
-    @variable(model, ϕ1[idx_params])
-    @variable(model, κ_AR1[idx_params])
+    @variable(model, AR1_LEVEL[1:T, idx_params])
+    @variable(model, ϕ_AR1_LEVEL[idx_params])
+    @variable(model, κ_AR1_LEVEL[idx_params])
 
-    @constraint(model, [i in idx_params], 1e-4 ≤ κ_AR1[i])
-    @constraint(model, [i in idx_params], -1 < ϕ_AR1[i] < 1)
-    @constraint(model, [t = 2:T, j in idx_params], AR1[t, j] == ϕ[j]*AR1[t-1, j] + κ_AR1[j] * s[j][t])
+    @constraint(model, [i in idx_params], 1e-4 ≤ κ_AR1_LEVEL[i])
+    @constraint(model, [i in idx_params], 0.9999 <= ϕ_AR1_LEVEL[i] <= 0.9999)
+    # @constraint(model, [i in idx_params], -0.9999 <= ϕ_AR1_LEVEL[i])
+    println("Antes da restrição")
+    println(T)
+    @constraint(model, [t = 2:T, j in idx_params], AR1_LEVEL[t, j] == ϕ_AR1_LEVEL[j]* AR1_LEVEL[t-1, j] + κ_AR1_LEVEL[j] * s[j][t])
+    println("Depois da restrição")
 end
 
 
-function add_level!(model::Ml, s::Vector{Fl}, T::Int64, level::Vector{String})
+function add_level!(model::Ml, s::Vector{Fl}, T::Int64, level::Vector{String}) where {Fl, Ml}
     if "random walk" ∈ level 
-        random_walk = dict{Int64, Bool}()
+        random_walk = Dict{Int64, Bool}()
         for i in 1:length(level)
             level[i] == "random walk" ? random_walk[i] = true : random_walk[i] = false
         end
 
         add_random_walk!(model, s, T, random_walk)
     elseif "random walk slope" ∈ level 
-        random_walk_slope = dict{Int64, Bool}()
+        random_walk_slope = Dict{Int64, Bool}()
         for i in 1:length(level)
         level[i] == "random walk slope" ? random_walk_slope[i] = true : random_walk_slope[i] = false
         end
         
         add_random_walk_slope!(model, s, T, random_walk_slope)
     else
-        ar1 = dict{Int64, Bool}()
+        ar1 = Dict{Int64, Bool}()
         for i in 1:length(level)
         level[i] == "ar(1)" ? ar1[i] = true : ar1[i] = false
         end
-        
         add_ar1!(model, s, T, ar1)
     end
 end
@@ -296,7 +318,7 @@ Retrieve the number of harmonics and seasonal periods specified in the input sea
 - `seasonal_period::Vector{Int64}`: A vector containing the seasoanl period for each parameter with a seasonal component; otherwise, it contains nothing.
 """
 # To do: Troquei o retorno da função caso não tenha sazo para nothing. Lembrar de trocar isso nos if's de outras funções.
-function get_num_harmonic_and_seasonal_period(seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}})
+function get_num_harmonic_and_seasonal_period(seasonality::Dict{Int64, Union{Bool, Int64}})
 
     num_params = length(seasonality)
 
@@ -334,26 +356,26 @@ Incorporates trigonometric seasonality into the specified model, considering the
 function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seasonality::Vector{String}) where {Ml, Fl}
     
     # seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}
-    seasonality_dict = Dict{Union{Dict{Int64, Int64}, Dict{Int64, Bool}}}()
-    stochastic       = false
-    for i in 1:length(seasonality)
-        if isempty(seasonality[i])
-            seasonality_dict[i] = false
-        else  
-            seasonal_type, seasonal_periods = split(seasonality[i])
-            seasonality_dict[i] = Int64(seasonal_periods)
-            seasonal_type == "stochastic" ? stochastic = true : stochastic = false
-        end
-    end
+    # seasonality_dict = Dict{Int64, Union{Int64, Bool}}()
+    # stochastic       = false
+    
+    # for i in 1:length(seasonality)
+    #     if isempty(seasonality[i])
+    #         seasonality_dict[i] = false
+    #     else  
+    #         seasonal_type, seasonal_periods = split(seasonality[i])
+    #         seasonality_dict[i] = parse(Int64, seasonal_periods)
+    #         seasonal_type == "stochastic" ? stochastic = true : stochastic = false
+    #     end
+    # end
+
+    seasonality_dict, stochastic = get_seasonality_dict_and_stochastic(seasonality)
     
     num_harmonic, seasonal_period = UnobservedComponentsGAS.get_num_harmonic_and_seasonal_period(seasonality_dict)
 
-    idx_params = findall(i -> i != false, seasonality) # Time-varying parameters with the seasonality dynamic
+    idx_params = findall(i -> i != false, seasonality_dict) # Time-varying parameters with the seasonality dynamic
 
     unique_num_harmonic = unique(num_harmonic)[minimum(idx_params)]
-    #@variable(model, S[1:T, idx_params])
-    # @variable(model, κ_S[idx_params])
-    # @constraint(model, [i in idx_params], 1e-4 ≤ κ_S[i])
 
     if stochastic
         @variable(model, κ_S[idx_params])
@@ -376,7 +398,6 @@ function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seas
 
         # @NLconstraint(model, [t = 2:T, j in idx_params], S[t, j] == sum(γ[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
         #                                     γ_star[i, j] * sin(2 * π * i* t/seasonal_period[j])  for i in 1:unique_num_harmonic))
-
         @expression(model, S[t = 1:T, j in idx_params], sum(γ[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
                                             γ_star[i, j] * sin(2 * π * i* t/seasonal_period[j]) for i in 1:unique_num_harmonic))
 
