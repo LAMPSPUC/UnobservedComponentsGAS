@@ -14,6 +14,7 @@ function define_state_space_model(y::Vector{Float64}, has_level::Bool, has_slope
     initial_seasonality = zeros(T)
     initial_γ           = zeros(1)
     initial_γ_star      = zeros(1)
+    println("has_level = ", has_level)
     if has_seasonality
         if !has_level && !has_slope
             ss_model = SeasonalNaive(y, seasonal_period)
@@ -52,6 +53,10 @@ function define_state_space_model(y::Vector{Float64}, has_level::Bool, has_slope
             initial_level = pred_state[2:end,1]
         end
         res = StateSpaceModels.get_innovations(ss_model)[:, 1]
+    end
+
+    if length(res) < T
+        res = vcat(rand(res, T - length(res)), res)
     end
     
     return Dict("level" => initial_level,"slope" => initial_slope,"seasonality" => initial_seasonality,
@@ -115,6 +120,10 @@ function define_state_space_model(y::Vector{Float64}, X::Union{Matrix{Float64}, 
     end
     
     explanatory_coefs = ss_model.hyperparameters.constrained_values[end-N+1:end]
+
+    if length(res) < T
+        res = vcat(rand(res, T - length(res)), res)
+    end
 
     return Dict("level" => initial_level,"slope" => initial_slope,"seasonality" => initial_seasonality,
                 "γ" => initial_γ,"γ_star" => initial_γ_star,"explanatory" => explanatory_coefs,"res" => res)
@@ -268,7 +277,7 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
             has_level_ar1[i] = false
         
         elseif has_ar1_level(level, i)
-            has_level[i]     = false
+            has_level[i]     = true
             has_slope[i]     = false
             has_level_ar1[i] = true
 

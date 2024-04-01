@@ -272,12 +272,10 @@ function add_ar1!(model::Ml, s::Vector{Fl}, T::Int64, ar1::Dict{Int64, Bool})  w
     @variable(model, κ_AR1_LEVEL[idx_params])
 
     @constraint(model, [i in idx_params], 1e-4 ≤ κ_AR1_LEVEL[i])
-    @constraint(model, [i in idx_params], 0.9999 <= ϕ_AR1_LEVEL[i] <= 0.9999)
-    # @constraint(model, [i in idx_params], -0.9999 <= ϕ_AR1_LEVEL[i])
-    println("Antes da restrição")
-    println(T)
-    @constraint(model, [t = 2:T, j in idx_params], AR1_LEVEL[t, j] == ϕ_AR1_LEVEL[j]* AR1_LEVEL[t-1, j] + κ_AR1_LEVEL[j] * s[j][t])
-    println("Depois da restrição")
+    @constraint(model, [i in idx_params], -0.9999 <= ϕ_AR1_LEVEL[i] <= 0.9999)
+
+    @NLconstraint(model, [t = 2:T, j in idx_params], AR1_LEVEL[t, j] == ϕ_AR1_LEVEL[j] * AR1_LEVEL[t-1, j] + κ_AR1_LEVEL[j] * s[j][t])
+
 end
 
 
@@ -292,14 +290,14 @@ function add_level!(model::Ml, s::Vector{Fl}, T::Int64, level::Vector{String}) w
     elseif "random walk slope" ∈ level 
         random_walk_slope = Dict{Int64, Bool}()
         for i in 1:length(level)
-        level[i] == "random walk slope" ? random_walk_slope[i] = true : random_walk_slope[i] = false
+            level[i] == "random walk slope" ? random_walk_slope[i] = true : random_walk_slope[i] = false
         end
         
         add_random_walk_slope!(model, s, T, random_walk_slope)
     else
         ar1 = Dict{Int64, Bool}()
         for i in 1:length(level)
-        level[i] == "ar(1)" ? ar1[i] = true : ar1[i] = false
+            level[i] == "ar(1)" ? ar1[i] = true : ar1[i] = false
         end
         add_ar1!(model, s, T, ar1)
     end
@@ -430,7 +428,7 @@ function include_components!(model::Ml, s::Vector{Fl}, gas_model::GASModel, T::I
     # if has_random_walk_slope(random_walk_slope)
     #     add_random_walk_slope!(model, s, T, random_walk_slope)
     # end
-
+    
     if has_level(level)
         add_level!(model, s, T, level)
     end

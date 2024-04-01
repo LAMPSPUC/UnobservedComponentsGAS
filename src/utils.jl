@@ -66,12 +66,12 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
         end
 
         if has_ar1_level(level, i)
-            components["param_$i"]["ar1_level"]                    = Dict{String, Any}()
-            components["param_$i"]["ar1_level"]["hyperparameters"] = Dict{String, Any}()
+            components["param_$i"]["level"]                    = Dict{String, Any}()
+            components["param_$i"]["level"]["hyperparameters"] = Dict{String, Any}()
             
-            components["param_$i"]["ar1_level"]["value"]                = Vector(value.(model[:AR1_LEVEL][:, i]))
-            components["param_$i"]["ar1_level"]["hyperparameters"]["κ"] = value(model[:κ_AR1_LEVEL][i])
-            components["param_$i"]["ar1_level"]["hyperparameters"]["ϕ"] = value(model[:ϕ_AR1_LEVEL][i])
+            components["param_$i"]["level"]["value"]                = Vector(value.(model[:AR1_LEVEL][:, i]))
+            components["param_$i"]["level"]["hyperparameters"]["κ"] = value(model[:κ_AR1_LEVEL][i])
+            components["param_$i"]["level"]["hyperparameters"]["ϕ"] = value(model[:ϕ_AR1_LEVEL][i])
         end
 
         if has_random_walk_slope(level, i)
