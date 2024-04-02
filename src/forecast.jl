@@ -480,13 +480,13 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
         for s in 1:num_scenarios
             for i in idx_params
                 update_score!(dict_hyperparams_and_fitted_components, pred_y, d, dist_code, i, T_fitted + t, s)
-                if has_random_walk(random_walk, i)
+                if has_random_walk(level, i)
                     update_rw!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
                 end
-                if has_random_walk_slope(random_walk_slope, i)
+                if has_random_walk_slope(level, i)
                     update_rws!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
                 end
-                if has_ar1_level(ar, i)
+                if has_ar1_level(level, i)
                     update_AR1_level!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
                 end
                 if has_seasonality(seasonality, i)

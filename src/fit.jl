@@ -243,7 +243,7 @@ function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl};
     if typeof(dist) == tLocationScaleDistribution
   
         fitted_model = fit_tlocationscale_local_search(gas_model, y, X;  
-                                                       α = α, robust = robust, robust_prop = robust_prop, number_max_iterations = number_max_iterations,
+                                                       tol = 0.01, α = α, robust = robust, robust_prop = robust_prop, number_max_iterations = number_max_iterations,
                                                        max_optimization_time = max_optimization_time, initial_values = initial_values)
     else
         model, parameters, initial_values = create_model(gas_model, y, X, missing;  number_max_iterations = number_max_iterations,

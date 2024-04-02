@@ -40,7 +40,7 @@ mutable struct GASModel
         ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}},  Vector{Union{Missing, Vector{Int64}}}})
 
         num_params = length(time_varying_params)
-
+        
         @assert d ∈ [1.0, 0.5, 0.0, 1, 0] "Invalid d value! It must be 1.0, 0.5 or 0.0"
 
         if typeof(level) == String
@@ -70,15 +70,15 @@ mutable struct GASModel
 
         idx_fixed_params = findall(x -> x == false, time_varying_params)
 
-        if all(.!isempty.(level[idx_fixed_params]))
+        if all(.!isempty.(level[idx_fixed_params])) & !isempty(idx_fixed_params)
            @warn "Non missing level dynamic found for a fixed paramater. This dynamic will be ignored."
         end
 
-        if all(.!isempty.(seasonality[idx_fixed_params]))
+        if all(.!isempty.(seasonality[idx_fixed_params])) & !isempty(idx_fixed_params)
             @warn "Non missing seasonality dynamic found for a fixed paramater. This dynamic will be ignored."
         end
 
-        if all(.!ismissing.(ar[idx_fixed_params]))
+        if all(.!ismissing.(ar[idx_fixed_params])) & !isempty(idx_fixed_params)
             @warn "Non missing ar dynamic found for a fixed paramater. This dynamic will be ignored."
         end
 

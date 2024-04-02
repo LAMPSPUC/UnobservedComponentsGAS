@@ -39,9 +39,10 @@
     @info(" --- Test for normal distribution")
     y_normal         = time_series_normal[:,1]
     dist_normal      = UnobservedComponentsGAS.NormalDistribution()
-    gas_model_normal = UnobservedComponentsGAS.GASModel(dist_normal, [true, false], 0.0, Dict(1=>false), 
-                                                        Dict(1 => true),  Dict(1 => false), 
-                                                        Dict(1 => 12), false, false)
+    gas_model_normal = UnobservedComponentsGAS.GASModel(dist_normal, [true, false], 0.0, "random walk slope", "deterministic 12", 1)
+    # gas_model_normal = UnobservedComponentsGAS.GASModel(dist_normal, [true, false], 0.0, Dict(1=>false), 
+    #                                                     Dict(1 => true),  Dict(1 => false), 
+    #                                                     Dict(1 => 12), false, false)
 
     fitted_model_normal = UnobservedComponentsGAS.fit(gas_model_normal, y_normal)
     # Me parece que essa função só funciona para a sazo estocástica -> ao mesmo tempo, a definição da sazo na linha 124 está determinística

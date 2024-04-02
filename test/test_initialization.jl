@@ -13,10 +13,11 @@
     has_level        = true
     has_slope        = true
     has_seasonality  = true
+    has_ar1_level    = false
     seasonal_period  = 12
 
     initial_values_state_space = UnobservedComponentsGAS.define_state_space_model(y, has_level, has_slope, has_seasonality, seasonal_period, stochastic)    
-    initial_values = UnobservedComponentsGAS.get_initial_values(y, X_missing, has_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
+    initial_values             = UnobservedComponentsGAS.get_initial_values(y, X_missing, has_level, has_ar1_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
 
     @test(isapprox(initial_values["rws"]["values"], initial_values_state_space["level"]; rtol = 1e-3))
     @test(isapprox(initial_values["slope"]["values"], initial_values_state_space["slope"]; rtol = 1e-3))
@@ -32,13 +33,14 @@
     max_order        = 2
     has_level        = true
     has_slope        = false
+    has_ar1_level    = true
     has_seasonality  = true
     seasonal_period  = 12
 
     initial_values_state_space = UnobservedComponentsGAS.define_state_space_model(y, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
-    initial_values             = UnobservedComponentsGAS.get_initial_values(y, X_missing, has_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
+    initial_values             = UnobservedComponentsGAS.get_initial_values(y, X_missing, has_level, has_ar1_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
 
-    @test(isapprox(initial_values["rw"]["values"], initial_values_state_space["level"]; rtol = 1e-3))
+    @test(isapprox(initial_values["rw"]["values"], initial_values_state_space["level"]; rtol = 1e-3)) #FALHOU
     @test(isapprox(initial_values["slope"]["values"], initial_values_state_space["slope"]; rtol = 1e-3))
     @test(isapprox(initial_values["seasonality"]["values"],initial_values_state_space["seasonality"]; rtol = 1e-3))
     @test(all(initial_values["seasonality"]["γ"] .== initial_values_state_space["γ"]))
@@ -53,11 +55,12 @@
     max_order        = 0
     has_level        = true
     has_slope        = true
+    has_ar1_level    = false
     has_seasonality  = true
     seasonal_period  = 12
 
     initial_values_state_space = UnobservedComponentsGAS.define_state_space_model(y, X, has_level, has_slope, has_seasonality, seasonal_period, stochastic)    
-    initial_values = UnobservedComponentsGAS.get_initial_values(y, X, has_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
+    initial_values             = UnobservedComponentsGAS.get_initial_values(y, X, has_level, has_ar1_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
 
     @test(isapprox(initial_values["rws"]["values"], initial_values_state_space["level"]; rtol = 1e-3))
     @test(isapprox(initial_values["slope"]["values"], initial_values_state_space["slope"]; rtol = 1e-3))
@@ -73,13 +76,14 @@
     max_order        = 2
     has_level        = true
     has_slope        = false
+    has_ar1_level    = true
     has_seasonality  = true
     seasonal_period  = 12
 
     initial_values_state_space = UnobservedComponentsGAS.define_state_space_model(y, X, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
-    initial_values             = UnobservedComponentsGAS.get_initial_values(y, X, has_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
+    initial_values             = UnobservedComponentsGAS.get_initial_values(y, X, has_level, has_ar1_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
 
-    @test(isapprox(initial_values["rw"]["values"], initial_values_state_space["level"]; rtol = 1e-3))
+    @test(isapprox(initial_values["rw"]["values"], initial_values_state_space["level"]; rtol = 1e-3)) # FALHOU
     @test(isapprox(initial_values["slope"]["values"], initial_values_state_space["slope"]; rtol = 1e-3))
     @test(isapprox(initial_values["seasonality"]["values"],initial_values_state_space["seasonality"]; rtol = 1e-3))
     @test(all(initial_values["seasonality"]["γ"] .== initial_values_state_space["γ"]))
@@ -91,9 +95,10 @@
 
     @info("Test create_output_initialization_from_fit")
     dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, false], 0.0, Dict(1=>false, 2=>false),  
-                                            Dict(1 => true, 2=>false),  Dict(1 => 1), 
-                                            Dict(1 => 12, 2 => 12), false, false)
+    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, false], 0.0, "random walk slope", "deterministic 12", 1)
+    # gas_model = UnobservedComponentsGAS.GASModel(dist, [true, false], 0.0, Dict(1=>false, 2=>false),  
+    #                                         Dict(1 => true, 2=>false),  Dict(1 => 1), 
+    #                                         Dict(1 => 12, 2 => 12), false, false)
     fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
     output_initial_values = UnobservedComponentsGAS.create_output_initialization_from_fit(fitted_model, gas_model)
     
@@ -105,9 +110,10 @@
 
     #Erro no state space models quando usamos 2 parametros
     dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, true], 0.0, Dict(1=>false, 2=>false),  
-                                            Dict(1 => true, 2=>false),  Dict(1 => 1), 
-                                            Dict(1 => 12, 2 => 12), false, false)
+    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, true], 0.0, "random walk slope", ["deterministic 12", "deterministic 12"], 1)
+    # gas_model = UnobservedComponentsGAS.GASModel(dist, [true, true], 0.0, Dict(1=>false, 2=>false),  
+    #                                         Dict(1 => true, 2=>false),  Dict(1 => 1), 
+    #                                         Dict(1 => 12, 2 => 12), false, false)
     fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
     output_initial_values = UnobservedComponentsGAS.create_output_initialization_from_fit(fitted_model, gas_model)
     

@@ -1,27 +1,30 @@
 @testset "Components Dynamics" begin
     
-    @test(UnobservedComponentsGAS.has_random_walk(Dict(1=>true)))
-    @test(!UnobservedComponentsGAS.has_random_walk(Dict(1=>false)))
-    @test(UnobservedComponentsGAS.has_random_walk_slope(Dict(1=>true)))
-    @test(!UnobservedComponentsGAS.has_random_walk_slope(Dict(1=>false)))
-    @test(UnobservedComponentsGAS.has_seasonality(Dict(1=>12)))
-    @test(!UnobservedComponentsGAS.has_seasonality(Dict(1=>false)))
-    @test(UnobservedComponentsGAS.has_AR(Dict(1=>1)))
-    @test(!UnobservedComponentsGAS.has_AR(Dict(1=>false)))
+    @test(UnobservedComponentsGAS.has_random_walk(["random walk"]))
+    @test(!UnobservedComponentsGAS.has_random_walk(["random walk slope"]))
+    @test(UnobservedComponentsGAS.has_random_walk_slope(["random walk slope"]))
+    @test(!UnobservedComponentsGAS.has_random_walk_slope(["random walk"]))
+    @test(UnobservedComponentsGAS.has_ar1_level(["ar(1)",""]))
+    @test(!UnobservedComponentsGAS.has_ar1_level([""]))
+    @test(UnobservedComponentsGAS.has_seasonality(["deterministic 12"]))
+    @test(!UnobservedComponentsGAS.has_seasonality(""))
+    @test(UnobservedComponentsGAS.has_AR(1))
+    @test(!UnobservedComponentsGAS.has_AR(missing))
 
 
-    @test(UnobservedComponentsGAS.has_random_walk(Dict(1=>true, 2=>false), 1))
-    @test(UnobservedComponentsGAS.has_random_walk(Dict(1=>false, 2=>true), 2))
-    @test(UnobservedComponentsGAS.has_random_walk_slope(Dict(1=>true, 2=>false), 1))
-    @test(UnobservedComponentsGAS.has_random_walk_slope(Dict(1=>false, 2=>true), 2))
-    @test(UnobservedComponentsGAS.has_seasonality(Dict(1=>12), 1))
-    @test(!UnobservedComponentsGAS.has_seasonality(Dict(2=>false), 2))
-    @test(UnobservedComponentsGAS.has_AR(Dict(1=>1), 1))
-    @test(!UnobservedComponentsGAS.has_AR(Dict(2=>false), 2))
+    @test(UnobservedComponentsGAS.has_random_walk(["random walk", ""], 1))
+    @test(UnobservedComponentsGAS.has_random_walk(["", "random walk"], 2))
+    @test(UnobservedComponentsGAS.has_random_walk_slope(["random walk slope",""], 1))
+    @test(UnobservedComponentsGAS.has_random_walk_slope(["","random walk slope"], 2))
+    @test(UnobservedComponentsGAS.has_ar1_level(["ar(1)",""], 1))
+    @test(UnobservedComponentsGAS.has_ar1_level(["","ar(1)"], 2))
+    @test(UnobservedComponentsGAS.has_seasonality(["deterministic 12", ""], 1))
+    @test(!UnobservedComponentsGAS.has_seasonality(["deterministic 12",""], 2))
+    @test(UnobservedComponentsGAS.has_AR(1, 1))
+    @test(!UnobservedComponentsGAS.has_AR([1,missing], 2))
 
-    @test(isequal(UnobservedComponentsGAS.get_AR_order(Dict(1=>2, 2=>0)), [[1, 2], [nothing]]))
-    @test(isequal(UnobservedComponentsGAS.get_AR_order(Dict(1=>false, 2=>false)), [[nothing], [nothing]]))
-    # OBS: quando passa false, retorna [0], mas quando passa 0, retorna [] ???
+    @test(isequal(UnobservedComponentsGAS.get_AR_order([2,0]), [[1, 2], [nothing]]))
+    @test(isequal(UnobservedComponentsGAS.get_AR_order([missing, missing]), [[nothing], [nothing]]))
 
     T = 100
     s = [zeros(T), zeros(T)]
@@ -33,7 +36,7 @@
     order                    = [2, 1]
     number_of_variables_ar   = (T + maximum(order) + 1) * sum(.!iszero.(order))
     number_of_constraints_ar = (T - maximum(order) + 1 ) * sum(.!iszero.(order)) + maximum(order) - minimum(order)
-    UnobservedComponentsGAS.add_AR!(model, s, T, Dict(1=>order[1], 2=>order[2])) 
+    UnobservedComponentsGAS.add_AR!(model, s, T, order) 
     @test(num_variables(model) == number_of_variables_ar)
     @test(num_constraints(model; count_variable_in_set_constraints=true) == number_of_constraints_ar)
 
@@ -57,9 +60,10 @@
 
     # Test number of variables and constraints of Seasonality
     seasonal_periods = 12
-    seasonality      = Dict(1=>seasonal_periods)
-    
-    num_harmonic, seasonal_period = UnobservedComponentsGAS.get_num_harmonic_and_seasonal_period(seasonality)
+    seasonality      = ["deterministic 12"]
+    seasonality_dict, stochastic = UnobservedComponentsGAS.get_seasonality_dict_and_stochastic(seasonality)
+
+    num_harmonic, seasonal_period = UnobservedComponentsGAS.get_num_harmonic_and_seasonal_period(seasonality_dict)
     @test((num_harmonic, seasonal_period) == ([Int64(floor(seasonal_periods))/2], [seasonal_periods]))
     
     # Deterministic
@@ -68,7 +72,7 @@
     unique_num_harmonic      = unique(num_harmonic)[minimum(idx_params)]
     number_of_variables_sd   = 2*unique_num_harmonic
     number_of_constraints_sd = 0
-    UnobservedComponentsGAS.add_trigonometric_seasonality!(model, s, T, seasonality, false)
+    UnobservedComponentsGAS.add_trigonometric_seasonality!(model, s, T, seasonality)
     @test(num_variables(model) == number_of_variables_sd)
     @test(num_constraints(model; count_variable_in_set_constraints=true) == number_of_constraints_sd)
 
@@ -76,15 +80,17 @@
     model                    = JuMP.Model(Ipopt.Optimizer)
     number_of_variables_ss   = 1 + 12*T
     number_of_constraints_ss = 1 + (T-1)*unique_num_harmonic*2
-    UnobservedComponentsGAS.add_trigonometric_seasonality!(model, s, T, seasonality, true)
+    seasonality      = ["stochastic 12"]
+    UnobservedComponentsGAS.add_trigonometric_seasonality!(model, s, T, seasonality)
     @test(num_variables(model) == number_of_variables_ss)
     @test(num_constraints(model; count_variable_in_set_constraints=true) == number_of_constraints_ss)
     
     # Test number of variables and constraints from include_components! with Deterministic Seasonality
     dist      = UnobservedComponentsGAS.NormalDistribution()
-    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, true], 1.0, Dict(1=>false),  
-                                                Dict(1 => rws[1]),  Dict(1 => order[1], 2=>order[2]), 
-                                                Dict(1 => seasonal_periods), false, false)
+    # gas_model = UnobservedComponentsGAS.GASModel(dist, [true, true], 1.0, Dict(1=>false),  
+    #                                             Dict(1 => rws[1]),  Dict(1 => order[1], 2=>order[2]), 
+    #                                             Dict(1 => seasonal_periods), false, false)
+    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, true], 1.0, ["random walk slope", ""], ["deterministic 12", "deterministic 12"], [2, 1])
 
     model = JuMP.Model(Ipopt.Optimizer)         
     UnobservedComponentsGAS.include_components!(model, s, gas_model, T)
@@ -96,9 +102,10 @@
                                                                             number_of_constraints_sd)
     
     # Test number of variables and constraints from include_components! with stochastic Seasonality
-    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, true], 1.0, Dict(1=>false),  
-                                                Dict(1 => rws[1]),  Dict(1 => order[1], 2=>order[2]), 
-                                                Dict(1 => seasonal_periods), false, true)
+    # gas_model = UnobservedComponentsGAS.GASModel(dist, [true, true], 1.0, Dict(1=>false),  
+    #                                             Dict(1 => rws[1]),  Dict(1 => order[1], 2=>order[2]), 
+    #                                             Dict(1 => seasonal_periods), false, true)
+    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, true], 1.0, ["random walk slope", ""], ["stochastic 12", "stochastic 12"], [2, 1])
 
     model = JuMP.Model(Ipopt.Optimizer)         
     UnobservedComponentsGAS.include_components!(model, s, gas_model, T)

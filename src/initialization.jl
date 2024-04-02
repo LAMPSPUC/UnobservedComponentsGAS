@@ -416,7 +416,7 @@ function create_output_initialization_from_fit(output::Output, gas_model::GASMod
     output_initial_values["ar1_level"]           = Dict()
     output_initial_values["slope"]               = Dict()
     output_initial_values["seasonality"]         = Dict()
-    output_initial_values["ar"]         = Dict()
+    output_initial_values["ar"]                  = Dict()
     output_initial_values["intercept"]           = Dict()
     output_initial_values["intercept"]["values"] = components["param_1"]["intercept"]
 
@@ -429,13 +429,13 @@ function create_output_initialization_from_fit(output::Output, gas_model::GASMod
     end
 
     if has_ar1_level(level, 1)
-        initial_values["ar1_level"]["values"] = components["param_1"]["level"]["value"]
-        initial_values["ar1_level"]["κ"]      = components["param_1"]["level"]["hyperparameters"]["κ"]
-        initial_values["ar1_level"]["ϕ"]      = components["param_1"]["level"]["hyperparameters"]["ϕ"]
+        output_initial_values["ar1_level"]["values"] = components["param_1"]["level"]["value"]
+        output_initial_values["ar1_level"]["κ"]      = components["param_1"]["level"]["hyperparameters"]["κ"]
+        output_initial_values["ar1_level"]["ϕ"]      = components["param_1"]["level"]["hyperparameters"]["ϕ"]
     else
-        initial_values["ar1_level"]["values"] = zeros(T)
-        initial_values["ar1_level"]["κ"]      = 0.0
-        initial_values["ar1_level"]["ϕ"]      = 0.0
+        output_initial_values["ar1_level"]["values"] = zeros(T)
+        output_initial_values["ar1_level"]["κ"]      = 0.0
+        output_initial_values["ar1_level"]["ϕ"]      = 0.0
     end 
 
     if has_random_walk_slope(level, 1)
@@ -451,6 +451,7 @@ function create_output_initialization_from_fit(output::Output, gas_model::GASMod
     end
 
     if has_seasonality(seasonality, 1)
+        seasonality_dict, stochastic = get_seasonality_dict_and_stochastic(seasonality)
         output_initial_values["seasonality"]["values"] = components["param_1"]["seasonality"]["value"]
         if stochastic
             output_initial_values["seasonality"]["κ"]      = components["param_1"]["seasonality"]["hyperparameters"]["κ"]

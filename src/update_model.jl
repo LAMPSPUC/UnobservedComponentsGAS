@@ -16,7 +16,7 @@ Updates the fitted parameters and components dictionary based on new data.
 function update_fitted_params_and_components_dict(gas_model::GASModel, output::Output, new_y::Vector{Fl}, new_X::Union{Missing, Matrix{Float64}};
                                                     initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl}
 
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
 
     components    = output.components
     fitted_params = output.fitted_params
@@ -24,7 +24,8 @@ function update_fitted_params_and_components_dict(gas_model::GASModel, output::O
     num_params    = get_num_params(dist)
 
     idx_params                    = get_idxs_time_varying_params(time_varying_params)
-    num_harmonic, seasonal_period = get_num_harmonic_and_seasonal_period(seasonality)
+    seasonality_dict, stochastic  = get_seasonality_dict_and_stochastic(seasonality)
+    num_harmonic, seasonal_period = get_num_harmonic_and_seasonal_period(seasonality_dict)
 
     T = length(new_y)
 
