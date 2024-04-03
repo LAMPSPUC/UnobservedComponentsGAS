@@ -48,6 +48,90 @@
     @test(all(initial_values["ar"]["values"] .!= zeros(T)))
     @test(all(initial_values["rws"]["values"] .==  zeros(T)))
 
+    @info("Test with just Seasonality without explanatory")
+    order            = [nothing]
+    max_order        = 0
+    has_level        = false
+    has_slope        = false
+    has_ar1_level    = false
+    has_seasonality  = true
+    seasonal_period  = 12
+
+    initial_values_state_space = UnobservedComponentsGAS.define_state_space_model(y, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
+    initial_values             = UnobservedComponentsGAS.get_initial_values(y, X_missing, has_level, has_ar1_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
+
+    @test(isapprox(initial_values["seasonality"]["values"],initial_values_state_space["seasonality"]; rtol = 1e-3))
+    @test(all(initial_values["seasonality"]["γ"] .== initial_values_state_space["γ"]))
+    @test(all(initial_values["seasonality"]["γ_star"] .== initial_values_state_space["γ_star"]))
+    @test(all(initial_values["rw"]["values"] .== zeros(T)))
+    @test(all(initial_values["slope"]["values"] .== zeros(T)))
+    @test(all(initial_values["ar"]["values"] .== zeros(T)))
+    @test(all(initial_values["rws"]["values"] .==  zeros(T)))
+
+    @info("Test with Random Walk without seasonality and without explanatory")
+    order            = [nothing]
+    max_order        = 0
+    has_level        = true
+    has_slope        = false
+    has_ar1_level    = false
+    has_seasonality  = false
+    seasonal_period  = missing
+
+    initial_values_state_space = UnobservedComponentsGAS.define_state_space_model(y, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
+    initial_values             = UnobservedComponentsGAS.get_initial_values(y, X_missing, has_level, has_ar1_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
+
+    @test(isapprox(initial_values["rw"]["values"], initial_values_state_space["level"]; rtol = 1e-3)) 
+    @test(isapprox(initial_values["slope"]["values"], initial_values_state_space["slope"]; rtol = 1e-3))
+    @test(isapprox(initial_values["seasonality"]["values"],initial_values_state_space["seasonality"]; rtol = 1e-3))
+    @test(all(initial_values["seasonality"]["γ"] .== initial_values_state_space["γ"]))
+    @test(all(initial_values["seasonality"]["γ_star"] .== initial_values_state_space["γ_star"]))
+    @test(all(initial_values["ar"]["values"] .== zeros(T)))
+    @test(all(initial_values["rws"]["values"] .==  zeros(T)))
+    @test(all(initial_values["slope"]["values"] .==  zeros(T)))
+    @test(all(initial_values["seasonality"]["values"] .==  zeros(T)))
+
+    @info("Test with Random Walk Slope without seasonality and without explanatory")
+    order            = [nothing]
+    max_order        = 0
+    has_level        = true
+    has_slope        = true
+    has_ar1_level    = false
+    has_seasonality  = false
+    seasonal_period  = missing
+
+    initial_values_state_space = UnobservedComponentsGAS.define_state_space_model(y, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
+    initial_values             = UnobservedComponentsGAS.get_initial_values(y, X_missing, has_level, has_ar1_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
+
+    @test(isapprox(initial_values["rws"]["values"], initial_values_state_space["level"]; rtol = 1e-3)) 
+    @test(isapprox(initial_values["slope"]["values"], initial_values_state_space["slope"]; rtol = 1e-3))
+    @test(isapprox(initial_values["seasonality"]["values"],initial_values_state_space["seasonality"]; rtol = 1e-3))
+    @test(all(initial_values["seasonality"]["γ"] .== initial_values_state_space["γ"]))
+    @test(all(initial_values["seasonality"]["γ_star"] .== initial_values_state_space["γ_star"]))
+    @test(all(initial_values["ar"]["values"] .== zeros(T)))
+    @test(all(initial_values["rw"]["values"] .==  zeros(T)))
+    @test(all(initial_values["seasonality"]["values"] .==  zeros(T)))
+
+    @info("Test with AR(1) with seasonality and without explanatory")
+    order            = [nothing]
+    max_order        = 0
+    has_level        = false
+    has_slope        = false
+    has_ar1_level    = true
+    has_seasonality  = true
+    seasonal_period  = 12
+
+    initial_values_state_space = UnobservedComponentsGAS.define_state_space_model(y, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
+    initial_values             = UnobservedComponentsGAS.get_initial_values(y, X_missing, has_level, has_ar1_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
+
+    @test(isapprox(initial_values["ar1_level"]["values"], initial_values_state_space["level"]; rtol = 1e-3)) 
+    @test(isapprox(initial_values["seasonality"]["values"],initial_values_state_space["seasonality"]; rtol = 1e-3))
+    @test(all(initial_values["seasonality"]["γ"] .== initial_values_state_space["γ"]))
+    @test(all(initial_values["seasonality"]["γ_star"] .== initial_values_state_space["γ_star"]))
+    @test(all(initial_values["ar"]["values"] .== zeros(T)))
+    @test(all(initial_values["slope"]["values"] .== zeros(T)))
+    @test(all(initial_values["rw"]["values"] .==  zeros(T)))
+    @test(all(initial_values["seasonality"]["values"] .!=  zeros(T)))
+
 
     @info("Test with Random Walk and Slope without AR and with explanatory")
     stochastic       = false
@@ -91,6 +175,95 @@
     @test(all(initial_values["ar"]["values"] .!= zeros(T)))
     @test(all(initial_values["rws"]["values"] .==  zeros(T)))
     @test(all(initial_values["explanatories"] .== initial_values_state_space["explanatory"]))
+
+    @info("Test with just Seasonality with explanatory") # ERRO POR QUE NÃO TEM SEASONAL NAIVE COM EXPLICATIVA
+    # order            = [nothing]
+    # max_order        = 0
+    # has_level        = false
+    # has_slope        = false
+    # has_ar1_level    = false
+    # has_seasonality  = true
+    # seasonal_period  = 12
+
+    # initial_values_state_space = UnobservedComponentsGAS.define_state_space_model(y, X, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
+    # initial_values             = UnobservedComponentsGAS.get_initial_values(y, X, has_level, has_ar1_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
+
+    # @test(isapprox(initial_values["seasonality"]["values"],initial_values_state_space["seasonality"]; rtol = 1e-3))
+    # @test(all(initial_values["seasonality"]["γ"] .== initial_values_state_space["γ"]))
+    # @test(all(initial_values["seasonality"]["γ_star"] .== initial_values_state_space["γ_star"]))
+    # @test(all(initial_values["rw"]["values"] .== zeros(T)))
+    # @test(all(initial_values["slope"]["values"] .== zeros(T)))
+    # @test(all(initial_values["ar"]["values"] .== zeros(T)))
+    # @test(all(initial_values["rws"]["values"] .==  zeros(T)))
+    # @test(all(initial_values["explanatories"] .== initial_values_state_space["explanatory"]))
+
+    @info("Test with Random Walk without seasonality and without explanatory")
+    order            = [nothing]
+    max_order        = 0
+    has_level        = true
+    has_slope        = false
+    has_ar1_level    = false
+    has_seasonality  = false
+    seasonal_period  = missing
+
+    initial_values_state_space = UnobservedComponentsGAS.define_state_space_model(y, X, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
+    initial_values             = UnobservedComponentsGAS.get_initial_values(y, X, has_level, has_ar1_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
+
+    @test(isapprox(initial_values["rw"]["values"], initial_values_state_space["level"]; rtol = 1e-3)) 
+    @test(isapprox(initial_values["slope"]["values"], initial_values_state_space["slope"]; rtol = 1e-3))
+    @test(isapprox(initial_values["seasonality"]["values"],initial_values_state_space["seasonality"]; rtol = 1e-3))
+    @test(all(initial_values["seasonality"]["γ"] .== initial_values_state_space["γ"]))
+    @test(all(initial_values["seasonality"]["γ_star"] .== initial_values_state_space["γ_star"]))
+    @test(all(initial_values["ar"]["values"] .== zeros(T)))
+    @test(all(initial_values["rws"]["values"] .==  zeros(T)))
+    @test(all(initial_values["slope"]["values"] .==  zeros(T)))
+    @test(all(initial_values["seasonality"]["values"] .==  zeros(T)))
+    @test(all(initial_values["explanatories"] .== initial_values_state_space["explanatory"]))
+
+
+    @info("Test with Random Walk Slope without seasonality and without explanatory") 
+    order            = [nothing]
+    max_order        = 0
+    has_level        = true
+    has_slope        = true
+    has_ar1_level    = false
+    has_seasonality  = false
+    seasonal_period  = missing
+
+    initial_values_state_space = UnobservedComponentsGAS.define_state_space_model(y, X, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
+    initial_values             = UnobservedComponentsGAS.get_initial_values(y, X, has_level, has_ar1_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
+
+    @test(isapprox(initial_values["rws"]["values"], initial_values_state_space["level"]; rtol = 1e-3)) 
+    @test(isapprox(initial_values["slope"]["values"], initial_values_state_space["slope"]; rtol = 1e-3))
+    @test(isapprox(initial_values["seasonality"]["values"],initial_values_state_space["seasonality"]; rtol = 1e-3))
+    @test(all(initial_values["seasonality"]["γ"] .== initial_values_state_space["γ"]))
+    @test(all(initial_values["seasonality"]["γ_star"] .== initial_values_state_space["γ_star"]))
+    @test(all(initial_values["ar"]["values"] .== zeros(T)))
+    @test(all(initial_values["rw"]["values"] .==  zeros(T)))
+    @test(all(initial_values["seasonality"]["values"] .==  zeros(T)))
+    @test(all(initial_values["explanatories"] .== initial_values_state_space["explanatory"]))
+
+
+    @info("Test with AR(1) with seasonality and with explanatory") # ERRO POR QUE NÃO TEM SEASONAL NAIVE COM EXPLICATIVA
+    # order            = [nothing]
+    # max_order        = 0
+    # has_level        = false
+    # has_slope        = false
+    # has_ar1_level    = true
+    # has_seasonality  = true
+    # seasonal_period  = 12
+
+    # initial_values_state_space = UnobservedComponentsGAS.define_state_space_model(y, X, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
+    # initial_values             = UnobservedComponentsGAS.get_initial_values(y, X, has_level, has_ar1_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
+
+    # @test(isapprox(initial_values["ar1_level"]["values"], initial_values_state_space["level"]; rtol = 1e-3)) 
+    # @test(isapprox(initial_values["seasonality"]["values"],initial_values_state_space["seasonality"]; rtol = 1e-3))
+    # @test(all(initial_values["seasonality"]["γ"] .== initial_values_state_space["γ"]))
+    # @test(all(initial_values["seasonality"]["γ_star"] .== initial_values_state_space["γ_star"]))
+    # @test(all(initial_values["ar"]["values"] .== zeros(T)))
+    # @test(all(initial_values["slope"]["values"] .== zeros(T)))
+    # @test(all(initial_values["rw"]["values"] .==  zeros(T)))
+    # @test(all(initial_values["seasonality"]["values"] .!=  zeros(T)))
 
 
     @info("Test create_output_initialization_from_fit")

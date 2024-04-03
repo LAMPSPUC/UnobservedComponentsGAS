@@ -161,7 +161,7 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
         initial_intercept = 0.0 #output.coefs[1]
     else
         fit_ar_model, ar_coefs, ar_intercept = fit_AR_model(y, order)
-
+        println("########################")
         initial_ar = fit_ar_model
             initial_ϕ  = zeros(max_order)
             for i in eachindex(order)
