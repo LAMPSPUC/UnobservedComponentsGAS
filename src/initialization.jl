@@ -14,8 +14,10 @@ function define_state_space_model(y::Vector{Float64}, has_level::Bool, has_slope
     initial_seasonality = zeros(T)
     initial_γ           = zeros(1)
     initial_γ_star      = zeros(1)
+
     if has_seasonality
         if !has_level && !has_slope
+            println("Entrou aqui")
             ss_model = SeasonalNaive(y, seasonal_period)
             StateSpaceModels.fit!(ss_model)
             initial_seasonality = ss_model.y .- vcat(zeros(seasonal_period), ss_model.residuals)
@@ -52,6 +54,10 @@ function define_state_space_model(y::Vector{Float64}, has_level::Bool, has_slope
             initial_level = pred_state[2:end,1]
         end
         res = StateSpaceModels.get_innovations(ss_model)[:, 1]
+    end
+
+    if length(res) < T
+        res = vcat(rand(res, T - length(res)), res)
     end
     
     return Dict("level" => initial_level,"slope" => initial_slope,"seasonality" => initial_seasonality,
@@ -116,12 +122,16 @@ function define_state_space_model(y::Vector{Float64}, X::Union{Matrix{Float64}, 
     
     explanatory_coefs = ss_model.hyperparameters.constrained_values[end-N+1:end]
 
+    if length(res) < T
+        res = vcat(rand(res, T - length(res)), res)
+    end
+
     return Dict("level" => initial_level,"slope" => initial_slope,"seasonality" => initial_seasonality,
                 "γ" => initial_γ,"γ_star" => initial_γ_star,"explanatory" => explanatory_coefs,"res" => res)
 end
 
 
-function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missing}, has_level::Bool, has_slope::Bool, has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool, order::Union{Vector{Int64}, Vector{Nothing}}, max_order::Int64)
+function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missing}, has_level::Bool, has_ar1_level::Bool, has_slope::Bool, has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool, order::Union{Vector{Int64}, Vector{Nothing}}, max_order::Int64)
 
     #T = length(y)
     has_explanatories = !ismissing(X) ? true : false
@@ -134,7 +144,6 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
             ss_components = define_state_space_model(y, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
         end
 
-        println("------",order)
         if !isnothing(order[1])
             res = ss_components["res"]
             fit_ar_model, ar_coefs, ar_intercept = fit_AR_model(res, order)
@@ -162,18 +171,26 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
         initial_intercept = ar_intercept
     end
 
-    if has_slope && has_level
-        initial_rws   = ss_components["level"]
-        initial_slope = ss_components["slope"]
-        initial_rw    = zeros(length(y))
+    if has_ar1_level
+        initial_ar1_level = ss_components["level"]
+        initial_rws       = zeros(length(y))
+        initial_slope     = zeros(length(y))
+        initial_rw        = zeros(length(y))
+    elseif has_slope && has_level
+        initial_ar1_level = zeros(length(y))
+        initial_rws       = ss_components["level"]
+        initial_slope     = ss_components["slope"]
+        initial_rw        = zeros(length(y))
     elseif !has_slope && has_level
-        initial_rw = ss_components["level"]
-        initial_rws  = zeros(length(y))
-        initial_slope = zeros(length(y))
+        initial_ar1_level = zeros(length(y))
+        initial_rw        = ss_components["level"]
+        initial_rws       = zeros(length(y))
+        initial_slope     = zeros(length(y))
     elseif !has_slope && !has_level
-        initial_rws  = zeros(length(y))
-        initial_slope = zeros(length(y))
-        initial_rw    = zeros(length(y))
+        initial_ar1_level = zeros(length(y))
+        initial_rws       = zeros(length(y))
+        initial_slope     = zeros(length(y))
+        initial_rw        = zeros(length(y))
     end
 
     if has_seasonality
@@ -197,6 +214,10 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
     initial_values["rws"]                   = Dict()
     initial_values["rws"]["values"]         = initial_rws
     initial_values["rws"]["κ"]              = 0.02
+    initial_values["ar1_level"]             = Dict()
+    initial_values["ar1_level"]["values"]   = initial_ar1_level
+    initial_values["ar1_level"]["κ"]        = 0.02
+    initial_values["ar1_level"]["ϕ"]        = 0.7
     initial_values["slope"]                 = Dict()
     initial_values["slope"]["values"]       = initial_slope
     initial_values["slope"]["κ"]            = 0.02
@@ -214,13 +235,13 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
         initial_values["explanatories"] = ss_components["explanatory"]
     end
 
-    return initial_values#, X, selected_explanatories
+    return initial_values
 end
   
 function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missing}, gas_model::GASModel) where {Fl}
 
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
-
+    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
+    
     dist_code               = get_dist_code(dist)
     num_params              = get_num_params(dist)
     idx_time_varying_params = get_idxs_time_varying_params(time_varying_params)
@@ -229,11 +250,13 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
     order                   = get_AR_order(ar)
     max_order               = has_AR(ar) ? max_order = maximum(filter(x -> !isnothing(x), vcat(order...))) : 0
 
-    initial_params = get_initial_params(y, time_varying_params, dist, seasonality)
+    seasonality_dict, stochastic = get_seasonality_dict_and_stochastic(seasonality)
+    initial_params = get_initial_params(y, time_varying_params, dist, seasonality_dict)
 
     initial_values = Vector{Any}(undef, maximum(idx_time_varying_params))
 
     has_level       = zeros(Bool, num_params)
+    has_level_ar1   = zeros(Bool, num_params)
     has_slope       = zeros(Bool, num_params)
     has_seasonal    = zeros(Bool, num_params)
     seasonal_period = zeros(Int64, num_params)
@@ -241,40 +264,38 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
     for i in idx_time_varying_params
 
         #checking which components will be consider 
-        if has_random_walk_slope(random_walk_slope, i)
-            has_level[i] = true
-            has_slope[i] = true
-            # push!(has_level, true)
-            # push!(has_slope, true)
-        end
+        if has_random_walk_slope(level, i)
+            has_level[i]     = true
+            has_slope[i]     = true
+            has_level_ar1[i] = false
+        
+        elseif has_random_walk(level, i)
+            has_level[i]     = true
+            has_slope[i]     = false
+            has_level_ar1[i] = false
+        
+        elseif has_ar1_level(level, i)
+            has_level[i]     = true
+            has_slope[i]     = false
+            has_level_ar1[i] = true
 
-        if has_random_walk(random_walk, i)
-            has_level[i] = true
-            has_slope[i] = false
-            # push!(has_level, true)
-            # push!(has_slope, false)
-        end
-
-        if !has_random_walk_slope(random_walk_slope, i) && !has_random_walk(random_walk, i)
+        else #!has_random_walk_slope(level, i) && !has_random_walk(level, i)
             has_level[i] = false
             has_slope[i] = false
-            # push!(has_level, false)
-            # push!(has_slope, false)
+            has_level_ar1[i] = true
         end
 
-        # push!(has_seasonal, has_seasonality(seasonality, i))
         has_seasonal[i] = has_seasonality(seasonality, i)
         if has_seasonal[i]
-            #push!(seasonal_period, get_num_harmonic_and_seasonal_period(seasonality)[2][i])
-            seasonal_period[i] = get_num_harmonic_and_seasonal_period(seasonality)[2][i]
-         #else
-            #push!(seasonal_period, 0)
+            seasonal_period[i] = get_num_harmonic_and_seasonal_period(seasonality_dict)[2][i]
         end
 
         X_aux =  i == 1 && !ismissing(X) ? X : missing
-        
-
-        initial_values[i] = get_initial_values(initial_params[i], X_aux, has_level[i], has_slope[i], has_seasonal[i], seasonal_period[i], stochastic, order[i], max_order)
+        println("Param = $i")
+        println("LEVEL ",has_level)
+        println("SLOPE ",has_slope)
+        println("seasonal ",has_seasonal)
+        initial_values[i] = get_initial_values(initial_params[i], X_aux, has_level[i], has_level_ar1[i], has_slope[i], has_seasonal[i], seasonal_period[i], stochastic, order[i], max_order)
         
         # initialize the mean parameter as the sum of the initial values of the components
         # initial_params[i] = zeros(T)
@@ -311,12 +332,18 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
     if length(idx_time_varying_params) > 1
         for i in eachindex(time_varying_params)
             if i != minimum(idx_time_varying_params)
-                if has_random_walk(random_walk, i)
+                if has_ar1_level(level, i)
+                    output_initial_values["ar1_level"]["values"] = hcat(output_initial_values["ar1"]["values"], initial_values[i]["ar1"]["values"])
+                    output_initial_values["ar1_level"]["κ"] = vcat(output_initial_values["ar1_level"]["κ"], initial_values[i]["ar1_level"]["κ"])
+                    output_initial_values["ar1_level"]["ϕ"] = vcat(output_initial_values["ar1_level"]["ϕ"], initial_values[i]["ar1_level"]["ϕ"])
+                end
+
+                if has_random_walk(level, i)
                     output_initial_values["rw"]["values"] = hcat(output_initial_values["rw"]["values"], initial_values[i]["rw"]["values"])
                     output_initial_values["rw"]["κ"] = vcat(output_initial_values["rw"]["κ"], initial_values[i]["rw"]["κ"])
                 end
 
-                if has_random_walk_slope(random_walk_slope, i)
+                if has_random_walk_slope(level, i)
                     output_initial_values["rws"]["values"] = hcat(output_initial_values["rws"]["values"], initial_values[i]["rws"]["values"])
                     output_initial_values["rws"]["κ"] = vcat(output_initial_values["rws"]["κ"], initial_values[i]["rws"]["κ"])
 
@@ -325,7 +352,6 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
                 end
 
                 if has_seasonality(seasonality, i)
-                    #println(size(output_initial_values["seasonality"]["γ"]))
                     output_initial_values["seasonality"]["values"] = hcat(output_initial_values["seasonality"]["values"], initial_values[i]["seasonality"]["values"])
                     if stochastic
                         output_initial_values["seasonality"]["γ"] = cat(output_initial_values["seasonality"]["γ"], initial_values[i]["seasonality"]["γ"], dims = 3)
@@ -346,12 +372,12 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
         end
     end
 
-    return convert(Dict{String, Any}, output_initial_values)#, X
+    return convert(Dict{String, Any}, output_initial_values)
 end
 
 function create_output_initialization_from_fit(output::Output, gas_model::GASModel)
 
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
 
     num_params              = get_num_params(dist)
     idx_time_varying_params = get_idxs_time_varying_params(time_varying_params)
@@ -387,21 +413,32 @@ function create_output_initialization_from_fit(output::Output, gas_model::GASMod
     # Getting initial values for the mean parameter
     output_initial_values["rw"]                  = Dict()
     output_initial_values["rws"]                 = Dict()
+    output_initial_values["ar1_level"]           = Dict()
     output_initial_values["slope"]               = Dict()
     output_initial_values["seasonality"]         = Dict()
-    output_initial_values["ar"]         = Dict()
+    output_initial_values["ar"]                  = Dict()
     output_initial_values["intercept"]           = Dict()
     output_initial_values["intercept"]["values"] = components["param_1"]["intercept"]
 
-    if has_random_walk(random_walk, 1)
+    if has_random_walk(level, 1)
         output_initial_values["rw"]["values"] = components["param_1"]["level"]["value"]
-        output_initial_values["rw"]["κ"]      = components["param_1"]["level"]["hyperparameters"]["κ"]
+        output_initial_values["rw"]["κ"]        = components["param_1"]["level"]["hyperparameters"]["κ"]
     else
         output_initial_values["rw"]["values"] = zeros(T)
         output_initial_values["rw"]["κ"]      = 0.0
     end
 
-    if has_random_walk_slope(random_walk_slope, 1)
+    if has_ar1_level(level, 1)
+        output_initial_values["ar1_level"]["values"] = components["param_1"]["level"]["value"]
+        output_initial_values["ar1_level"]["κ"]      = components["param_1"]["level"]["hyperparameters"]["κ"]
+        output_initial_values["ar1_level"]["ϕ"]      = components["param_1"]["level"]["hyperparameters"]["ϕ"]
+    else
+        output_initial_values["ar1_level"]["values"] = zeros(T)
+        output_initial_values["ar1_level"]["κ"]      = 0.0
+        output_initial_values["ar1_level"]["ϕ"]      = 0.0
+    end 
+
+    if has_random_walk_slope(level, 1)
         output_initial_values["rws"]["values"]   = components["param_1"]["level"]["value"]
         output_initial_values["rws"]["κ"]        = components["param_1"]["level"]["hyperparameters"]["κ"]
         output_initial_values["slope"]["values"] = components["param_1"]["slope"]["value"]
@@ -414,6 +451,7 @@ function create_output_initialization_from_fit(output::Output, gas_model::GASMod
     end
 
     if has_seasonality(seasonality, 1)
+        seasonality_dict, stochastic = get_seasonality_dict_and_stochastic(seasonality)
         output_initial_values["seasonality"]["values"] = components["param_1"]["seasonality"]["value"]
         if stochastic
             output_initial_values["seasonality"]["κ"]      = components["param_1"]["seasonality"]["hyperparameters"]["κ"]
@@ -445,12 +483,18 @@ function create_output_initialization_from_fit(output::Output, gas_model::GASMod
         for i in setdiff(idx_time_varying_params, 1)
             output_initial_values["intercept"]["values"]  = vcat(output_initial_values["intercept"]["values"], components["param_$i"]["intercept"])
 
-            if has_random_walk(random_walk, i)
+            if has_random_walk(level, i)
                 output_initial_values["rw"]["values"] = hcat(output_initial_values["rw"]["values"], components["param_$i"]["level"]["value"])
                 output_initial_values["rw"]["κ"]      = vcat(output_initial_values["rw"]["κ"] , components["param_$i"]["level"]["hyperparameters"]["κ"])
             end
 
-            if has_random_walk_slope(random_walk_slope, i)
+            if has_random_ar1_level(level, i)
+                output_initial_values["ar1_level"]["values"] = hcat(output_initial_values["ar1_level"]["values"], components["param_$i"]["level"]["value"])
+                output_initial_values["ar1_level"]["κ"]      = vcat(output_initial_values["ar1_level"]["κ"] , components["param_$i"]["level"]["hyperparameters"]["κ"])
+                output_initial_values["ar1_level"]["ϕ"]      = vcat(output_initial_values["ar1_level"]["ϕ"] , components["param_$i"]["level"]["hyperparameters"]["ϕ"])
+            end
+
+            if has_random_walk_slope(level, i)
                 output_initial_values["rws"]["values"]   = hcat(output_initial_values["rws"]["values"], components["param_$i"]["level"]["value"])
                 output_initial_values["rws"]["κ"]        = vcat(output_initial_values["rws"]["κ"], components["param_$i"]["level"]["hyperparameters"]["κ"])
                 output_initial_values["slope"]["values"] = hcat(output_initial_values["slope"]["values"], components["param_$i"]["slope"]["value"])
@@ -484,58 +528,48 @@ end
 
 function initialize_components!(model::Ml, initial_values::Dict{String, Any}, gas_model::GASModel) where {Ml}
 
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
 
     set_start_value.(model[:params], round.(initial_values["param"]; digits = 5))
-    set_start_value.(model[:c], round.(initial_values["intercept"]["values"]; digits = 5))
+    #set_start_value.(model[:c], round.(initial_values["intercept"]["values"]; digits = 5))
     #println(round.(initial_values["intercept"]["values"]; digits = 5))
     
     if haskey(initial_values, "fixed_param")
         set_start_value.(model[:fixed_params], round.(initial_values["fixed_param"]; digits = 5))
     end
     
-    if sum(values(random_walk_slope)) > 0 
+    if has_random_walk_slope(level) 
         set_start_value.(model[:RWS], round.(initial_values["rws"]["values"]; digits = 5))
         set_start_value.(model[:κ_RWS], round.(initial_values["rws"]["κ"]; digits = 5))
         set_start_value.(model[:b],  round.(initial_values["slope"]["values"]; digits = 5))
         set_start_value.(model[:κ_b], round.(initial_values["slope"]["κ"]; digits = 5))
     end
 
-    if sum(values(random_walk)) > 0 
+    if has_ar1_level(level)
+        set_start_value.(model[:AR1_LEVEL], round.(initial_values["ar1_level"]["values"]; digits = 5))
+        set_start_value.(model[:κ_AR1_LEVEL], round.(initial_values["ar1_level"]["κ"]; digits = 5))
+        set_start_value.(model[:ϕ_AR1_LEVEL],  round.(initial_values["ar1_level"]["ϕ"]; digits = 5))
+    end
+
+
+    if has_random_walk(level) 
         set_start_value.(model[:RW], round.(initial_values["rw"]["values"]; digits = 5))
         set_start_value.(model[:κ_RW], round.(initial_values["rw"]["κ"]; digits = 5))
     end
 
-    if sum(values(seasonality)) > 0
-        #set_start_value.(model[:S], initial_values["seasonality"]["values"])
+    if has_seasonality(seasonality)
+        seasonality_dict, stochastic = get_seasonality_dict_and_stochastic(seasonality)
         if stochastic
             set_start_value.(model[:κ_S], round.(initial_values["seasonality"]["κ"]; digits = 5))
         end
 
         if haskey(initial_values["seasonality"], "γ")
-            #if stochastic
-                set_start_value.(model[:γ], round.(initial_values["seasonality"]["γ"]; digits = 5))
-                #println(initial_values["seasonality"]["γ"])
-                set_start_value.(model[:γ_star], round.(initial_values["seasonality"]["γ_star"]; digits = 5))
-                #println(initial_values["seasonality"]["γ_star"])
-            # else
-            #     num_harmonic, num_params = size(initial_values["seasonality"]["γ"])
-            #     T = length(initial_values["seasonality"]["values"])
-            #     γ_aux = zeros(1:num_harmonic, 1:T, 1:num_params)
-            #     γ_star_aux = zeros(1:num_harmonic, 1:T, 1:num_params)
-
-            #     for t in 1:T
-            #         γ_aux[:, t, :] = initial_values["seasonality"]["γ"]
-            #         γ_star_aux[:, t, :] = initial_values["seasonality"]["γ_star"]
-            #     end
-
-            #     set_start_value.(model[:γ], γ_aux)
-            #     set_start_value.(model[:γ_star], γ_star_aux)
-            # end
+            set_start_value.(model[:γ], round.(initial_values["seasonality"]["γ"]; digits = 5))
+            set_start_value.(model[:γ_star], round.(initial_values["seasonality"]["γ_star"]; digits = 5))        
         end
     end
 
-    if any(typeof.((values(ar))) .!= Bool)
+    if has_AR(ar)
         set_start_value.(model[:AR], initial_values["ar"]["values"])
         set_start_value.(model[:ϕ], initial_values["ar"]["ϕ"])
         set_start_value.(model[:κ_AR], initial_values["ar"]["κ"])

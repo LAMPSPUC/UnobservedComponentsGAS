@@ -7,15 +7,7 @@
     y = time_series[:,1]
     T = length(y)
     X = [2*y y/2 rand(T)]
-
-    function build_gas_model(dist, d, rw, rws, ar, seasonality)
-        typeof(dist) == UnobservedComponentsGAS.tLocationScaleDistribution ? time_varying = [true, false, false] : time_varying = [true, false]
-        return UnobservedComponentsGAS.GASModel(dist, time_varying, d, Dict(1=>rw), 
-                                                Dict(1 => rws),  Dict(1 => ar), 
-                                                Dict(1 => seasonality), false, false)
-    end
-
-    
+   
     function test_initial_values_components(initial_values, rw, rws, ar, seasonality)
         ismissing(seasonality) ? s = false : s = true
         ar == false ? ar_bool = false : ar_bool = true
@@ -47,9 +39,14 @@
     ar          = false
     seasonality = 12    
 
-    gas_model_normal    = build_gas_model(UnobservedComponentsGAS.NormalDistribution(), 1.0, rw, rws, ar, seasonality)
-    gas_model_lognormal = build_gas_model(UnobservedComponentsGAS.LogNormalDistribution(), 1.0, rw, rws, ar, seasonality)
-    gas_model_t         = build_gas_model(UnobservedComponentsGAS.tLocationScaleDistribution(), 1.0, rw, rws, ar, seasonality)
+    dist_normal    = UnobservedComponentsGAS.NormalDistribution()
+    dist_lognormal = UnobservedComponentsGAS.LogNormalDistribution()
+    dist_t         = UnobservedComponentsGAS.tLocationScaleDistribution()
+
+    gas_model_normal    = UnobservedComponentsGAS.GASModel(dist_normal, [true, false], 1.0, "random walk slope", "deterministic 12", missing)
+    gas_model_lognormal = UnobservedComponentsGAS.GASModel(dist_lognormal, [true, false], 1.0, "random walk slope", "deterministic 12", missing)
+    gas_model_t         = UnobservedComponentsGAS.GASModel(dist_t, [true, false, false], 1.0, "random walk slope", "deterministic 12", missing)
+
 
     gas_model_normal_X    = deepcopy(gas_model_normal)
     gas_model_lognormal_X = deepcopy(gas_model_lognormal)
@@ -134,7 +131,7 @@
 
     @info(" --- Test quality of fit - Normal")
 
-    time_series_normal      = CSV.read(joinpath(@__DIR__, "data/timeseries_normal_rws_d1.csv"), DataFrame)
+    time_series_normal      = CSV.read(joinpath(@__DIR__,  "data/timeseries_normal_rws_d1.csv"), DataFrame)
     benchmark_values_normal = JSON3.read(joinpath(@__DIR__, "data/benchmark_values_normal_rws.json"))
 
     initial_values_normal = convert_dict_keys_to_string(initial_values_normal)
@@ -148,9 +145,9 @@
 
     for j in 1:N
         y         = time_series_normal[:,j]
-        gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false], 1.0, Dict(1=>false), 
-                                                    Dict(1 => true),  Dict(1 => false), 
-                                                    Dict(1 => 12), false, false)
+        gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false],
+                                                     1.0, "random walk slope", "deterministic 12", missing)
+        
         fitted_model = UnobservedComponentsGAS.fit(gas_model, y; α = 0.5)
 
         σ2_values[j]               = fitted_model.fitted_params["param_2"][1]        
@@ -178,10 +175,9 @@
     fitted_values_lognormal = zeros(T,N)
     # ~ 80 sec to run
     for j in 1:N
-        y            = time_series_lognormal[:,j]
-        gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.LogNormalDistribution(), [true, false], 1.0, Dict(1=>false), 
-                                                        Dict(1 => true),  Dict(1 => false), 
-                                                        Dict(1 => 12), false, false)
+        y         = time_series_lognormal[:,j]
+        gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.LogNormalDistribution(), [true, false],
+                                                     1.0, "random walk slope", "deterministic 12", missing)
         fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
 
         σ2_values[j]                  = fitted_model.fitted_params["param_2"][1]      
@@ -198,7 +194,7 @@
     
     @info(" --- Test quality of fit - t")
 
-    time_series_t      = CSV.read(joinpath(@__DIR__, "data/timeseries_t_rws_d1.csv"), DataFrame)
+    time_series_t      = CSV.read(joinpath(@__DIR__,  "data/timeseries_t_rws_d1.csv"), DataFrame)
     benchmark_values_t = JSON3.read(joinpath(@__DIR__, "data/benchmark_values_t_rws.json"))
     N = 10
 
@@ -210,9 +206,9 @@
     fitted_values_t = zeros(T,N)
     for j in 1:N
         y         = time_series_t[:,j]
-        gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.tLocationScaleDistribution(), [true, false, false], 1.0, Dict(1=>false), 
-                                                        Dict(1 => true),  Dict(1 => false), 
-                                                        Dict(1 => 12), false, false)
+        gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.tLocationScaleDistribution(), [true, false, false],
+                                                     1.0, "random walk slope", "deterministic 12", missing)
+        
         fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
 
         σ2_values[j]          = fitted_model.fitted_params["param_2"][1]   

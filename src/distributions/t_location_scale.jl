@@ -262,7 +262,7 @@ get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::tLoca
         - 2: Initial values for the scale parameter, which can be fixed or time-varying.
         - 3: Initial values for the degrees of freedom parameter, which can be fixed or time-varying.
 """
-function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::tLocationScaleDistribution, seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}) where Fl
+function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::tLocationScaleDistribution, seasonality::Dict{Int64, Union{Bool, Int64}}) where Fl
 
     T         = length(y)
     dist_code = get_dist_code(dist)
@@ -349,7 +349,7 @@ find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl};
     
 """
 function find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}; 
-                                          α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
+                                          α::Float64 = 0.5, robust::Bool = false, robust_prop::Float64 = 0.7, 
                                           number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
                                           initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl, Dl}
 
@@ -408,7 +408,7 @@ find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}, X::Matrix{
 
 """
 function find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; 
-                                          α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
+                                          α::Float64 = 0.5, robust::Bool = false, robust_prop::Float64 = 0.7, 
                                           number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
                                           initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl, Dl}
     T    = length(y)
@@ -420,12 +420,12 @@ function find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}, X
     opt_model, opt_parameters, initial_values = create_model(gas_model, y, X, optimal_ν;  number_max_iterations = number_max_iterations,
                                              max_optimization_time =  max_optimization_time, initial_values = initial_values)
 
-    optimal_model = fit(gas_model, y, X, opt_model, opt_parameters, initial_values; α = α, robust_prop = robust_prop)
+    optimal_model = fit(gas_model, y, X, opt_model, opt_parameters, initial_values; α = α, robust = robust, robust_prop = robust_prop)
 
     heu_model, heu_parameters, initial_values = create_model(gas_model, y, X, heuristic_ν;  number_max_iterations = number_max_iterations,
                                              max_optimization_time =  max_optimization_time, initial_values = initial_values)
 
-    heuristic_model = fit(gas_model, y, X, heu_model, heu_parameters, initial_values; α = α, robust_prop = robust_prop)
+    heuristic_model = fit(gas_model, y, X, heu_model, heu_parameters, initial_values; α = α, robust = robust, robust_prop = robust_prop)
 
     if !is_valid_model(optimal_model) || optimal_model.information_criteria["aicc"] > heuristic_model.information_criteria["aicc"]
         @info("Considering ν  = T-1")
@@ -463,24 +463,24 @@ fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl};
     - best_model: The best-fitted model based on the t-location-scale distribution after the local search is determined by comparing information criteria (AICc).
 """
 function fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl};
-                                            tol::Float64 = 0.01, α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
+                                            tol::Float64 = 0.01, α::Float64 = 0.5, robust::Bool = false, robust_prop::Float64 = 0.7, 
                                             number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl, Dl}
 
     T    = length(y)
     dist = gas_model.dist
 
-    fitted_model_ν, first_ν = find_first_model_for_local_search(gas_model, y;  α = α, robust_prop = robust_prop, number_max_iterations = number_max_iterations,
+    fitted_model_ν, first_ν = find_first_model_for_local_search(gas_model, y;  α = α, robust = robust, robust_prop = robust_prop, number_max_iterations = number_max_iterations,
                                                                 max_optimization_time =  max_optimization_time, initial_values = initial_values)
 
     model_lower, parameters_lower, initial_values_lower = create_model(gas_model, y,  first_ν-1; number_max_iterations = number_max_iterations,
                                                  max_optimization_time =  max_optimization_time, initial_values = initial_values)
 
-    fitted_model_ν_lower = fit(gas_model, y, model_lower, parameters_lower, initial_values_lower; α = α, robust_prop = robust_prop)
+    fitted_model_ν_lower = fit(gas_model, y, model_lower, parameters_lower, initial_values_lower; α = α, robust = robust, robust_prop = robust_prop)
     
     model_upper, parameters_upper, initial_values_upper = create_model(gas_model, y, first_ν+1;  number_max_iterations = number_max_iterations,
                                                  max_optimization_time =  max_optimization_time, initial_values = initial_values)
 
-    fitted_model_ν_upper = fit(gas_model, y, model_upper, parameters_upper, initial_values_upper; α = α, robust_prop = robust_prop)
+    fitted_model_ν_upper = fit(gas_model, y, model_upper, parameters_upper, initial_values_upper; α = α,robust = robust, robust_prop = robust_prop)
 
     aicc_ = [is_valid_model(fitted_model_ν_lower) ? fitted_model_ν_lower.information_criteria["aicc"] : Inf,
             fitted_model_ν.information_criteria["aicc"],
@@ -525,7 +525,7 @@ function fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl};
             model, parameter, _ = create_model(gas_model, y, current_ν;  number_max_iterations = number_max_iterations,
                                             max_optimization_time =  max_optimization_time, initial_values = initial_values)
 
-            fitted_model   = fit(gas_model, y, model, parameter, initial_values; α = α, robust_prop = robust_prop)
+            fitted_model   = fit(gas_model, y, model, parameter, initial_values; α = α,robust = robust,  robust_prop = robust_prop)
 
             if fitted_model.information_criteria["aicc"] < best_aicc#(fitted_model.information_criteria["aicc"] - best_aicc) / best_aicc < -tol && is_valid_model(fitted_model)
                 
@@ -567,25 +567,25 @@ Fits a t-location-scale distribution with exogenous variables using local search
 - best_model: The best-fitted model based on the t-location-scale distribution after the local search is determined by comparing information criteria (AICc).
 """
 function fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl};
-                                         tol::Float64 = 0.01, α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
+                                         tol::Float64 = 0.01, α::Float64 = 0.5, robust::Bool = false, robust_prop::Float64 = 0.7, 
                                          number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
                                           initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl}
 
     T    = length(y)
     dist = gas_model.dist
 
-    fitted_model_ν, first_ν = find_first_model_for_local_search(gas_model, y, X;  α = α, robust_prop = robust_prop, number_max_iterations = number_max_iterations,
+    fitted_model_ν, first_ν = find_first_model_for_local_search(gas_model, y, X;  α = α, robust = robust, robust_prop = robust_prop, number_max_iterations = number_max_iterations,
                                                                 max_optimization_time =  max_optimization_time, initial_values = initial_values)
 
     model_lower, parameters_lower, initial_values_lower = create_model(gas_model, y, X, first_ν-1;  number_max_iterations = number_max_iterations,
                                                  max_optimization_time =  max_optimization_time, initial_values = initial_values)
 
-    fitted_model_ν_lower = fit(gas_model, y, X, model_lower, parameters_lower, initial_values_lower; α = α, robust_prop = robust_prop)
+    fitted_model_ν_lower = fit(gas_model, y, X, model_lower, parameters_lower, initial_values_lower; α = α, robust = robust, robust_prop = robust_prop)
     
     model_upper, parameters_upper, initial_values_upper = create_model(gas_model, y, X, first_ν+1;  number_max_iterations = number_max_iterations,
                                                  max_optimization_time =  max_optimization_time, initial_values = initial_values)
 
-    fitted_model_ν_upper = fit(gas_model, y, X, model_upper, parameters_upper, initial_values_upper; α = α, robust_prop = robust_prop)
+    fitted_model_ν_upper = fit(gas_model, y, X, model_upper, parameters_upper, initial_values_upper; α = α, robust = robust, robust_prop = robust_prop)
 
     aicc_ = [is_valid_model(fitted_model_ν_lower) ? fitted_model_ν_lower.information_criteria["aicc"] : Inf,
              fitted_model_ν.information_criteria["aicc"],
@@ -630,7 +630,7 @@ function fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl}, X::
             model, parameter, _ = create_model(gas_model, y, X, current_ν;  number_max_iterations = number_max_iterations,
                                               max_optimization_time =  max_optimization_time, initial_values = initial_values)
 
-            fitted_model   = fit(gas_model, y, X, model, parameter, initial_values; α = α, robust_prop = robust_prop)
+            fitted_model   = fit(gas_model, y, X, model, parameter, initial_values; α = α, robust = robust, robust_prop = robust_prop)
 
             if (fitted_model.information_criteria["aicc"] - best_aicc) / best_aicc < -tol && is_valid_model(fitted_model)
                 

@@ -30,7 +30,8 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missin
         log_normal_flag = false
     end 
 
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    # @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
 
     dist_code = get_dist_code(dist)
     dist_name = DICT_CODE[dist_code]
@@ -109,7 +110,8 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_�
         log_normal_flag = false
     end 
 
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    # @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
 
     dist_code = get_dist_code(dist)
     dist_name = DICT_CODE[dist_code]
@@ -184,7 +186,7 @@ Fits a generalized autoregressive score (GAS) model to the given time series dat
 - Otherwise, it creates a GAS model based on the specifications and fits it to the data.
 """
 function fit(gas_model::GASModel, y::Vector{Fl}; 
-                α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
+                α::Float64 = 0.5, robust::Bool = false, robust_prop::Float64 = 0.7, 
                 number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
 
     dist = gas_model.dist
@@ -192,14 +194,15 @@ function fit(gas_model::GASModel, y::Vector{Fl};
     if typeof(dist) == tLocationScaleDistribution
 
         fitted_model = fit_tlocationscale_local_search(gas_model, y; 
-                                                       α = α, robust_prop = robust_prop, number_max_iterations = number_max_iterations,
+                                                       α = α, robust = robust ,robust_prop = robust_prop, 
+                                                       number_max_iterations = number_max_iterations,
                                                        max_optimization_time = max_optimization_time, initial_values = initial_values)
     else
     
         model, parameters, initial_values = create_model(gas_model, y,missing;  number_max_iterations = number_max_iterations,
                                          max_optimization_time = max_optimization_time, initial_values = initial_values, tol = tol)
 
-        fitted_model = fit(gas_model, y, model, parameters, initial_values; α = α, robust_prop = robust_prop)
+        fitted_model = fit(gas_model, y, model, parameters, initial_values; α = α, robust = robust, robust_prop = robust_prop)
     end
 
     return fitted_model
@@ -232,7 +235,7 @@ Fits a generalized autoregressive score (GAS) model with explanatory variables t
 - Otherwise, it creates a GAS model based on the specifications and fits it to the data.
 """
 function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; 
-                α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
+                α::Float64 = 0.5, robust::Bool=false, robust_prop::Float64 = 0.7, 
                 number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing,tol::Float64 = 0.005) where Fl
 
     dist = gas_model.dist
@@ -240,13 +243,13 @@ function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl};
     if typeof(dist) == tLocationScaleDistribution
   
         fitted_model = fit_tlocationscale_local_search(gas_model, y, X;  
-                                                       α = α, robust_prop = robust_prop, number_max_iterations = number_max_iterations,
+                                                       tol = 0.01, α = α, robust = robust, robust_prop = robust_prop, number_max_iterations = number_max_iterations,
                                                        max_optimization_time = max_optimization_time, initial_values = initial_values)
     else
         model, parameters, initial_values = create_model(gas_model, y, X, missing;  number_max_iterations = number_max_iterations,
                                          max_optimization_time = max_optimization_time, initial_values = initial_values, tol = tol)
 
-        fitted_model = fit(gas_model, y, X, model, parameters, initial_values; α = α, robust_prop = robust_prop)
+        fitted_model = fit(gas_model, y, X, model, parameters, initial_values; α = α, robust = robust, robust_prop = robust_prop)
     end
 
     return fitted_model
@@ -275,7 +278,7 @@ Fits a generalized autoregressive score (GAS) model to the given time series dat
 - If the distribution of the GAS model is `LogNormalDistribution`, it transforms the dependent variable data to natural logarithms.
 - Includes the objective function, initializes variables, optimizes the model, and returns the fitted GAS model.
 """
-function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.5, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
+function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.5, robust::Bool=false, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
 
     if typeof(gas_model.dist) == LogNormalDistribution
         gas_model.dist = NormalDistribution()
@@ -285,7 +288,8 @@ function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{G
         log_normal_flag = false
     end 
 
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    # @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
 
     dist_code = get_dist_code(dist)
     
@@ -331,7 +335,7 @@ Fits a generalized autoregressive score (GAS) model with explanatory variables t
 - If the distribution of the GAS model is `LogNormalDistribution`, it transforms the dependent variable data to natural logarithms.
 - Includes the objective function, initializes variables, optimizes the model, and returns the fitted GAS model.
 """
-function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.5, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
+function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.5, robust::Bool = false, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
 
     if typeof(gas_model.dist) == LogNormalDistribution
         #println("Log Normal distribution")
@@ -342,7 +346,7 @@ function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, param
         log_normal_flag = false
     end
 
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
 
     dist_code = get_dist_code(dist)
     
@@ -386,7 +390,7 @@ Creates an output structure containing the fitted values, residuals, and informa
 function create_output_fit(model::Ml, parameters::Matrix{Gl} ,y::Vector{Fl}, X::Union{Missing, Matrix{Fl}}, selected_variables::Union{Missing, Vector{Int64}},  
                             gas_model::GASModel, penalty_factor::Float64) where {Ml, Gl, Fl}
 
-    @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
+    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
 
     dist_code  = get_dist_code(dist)
     num_params = get_num_params(dist)

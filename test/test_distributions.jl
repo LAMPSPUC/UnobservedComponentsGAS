@@ -61,8 +61,8 @@
     logpdf_normal_2         = UnobservedComponentsGAS.logpdf_normal(μ, σ², 1)
     cdf_normal_1            = UnobservedComponentsGAS.cdf_normal([μ, σ²], 0)
     cdf_normal_2            = UnobservedComponentsGAS.cdf_normal([μ, σ²], 1)
-    initial_params_normal_1 = UnobservedComponentsGAS.get_initial_params(y, [true, false], dist, Dict(1=>12))
-    initial_params_normal_2 = UnobservedComponentsGAS.get_initial_params(y, [false, false], dist, Dict(1=>12))
+    initial_params_normal_1 = UnobservedComponentsGAS.get_initial_params(y, [true, false], dist, Dict{Int64, Union{Bool, Int64}}(1=>12))
+    initial_params_normal_2 = UnobservedComponentsGAS.get_initial_params(y, [false, false], dist, Dict{Int64, Union{Bool, Int64}}(1=>12))
     seasonal_variances      = UnobservedComponentsGAS.get_seasonal_var(y,seasonal_period, dist)
 
 
@@ -82,9 +82,6 @@
     @test(initial_params_normal_2[1] == mean(y))
     @test(all(seasonal_variances .> 0))
 
-    #Testar size das saidas do score e afins
-    # Testar casos conhecidos para o score e afins
-
     @info(" --- Test distributions/t_location_scale")
     dist            = UnobservedComponentsGAS.tLocationScaleDistribution()
     seasonal_period = 12
@@ -98,13 +95,12 @@
     logpdf_tlocationscale_2         = UnobservedComponentsGAS.logpdf_tlocationscale(μ, σ², ν, 1)
     cdf_tlocationscale_1            = UnobservedComponentsGAS.cdf_tlocationscale([μ, σ², ν], 0)
     cdf_tlocationscale_2            = UnobservedComponentsGAS.cdf_tlocationscale([μ, σ², ν], 1)
-    initial_params_tlocationscale_1 = UnobservedComponentsGAS.get_initial_params(y, [true, false, false], dist, Dict(1=>12))
-    initial_params_tlocationscale_2 = UnobservedComponentsGAS.get_initial_params(y, [false, false, true], dist, Dict(1=>12))
+    initial_params_tlocationscale_1 = UnobservedComponentsGAS.get_initial_params(y, [true, false, false], dist, Dict{Int64, Union{Bool, Int64}}(1=>12))
+    initial_params_tlocationscale_2 = UnobservedComponentsGAS.get_initial_params(y, [false, false, true], dist, Dict{Int64, Union{Bool, Int64}}(1=>12))
     seasonal_variances              = UnobservedComponentsGAS.get_seasonal_var(y,seasonal_period, dist)
 
-    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, false, false], 0.0, Dict(1=>true),  
-                                            Dict(1 => false),  Dict(1 => false), 
-                                            Dict(1 => 12), false, false)
+    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, false, false], 0.0, ["random walk", "", ""], "deterministic 12", missing)    
+    
     gas_model_2 = deepcopy(gas_model)
     best_model_no_explanatory, best_ν_no_explanatory = UnobservedComponentsGAS.find_first_model_for_local_search(gas_model, y)
 
