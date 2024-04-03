@@ -80,30 +80,21 @@ function define_state_space_model(y::Vector{Float64}, X::Union{Matrix{Float64}, 
     # Be aware that if we select just seasonal as the mean component with explanatories, 
     ## there wont be a initial value for the explanatories coefs (it will be zero)
     if has_seasonality
-        if !has_level && !has_slope
-            ss_model = SeasonalNaive(y, seasonal_period)
-            StateSpaceModels.fit!(ss_model)
-            initial_seasonality = ss_model.y .- vcat(zeros(seasonal_period), ss_model.residuals)
-            explanatory_coefs   = zeros(N)
-            res = ss_model.residuals
-            initial_γ, initial_γ_star = fit_harmonics(initial_seasonality, seasonal_period, stochastic)
-        else
-         #Basic structural
-            ss_model   = BasicStructuralExplanatory(y, seasonal_period, X)
-            pred_state = fit_and_get_preditive_state(ss_model)
-            for t in 1:T
-                initial_seasonality[t] = -sum(pred_state[t+1, end-(seasonal_period+N-2):end-N])
-            end
-            initial_γ, initial_γ_star = fit_harmonics(initial_seasonality, seasonal_period, stochastic)
-
-            if has_level && has_slope
-                initial_level = pred_state[2:end,1]
-                initial_slope = pred_state[2:end,2]
-            elseif has_level && !has_slope
-                initial_level = pred_state[2:end,1] + pred_state[2:end,2]
-            end
-            res = StateSpaceModels.get_innovations(ss_model)[:, 1]
+        #Basic structural
+        ss_model   = BasicStructuralExplanatory(y, seasonal_period, X)
+        pred_state = fit_and_get_preditive_state(ss_model)
+        for t in 1:T
+            initial_seasonality[t] = -sum(pred_state[t+1, end-(seasonal_period+N-2):end-N])
         end
+        initial_γ, initial_γ_star = fit_harmonics(initial_seasonality, seasonal_period, stochastic)
+
+        if has_level && has_slope
+            initial_level = pred_state[2:end,1]
+            initial_slope = pred_state[2:end,2]
+        elseif has_level && !has_slope
+            initial_level = pred_state[2:end,1] + pred_state[2:end,2]
+        end
+        res = StateSpaceModels.get_innovations(ss_model)[:, 1]
     else
         if has_level && has_slope 
             # Since there is no LocalLinearTrendExplanatory ...
