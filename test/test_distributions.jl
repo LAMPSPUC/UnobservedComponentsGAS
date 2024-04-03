@@ -82,9 +82,6 @@
     @test(initial_params_normal_2[1] == mean(y))
     @test(all(seasonal_variances .> 0))
 
-    #Testar size das saidas do score e afins
-    # Testar casos conhecidos para o score e afins
-
     @info(" --- Test distributions/t_location_scale")
     dist            = UnobservedComponentsGAS.tLocationScaleDistribution()
     seasonal_period = 12
@@ -102,9 +99,6 @@
     initial_params_tlocationscale_2 = UnobservedComponentsGAS.get_initial_params(y, [false, false, true], dist, Dict{Int64, Union{Bool, Int64}}(1=>12))
     seasonal_variances              = UnobservedComponentsGAS.get_seasonal_var(y,seasonal_period, dist)
 
-    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, false, false], 0.0, Dict(1=>true),  
-                                            Dict(1 => false),  Dict(1 => false), 
-                                            Dict(1 => 12), false, false)
     gas_model = UnobservedComponentsGAS.GASModel(dist, [true, false, false], 0.0, ["random walk", "", ""], "deterministic 12", missing)    
     
     gas_model_2 = deepcopy(gas_model)

@@ -59,9 +59,6 @@
     X_lognormal_forec   = hcat(y_lognormal[end-steps_ahead+1:end].+5*rand(steps_ahead), y_lognormal[end-steps_ahead+1:end].+10*rand(steps_ahead))
     dist_lognormal      = UnobservedComponentsGAS.LogNormalDistribution()
     gas_model_lognormal = UnobservedComponentsGAS.GASModel(dist_lognormal, [true, false], 1.0, "random walk slope", "stochastic 12", 1)
-    # gas_model_lognormal = UnobservedComponentsGAS.GASModel(dist_lognormal, [true, false], 1.0, Dict(1=>false), 
-    #                                             Dict(1 => true),  Dict(1 => 1), 
-    #                                             Dict(1 => 12), false, true)
 
     fitted_model_lognormal   = UnobservedComponentsGAS.fit(gas_model_lognormal, y_lognormal)  
     fitted_model_lognormal_X = UnobservedComponentsGAS.fit(gas_model_lognormal, y_lognormal, X_lognormal)
@@ -91,9 +88,6 @@
     X_t_forec   = hcat(y_t[end-steps_ahead+1:end].+5*rand(steps_ahead), y_t[end-steps_ahead+1:end].+10*rand(steps_ahead))
     dist_t      = UnobservedComponentsGAS.tLocationScaleDistribution()
     gas_model_t = UnobservedComponentsGAS.GASModel(dist_t, [true, false, false], 1.0, "random walk slope", "stochastic 12", 1)
-    # gas_model_t = UnobservedComponentsGAS.GASModel(dist_t, [true, false, false], 1.0, Dict(1=>false), 
-    #                                             Dict(1 => true),  Dict(1 => 1), 
-    #                                             Dict(1 => 12), false, true)
 
     fitted_model_t   = UnobservedComponentsGAS.fit(gas_model_t, y_t) 
     fitted_model_t_X = UnobservedComponentsGAS.fit(gas_model_t, y_t, X_t)

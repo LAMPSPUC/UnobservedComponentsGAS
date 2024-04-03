@@ -87,10 +87,7 @@
     
     # Test number of variables and constraints from include_components! with Deterministic Seasonality
     dist      = UnobservedComponentsGAS.NormalDistribution()
-    # gas_model = UnobservedComponentsGAS.GASModel(dist, [true, true], 1.0, Dict(1=>false),  
-    #                                             Dict(1 => rws[1]),  Dict(1 => order[1], 2=>order[2]), 
-    #                                             Dict(1 => seasonal_periods), false, false)
-    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, true], 1.0, ["random walk slope", ""], ["deterministic 12", "deterministic 12"], [2, 1])
+    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, true], 1.0, ["random walk slope", ""], ["deterministic 12", ""], order)
 
     model = JuMP.Model(Ipopt.Optimizer)         
     UnobservedComponentsGAS.include_components!(model, s, gas_model, T)
@@ -102,10 +99,7 @@
                                                                             number_of_constraints_sd)
     
     # Test number of variables and constraints from include_components! with stochastic Seasonality
-    # gas_model = UnobservedComponentsGAS.GASModel(dist, [true, true], 1.0, Dict(1=>false),  
-    #                                             Dict(1 => rws[1]),  Dict(1 => order[1], 2=>order[2]), 
-    #                                             Dict(1 => seasonal_periods), false, true)
-    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, true], 1.0, ["random walk slope", ""], ["stochastic 12", "stochastic 12"], [2, 1])
+    gas_model = UnobservedComponentsGAS.GASModel(dist, [true, true], 1.0, ["random walk slope", ""], ["stochastic 12", ""], [2, 1])
 
     model = JuMP.Model(Ipopt.Optimizer)         
     UnobservedComponentsGAS.include_components!(model, s, gas_model, T)
