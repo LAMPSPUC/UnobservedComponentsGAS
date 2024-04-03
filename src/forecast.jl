@@ -54,6 +54,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     dict_hyperparams_and_fitted_components["ar1_level"]["value"]  = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
     dict_hyperparams_and_fitted_components["ar1_level"]["κ"]      = zeros(num_params)
     dict_hyperparams_and_fitted_components["ar1_level"]["ϕ"]      = zeros(num_params)
+    dict_hyperparams_and_fitted_components["ar1_level"]["ω"]      = zeros(num_params)
 
     dict_hyperparams_and_fitted_components["seasonality"]["value"]   = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
     dict_hyperparams_and_fitted_components["seasonality"]["κ"]       = zeros(num_params)
@@ -97,6 +98,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
             dict_hyperparams_and_fitted_components["ar1_level"]["value"][i, 1:T_fitted, :] .= components["param_$i"]["level"]["value"]
             dict_hyperparams_and_fitted_components["ar1_level"]["ϕ"][i]                     = components["param_$i"]["level"]["hyperparameters"]["ϕ"]
             dict_hyperparams_and_fitted_components["ar1_level"]["κ"][i]                     = components["param_$i"]["level"]["hyperparameters"]["κ"]
+            dict_hyperparams_and_fitted_components["ar1_level"]["ω"][i]                     = components["param_$i"]["level"]["hyperparameters"]["ω"]
         end 
 
         if has_AR(ar, i)
@@ -240,7 +242,7 @@ Incluir documentação
 """
 function update_AR1_level!(dict_hyperparams_and_fitted_components::Dict{String, Any} , param::Int64, t::Int64, s::Int64)
 
-    dict_hyperparams_and_fitted_components["ar1_level"]["value"][param, t, s] = dict_hyperparams_and_fitted_components["ar1_level"]["ϕ"][param] * dict_hyperparams_and_fitted_components["ar1_level"]["value"][param, t - 1, s] + 
+    dict_hyperparams_and_fitted_components["ar1_level"]["value"][param, t, s] = dict_hyperparams_and_fitted_components["ar1_level"]["ω"][param] + dict_hyperparams_and_fitted_components["ar1_level"]["ϕ"][param] * dict_hyperparams_and_fitted_components["ar1_level"]["value"][param, t - 1, s] + 
                                                                                 dict_hyperparams_and_fitted_components["ar1_level"]["κ"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s]
 end
 

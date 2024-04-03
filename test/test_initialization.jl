@@ -1,6 +1,6 @@
 @testset "Initialization" begin
     
-    time_series = CSV.read(joinpath(@__DIR__, "data/timeseries_lognormal_rws_d1.csv"), DataFrame)
+    time_series = CSV.read(joinpath(@__DIR__, "data/timeseries_normal_rws_d1.csv"), DataFrame)
     y = time_series[:,1]
     T = length(y)
     X = rand(T, 2).+10
@@ -33,14 +33,14 @@
     max_order        = 2
     has_level        = true
     has_slope        = false
-    has_ar1_level    = true
+    has_ar1_level    = false
     has_seasonality  = true
     seasonal_period  = 12
 
     initial_values_state_space = UnobservedComponentsGAS.define_state_space_model(y, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
     initial_values             = UnobservedComponentsGAS.get_initial_values(y, X_missing, has_level, has_ar1_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
 
-    @test(isapprox(initial_values["rw"]["values"], initial_values_state_space["level"]; rtol = 1e-3)) # ---------FALHOU - RW TÁ VINDO ZERADO -----------
+    @test(isapprox(initial_values["rw"]["values"], initial_values_state_space["level"]; rtol = 1e-3)) 
     @test(isapprox(initial_values["slope"]["values"], initial_values_state_space["slope"]; rtol = 1e-3))
     @test(isapprox(initial_values["seasonality"]["values"],initial_values_state_space["seasonality"]; rtol = 1e-3))
     @test(all(initial_values["seasonality"]["γ"] .== initial_values_state_space["γ"]))
@@ -76,14 +76,14 @@
     max_order        = 2
     has_level        = true
     has_slope        = false
-    has_ar1_level    = true
+    has_ar1_level    = false
     has_seasonality  = true
     seasonal_period  = 12
 
     initial_values_state_space = UnobservedComponentsGAS.define_state_space_model(y, X, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
     initial_values             = UnobservedComponentsGAS.get_initial_values(y, X, has_level, has_ar1_level, has_slope, has_seasonality, seasonal_period, stochastic, order, max_order)
 
-    @test(isapprox(initial_values["rw"]["values"], initial_values_state_space["level"]; rtol = 1e-3))  # ---------FALHOU - RW TÁ VINDO ZERADO -----------
+    @test(isapprox(initial_values["rw"]["values"], initial_values_state_space["level"]; rtol = 1e-3)) 
     @test(isapprox(initial_values["slope"]["values"], initial_values_state_space["slope"]; rtol = 1e-3))
     @test(isapprox(initial_values["seasonality"]["values"],initial_values_state_space["seasonality"]; rtol = 1e-3))
     @test(all(initial_values["seasonality"]["γ"] .== initial_values_state_space["γ"]))
@@ -107,11 +107,12 @@
     @test(all(output_initial_values["rws"]["values"] .!=  zeros(T)))
 
     #Erro no state space models quando usamos 2 parametros !!!
+    # y = collect(1.:T) + 10*rand(T)
     # dist                  = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-    # gas_model             = UnobservedComponentsGAS.GASModel(dist, [true, true], 0.0, "random walk slope", ["deterministic 12", "deterministic 12"], 1)
-    # fitted_model          = UnobservedComponentsGAS.fit(gas_model, y)
+    # gas_model             = UnobservedComponentsGAS.GASModel(dist, [true, true], 1.0, ["random walk", ""], ["deterministic 12", "deterministic 12"], [missing, missing])
+    # fitted_model          = UnobservedComponentsGAS.fit(gas_model, y; number_max_iterations = 80000, max_optimization_time = 360.0)
     # output_initial_values = UnobservedComponentsGAS.create_output_initialization_from_fit(fitted_model, gas_model)
-    
+
     # @test(all(output_initial_values["rw"]["values"] .== 0))
     # @test(all(output_initial_values["seasonality"]["values"] .!= 0))
     # @test(all(output_initial_values["ar"]["values"] .!= 0))

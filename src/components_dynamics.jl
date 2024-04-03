@@ -270,11 +270,12 @@ function add_ar1!(model::Ml, s::Vector{Fl}, T::Int64, ar1::Dict{Int64, Bool})  w
     @variable(model, AR1_LEVEL[1:T, idx_params])
     @variable(model, ϕ_AR1_LEVEL[idx_params])
     @variable(model, κ_AR1_LEVEL[idx_params])
+    @variable(model, ω_AR1_LEVEL[idx_params])
 
     @constraint(model, [i in idx_params], 1e-4 ≤ κ_AR1_LEVEL[i])
     @constraint(model, [i in idx_params], -0.9999 <= ϕ_AR1_LEVEL[i] <= 0.9999)
 
-    @NLconstraint(model, [t = 2:T, j in idx_params], AR1_LEVEL[t, j] == ϕ_AR1_LEVEL[j] * AR1_LEVEL[t-1, j] + κ_AR1_LEVEL[j] * s[j][t])
+    @NLconstraint(model, [t = 2:T, j in idx_params], AR1_LEVEL[t, j] == ω_AR1_LEVEL[j] + ϕ_AR1_LEVEL[j] * AR1_LEVEL[t-1, j] + κ_AR1_LEVEL[j] * s[j][t])
 
 end
 
