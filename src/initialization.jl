@@ -17,7 +17,6 @@ function define_state_space_model(y::Vector{Float64}, has_level::Bool, has_slope
 
     if has_seasonality
         if !has_level && !has_slope
-            println("Entrou aqui")
             ss_model = SeasonalNaive(y, seasonal_period)
             StateSpaceModels.fit!(ss_model)
             initial_seasonality = ss_model.y .- vcat(zeros(seasonal_period), ss_model.residuals)
@@ -127,12 +126,12 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
     #T = length(y)
     has_explanatories = !ismissing(X) ? true : false
 
-    if has_level || has_slope || has_seasonality
+    if has_level || has_slope || has_seasonality || has_ar1_level
 
         if has_explanatories
-            ss_components = define_state_space_model(y, X, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
+            ss_components = define_state_space_model(y, X, (has_level || has_ar1_level), has_slope, has_seasonality, seasonal_period, stochastic)
         else
-            ss_components = define_state_space_model(y, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
+            ss_components = define_state_space_model(y, (has_level || has_ar1_level), has_slope, has_seasonality, seasonal_period, stochastic)
         end
 
         if !isnothing(order[1])
@@ -152,7 +151,6 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
         initial_intercept = 0.0 #output.coefs[1]
     else
         fit_ar_model, ar_coefs, ar_intercept = fit_AR_model(y, order)
-        println("########################")
         initial_ar = fit_ar_model
             initial_ϕ  = zeros(max_order)
             for i in eachindex(order)
