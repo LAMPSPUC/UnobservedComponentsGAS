@@ -161,24 +161,22 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_�
 end
 
 """
-# fit(gas_model::GASModel, y::Vector{Fl}; 
-      α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
-      number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
-      initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+## fit(gas_model::GASModel, y::Vector{Fl}; α::Float64 = 0.5, robust::Bool = false, robust_prop::Float64 = 0.7, number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
 
-Fits a generalized autoregressive score (GAS) model to the given time series data.
+Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticity) model to the given time series data.
 
-## Arguments
-- `gas_model::GASModel`: The GAS model containing parameters and specifications.
-- `y::Vector{Fl}`: The dependent variable time series data to be modeled.
-- `α::Float64`: The coefficient of the convex combination that guide the regularization of the κ parameters. Default is 0.5.
-- `robust_prop::Float64`: The proportion of data used for robust optimization. Default is 0.7.
-- `number_max_iterations::Int64`: The maximum number of iterations for optimization. Default is 30000.
-- `max_optimization_time::Float64`: The maximum CPU time allowed for optimization. Default is 180.0 seconds.
-- `initial_values::Union{Dict{String, Any}, Missing}`: Initial values for the model parameters. Default is `missing`.
-- `tol::Float64`: Tolerance for optimization convergence. Default is 0.005.
+### Arguments
+- `gas_model::GASModel`: The GAS model to fit to the data.
+- `y::Vector{Fl}`: A vector representing the time series data.
+- `α::Float64`: The significance level for the optimization process. Default is `0.5`.
+- `robust::Bool`: Whether to use robust optimization. Default is `false`.
+- `robust_prop::Float64`: Proportion of observations to be considered for robust optimization. Default is `0.7`.
+- `number_max_iterations::Int64`: Maximum number of iterations for optimization. Default is `30000`.
+- `max_optimization_time::Float64`: Maximum optimization time in seconds. Default is `180.0`.
+- `initial_values::Union{Dict{String, Any}, Missing}`: Initial values for optimization. Default is `missing`.
+- `tol::Float64`: Tolerance level for convergence. Default is `0.005`.
 
-## Returns
+### Returns
 - `fitted_model`: The fitted GAS model.
 
 ## Details
@@ -209,25 +207,23 @@ function fit(gas_model::GASModel, y::Vector{Fl};
 end
 
 """
-# fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; 
-      α::Float64 = 0.5, robust_prop::Float64 = 0.7, 
-      number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
-      initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+## fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; α::Float64 = 0.5, robust::Bool=false, robust_prop::Float64 = 0.7, number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing,tol::Float64 = 0.005) where Fl
 
-Fits a generalized autoregressive score (GAS) model with explanatory variables to the given time series data.
+Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticity) model with exogenous variables to the given time series data.
 
-## Arguments
-- `gas_model::GASModel`: The GAS model containing parameters and specifications.
-- `y::Vector{Fl}`: The dependent variable time series data to be modeled.
-- `X::Matrix{Fl}`: The matrix containing explanatory variables.
-- `α::Float64`: The coefficient of the convex combination that guides the regularization of the κ parameters. Default is 0.5.
-- `robust_prop::Float64`: The proportion of data used for robust optimization. Default is 0.7.
-- `number_max_iterations::Int64`: The maximum number of iterations for optimization. Default is 30000.
-- `max_optimization_time::Float64`: The maximum CPU time allowed for optimization. Default is 180.0 seconds.
-- `initial_values::Union{Dict{String, Any}, Missing}`: Initial values for the model parameters. Default is `missing`.
-- `tol::Float64`: Tolerance for optimization convergence. Default is 0.005.
+### Arguments
+- `gas_model::GASModel`: The GAS model to fit to the data.
+- `y::Vector{Fl}`: A vector representing the time series data.
+- `X::Matrix{Fl}`: A matrix representing the exogenous variables data.
+- `α::Float64`: The significance level for the optimization process. Default is `0.5`.
+- `robust::Bool`: Whether to use robust optimization. Default is `false`.
+- `robust_prop::Float64`: Proportion of observations to be considered for robust optimization. Default is `0.7`.
+- `number_max_iterations::Int64`: Maximum number of iterations for optimization. Default is `30000`.
+- `max_optimization_time::Float64`: Maximum optimization time in seconds. Default is `180.0`.
+- `initial_values::Union{Dict{String, Any}, Missing}`: Initial values for optimization. Default is `missing`.
+- `tol::Float64`: Tolerance level for convergence. Default is `0.005`.
 
-## Returns
+### Returns
 - `fitted_model`: The fitted GAS model.
 
 ## Details
@@ -257,21 +253,21 @@ function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl};
 end
 
 """
-# fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; 
-      α::Float64 = 0.5, robust_prop::Float64 = 0.7) where {Fl, Ml, Gl}
+## fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.5, robust::Bool=false, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
 
-Fits a generalized autoregressive score (GAS) model to the given time series data using a pre-defined JuMP model.
+Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticity) model to the given time series data.
 
-## Arguments
-- `gas_model::GASModel`: The GAS model containing parameters and specifications.
-- `y::Vector{Fl}`: The dependent variable time series data to be modeled.
-- `model::Ml`: The pre-defined JuMP model to be used for optimization.
-- `parameters::Matrix{Gl}`: The matrix containing parameters to be optimized.
-- `initial_values::Dict{String, Any}`: Initial values for the model parameters.
-- `α::Float64`: The coefficient of the convex combination that guides the regularization of the κ parameters. Default is 0.5.
-- `robust_prop::Float64`: The proportion of data used for robust optimization. Default is 0.7.
+### Arguments
+- `gas_model::GASModel`: The GAS model to fit to the data.
+- `y::Vector{Fl}`: A vector representing the time series data.
+- `model::Ml`: The optimization model.
+- `parameters::Matrix{Gl}`: Matrix of parameters for optimization.
+- `initial_values::Dict{String, Any}`: Initial values for optimization.
+- `α::Float64`: The significance level for the optimization process. Default is `0.5`.
+- `robust::Bool`: Whether to use robust optimization. Default is `false`.
+- `robust_prop::Float64`: Proportion of observations to be considered for robust optimization. Default is `0.7`.
 
-## Returns
+### Returns
 - `fitted_model`: The fitted GAS model.
 
 ## Details
@@ -313,22 +309,22 @@ function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{G
 end
 
 """
-# fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; 
-      α::Float64 = 0.5, robust_prop::Float64 = 0.7) where {Fl, Ml, Gl}
+## fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.5, robust::Bool = false, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
 
-Fits a generalized autoregressive score (GAS) model with explanatory variables to the given time series data using a pre-defined JuMP model.
+Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticity) model to the given time series data with exogenous variables.
 
-## Arguments
-- `gas_model::GASModel`: The GAS model containing parameters and specifications.
-- `y::Vector{Fl}`: The dependent variable time series data to be modeled.
-- `X::Matrix{Fl}`: The matrix of explanatory variables.
-- `model::Ml`: The pre-defined JuMP model to be used for optimization.
-- `parameters::Matrix{Gl}`: The matrix containing parameters to be optimized.
-- `initial_values::Dict{String, Any}`: Initial values for the model parameters.
-- `α::Float64`: The coefficient of the convex combination that guides the regularization of the κ parameters. Default is 0.5.
-- `robust_prop::Float64`: The proportion of data used for robust optimization. Default is 0.7.
+### Arguments
+- `gas_model::GASModel`: The GAS model to fit to the data.
+- `y::Vector{Fl}`: A vector representing the dependent variable time series data.
+- `X::Matrix{Fl}`: A matrix representing the exogenous variables time series data.
+- `model::Ml`: The optimization model.
+- `parameters::Matrix{Gl}`: Matrix of parameters for optimization.
+- `initial_values::Dict{String, Any}`: Initial values for optimization.
+- `α::Float64`: The significance level for the optimization process. Default is `0.5`.
+- `robust::Bool`: Whether to use robust optimization. Default is `false`.
+- `robust_prop::Float64`: Proportion of observations to be considered for robust optimization. Default is `0.7`.
 
-## Returns
+### Returns
 - `fitted_model`: The fitted GAS model.
 
 ## Details

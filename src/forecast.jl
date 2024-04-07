@@ -237,15 +237,23 @@ function update_rws!(dict_hyperparams_and_fitted_components::Dict{String, Any}, 
                                                                                         dict_hyperparams_and_fitted_components["rws"]["κ"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s]
 
 end
+
 """
-Incluir documentação
+## update_AR1_level!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64)
+
+Updates the autoregressive component of the AR(1) level model.
+
+### Arguments
+- `dict_hyperparams_and_fitted_components::Dict{String, Any}`: A dictionary containing hyperparameters and fitted components.
+- `param::Int64`: The parameter index.
+- `t::Int64`: The time index.
+- `s::Int64`: The sample index.
 """
 function update_AR1_level!(dict_hyperparams_and_fitted_components::Dict{String, Any} , param::Int64, t::Int64, s::Int64)
 
     dict_hyperparams_and_fitted_components["ar1_level"]["value"][param, t, s] = dict_hyperparams_and_fitted_components["ar1_level"]["ω"][param] + dict_hyperparams_and_fitted_components["ar1_level"]["ϕ"][param] * dict_hyperparams_and_fitted_components["ar1_level"]["value"][param, t - 1, s] + 
                                                                                 dict_hyperparams_and_fitted_components["ar1_level"]["κ"][param] * dict_hyperparams_and_fitted_components["score"][param, t, s]
 end
-
 
 """
 # update_S!(dict_hyperparams_and_fitted_components::Dict{String, Any}, num_harmonic::Vector{Int64}, diff_T::Int64, param::Int64, t::Int64, s::Int64)
@@ -263,8 +271,7 @@ Updates the seasonality component predictions for the specified parameter, time 
 ## Returns
 Updates the seasonality component predictions for the specified parameter, time period, and scenario in the `dict_hyperparams_and_fitted_components` object.
 """
-# Testar se a função precisa mesmo do diff_T  na sazo deterministica. Eu acho que não pq ja passamos o t = T + t
-function update_S!(dict_hyperparams_and_fitted_components::Dict{String, Any}, num_harmonic::Vector{Union{Nothing, Int64}}, diff_T::Int64, param::Int64, t::Int64, s::Int64)
+function update_S!(dict_hyperparams_and_fitted_components::Dict{String, Any}, num_harmonic::Vector{Union{Nothing, Int64}}, param::Int64, t::Int64, s::Int64)
 
     if length(size( dict_hyperparams_and_fitted_components["seasonality"]["γ"])) == 4
         for j in 1:num_harmonic[param]
@@ -351,7 +358,7 @@ function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any
 
     n_exp = size(X_forecast, 2)
 
-    # dict_hyperparams_and_fitted_components["params"][param, t, s] = dict_hyperparams_and_fitted_components["intercept"][param] + 
+    dict_hyperparams_and_fitted_components["params"][param, t, s] = #dict_hyperparams_and_fitted_components["intercept"][param] + 
                                                                     dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] + 
                                                                     dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] +
                                                                     dict_hyperparams_and_fitted_components["ar1_level"]["value"][param, t, s] +
@@ -419,7 +426,7 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
                     update_AR1_level!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
                 end
                 if has_seasonality(seasonality, i)
-                    update_S!(dict_hyperparams_and_fitted_components, num_harmonic, T - T_fitted, i, T_fitted + t, s)
+                    update_S!(dict_hyperparams_and_fitted_components, num_harmonic, i, T_fitted + t, s)
                 end
                 if has_AR(ar, i)
                     update_AR!(dict_hyperparams_and_fitted_components, order, i, T_fitted + t, s)
@@ -492,7 +499,7 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
                     update_AR1_level!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
                 end
                 if has_seasonality(seasonality, i)
-                    update_S!(dict_hyperparams_and_fitted_components, num_harmonic, T - T_fitted, i, T_fitted + t, s)
+                    update_S!(dict_hyperparams_and_fitted_components, num_harmonic, i, T_fitted + t, s)
                 end
                 if has_AR(ar, i)
                     update_AR!(dict_hyperparams_and_fitted_components, order, i, T_fitted + t, s)

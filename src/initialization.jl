@@ -1,10 +1,42 @@
-# Fit and return the predictive state of a StateSpaceModel
+"""
+## fit_and_get_predictive_state(model::M) where M
+
+Fits the state space model and retrieves the predictive state.
+
+### Arguments
+- `model::M`: The state space model to be fitted.
+
+### Returns
+- A predictive state obtained after fitting the state space model.
+"""
 function fit_and_get_preditive_state(model::M) where M
     StateSpaceModels.fit!(model)
     return StateSpaceModels.get_predictive_state(model)
 end
 
-# Case without explanatory
+"""
+## define_state_space_model(y::Vector{Float64}, has_level::Bool, has_slope::Bool, has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool)
+
+Defines a state space model based on the provided parameters and data.
+
+### Arguments
+- `y::Vector{Float64}`: The time series data.
+- `has_level::Bool`: Indicates whether the model includes a level component.
+- `has_slope::Bool`: Indicates whether the model includes a slope component.
+- `has_seasonality::Bool`: Indicates whether the model includes a seasonality component.
+- `seasonal_period::Union{Missing, Int64}`: The period of seasonality if present. Can be an integer indicating the seasonal period or `missing` if no seasonality.
+- `stochastic::Bool`: Indicates whether the model is stochastic.
+
+### Returns
+- A dictionary containing the initial values for different components of the state space model:
+  - `level`: Initial values for the level component.
+  - `slope`: Initial values for the slope component.
+  - `seasonality`: Initial values for the seasonality component.
+  - `γ`: Initial values for the gamma parameter.
+  - `γ_star`: Initial values for the gamma star parameter.
+  - `explanatory`: Initial values for any explanatory variables (currently set as `missing`).
+  - `res`: Initial values for the residuals.
+"""
 function define_state_space_model(y::Vector{Float64}, has_level::Bool, has_slope::Bool, 
                                 has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool)
 
@@ -63,7 +95,30 @@ function define_state_space_model(y::Vector{Float64}, has_level::Bool, has_slope
             "γ" => initial_γ,"γ_star" => initial_γ_star,"explanatory" => missing,"res" => res)
 end
 
-# Case with explanatory
+"""
+## define_state_space_model(y::Vector{Float64}, X::Union{Matrix{Float64}, Missing}, has_level::Bool, has_slope::Bool, has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool)
+
+Defines a state space model with explanatory variables based on the provided parameters and data.
+
+### Arguments
+- `y::Vector{Float64}`: The time series data.
+- `X::Union{Matrix{Float64}, Missing}`: The matrix of explanatory variables. If no explanatory variables are present, set as `missing`.
+- `has_level::Bool`: Indicates whether the model includes a level component.
+- `has_slope::Bool`: Indicates whether the model includes a slope component.
+- `has_seasonality::Bool`: Indicates whether the model includes a seasonality component.
+- `seasonal_period::Union{Missing, Int64}`: The period of seasonality if present. Can be an integer indicating the seasonal period or `missing` if no seasonality.
+- `stochastic::Bool`: Indicates whether the model is stochastic.
+
+### Returns
+- A dictionary containing the initial values for different components of the state space model:
+  - `level`: Initial values for the level component.
+  - `slope`: Initial values for the slope component.
+  - `seasonality`: Initial values for the seasonality component.
+  - `γ`: Initial values for the gamma parameter.
+  - `γ_star`: Initial values for the gamma star parameter.
+  - `explanatory`: Initial values for the coefficients of the explanatory variables.
+  - `res`: Initial values for the residuals.
+"""
 function define_state_space_model(y::Vector{Float64}, X::Union{Matrix{Float64}, Missing}, has_level::Bool, has_slope::Bool, 
                                 has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool)
 
@@ -120,7 +175,35 @@ function define_state_space_model(y::Vector{Float64}, X::Union{Matrix{Float64}, 
                 "γ" => initial_γ,"γ_star" => initial_γ_star,"explanatory" => explanatory_coefs,"res" => res)
 end
 
+"""
+## get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missing}, has_level::Bool, has_ar1_level::Bool, has_slope::Bool, has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool, order::Union{Vector{Int64}, Vector{Nothing}}, max_order::Int64)
 
+Computes initial values for the components of the GAS model based on the predictive states of the state space model.
+
+### Arguments
+- `y::Vector{Float64}`: The time series data.
+- `X::Union{Matrix{Float64}, Missing}`: The matrix of explanatory variables. Set as `missing` if no explanatory variables are present.
+- `has_level::Bool`: Indicates whether the model includes a level component.
+- `has_ar1_level::Bool`: Indicates whether the model includes an AR(1) level component.
+- `has_slope::Bool`: Indicates whether the model includes a slope component.
+- `has_seasonality::Bool`: Indicates whether the model includes a seasonality component.
+- `seasonal_period::Union{Missing, Int64}`: The period of seasonality if present. Can be an integer indicating the seasonal period or `missing` if no seasonality.
+- `stochastic::Bool`: Indicates whether the model is stochastic.
+- `order::Union{Vector{Int64}, Vector{Nothing}}`: The order of autoregressive (AR) model if present. Specify `nothing` for no AR component.
+- `max_order::Int64`: The maximum order for autoregressive (AR) model if present.
+
+### Returns
+- A dictionary containing initial values for the components of the state space model:
+  - `intercept`: Initial value for the intercept component.
+  - `rw`: Initial value for the random walk component.
+  - `rws`: Initial value for the random walk slope component.
+  - `ar1_level`: Initial value for the AR(1) level component.
+  - `slope`: Initial value for the slope component.
+  - `seasonality`: Initial value for the seasonality component.
+  - `ar`: Initial value for the autoregressive (AR) component.
+  - `explanatories`: Initial values for the coefficients of the explanatory variables if present.
+
+"""
 function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missing}, has_level::Bool, has_ar1_level::Bool, has_slope::Bool, has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool, order::Union{Vector{Int64}, Vector{Nothing}}, max_order::Int64)
 
     #T = length(y)
@@ -227,6 +310,22 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
     return initial_values
 end
   
+"""
+## create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missing}, gas_model::GASModel) where {Fl}
+
+Creates output initialization values for the components of the GAS model based on the provided data and state space predictive states.
+
+### Arguments
+- `y::Vector{Fl}`: The time series data.
+- `X::Union{Matrix{Fl}, Missing}`: The matrix of explanatory variables. Set as `missing` if no explanatory variables are present.
+- `gas_model::GASModel`: The GAS model containing information about the model's components.
+
+### Returns
+- A dictionary containing initial values for the components of GAS model:
+  - `param`: Initial values for time-varying parameters.
+  - `fixed_param`: Initial values for fixed parameters if present.
+  - Component-specific initial values such as intercept, random walk, random walk slope, AR(1) level, slope, seasonality, and AR parameters.
+"""
 function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missing}, gas_model::GASModel) where {Fl}
 
     @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
@@ -364,6 +463,19 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
     return convert(Dict{String, Any}, output_initial_values)
 end
 
+
+"""
+## create_output_initialization_from_fit(output::Output, gas_model::GASModel)
+
+Generates initial values for the components of a GAS (Generalized Autoregressive Score) model based on the previously estimated model's fitted output.
+
+### Arguments
+- `output::Output`: The fitted output containing parameters and components of the previously estimated GAS model.
+- `gas_model::GASModel`: The GAS model containing information about the model's components.
+
+### Returns
+- A dictionary containing initial values for the components of the GAS model based on the fitted output and model configuration.
+"""
 function create_output_initialization_from_fit(output::Output, gas_model::GASModel)
 
     @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
@@ -515,13 +627,25 @@ function create_output_initialization_from_fit(output::Output, gas_model::GASMod
 
 end
 
+"""
+## initialize_components!(model::Ml, initial_values::Dict{String, Any}, gas_model::GASModel) where {Ml}
+
+Initializes the components of a GAS (Generalized Autoregressive Score) model with the provided initial values.
+
+### Arguments
+- `model::Ml`: The GAS model to be initialized.
+- `initial_values::Dict{String, Any}`: A dictionary containing initial values for the components of the GAS model.
+- `gas_model::GASModel`: The GAS model containing information about the model's components.
+
+### Modifies
+The `model` argument is modified in place.
+"""
 function initialize_components!(model::Ml, initial_values::Dict{String, Any}, gas_model::GASModel) where {Ml}
 
     @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
 
     set_start_value.(model[:params], round.(initial_values["param"]; digits = 5))
     #set_start_value.(model[:c], round.(initial_values["intercept"]["values"]; digits = 5))
-    #println(round.(initial_values["intercept"]["values"]; digits = 5))
     
     if haskey(initial_values, "fixed_param")
         set_start_value.(model[:fixed_params], round.(initial_values["fixed_param"]; digits = 5))
