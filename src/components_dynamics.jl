@@ -271,8 +271,8 @@ function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_
     @variable(model, κ_RWS[idx_params])
     @variable(model, κ_b[idx_params])
 
-    @constraint(model, [t = 2:T, j in idx_params], fisher_information(parameters[t, 1], parameters[t, 1])* b[t, j] == fisher_information(parameters[t, 1], parameters[t, 1])*b[t - 1, j] + κ_b[j] * score(parameters[t, 1], parameters[t, 1]))
-    @constraint(model, [t = 2:T, j in idx_params], fisher_information(parameters[t, 1], parameters[t, 1])*RWS[t, j] == fisher_information(parameters[t, 1], parameters[t, 1])*RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * s[j][t])
+    @constraint(model, [t = 2:T, j in idx_params], b[t, j]   == b[t - 1, j] + κ_b[j] * s[j][t])
+    @constraint(model, [t = 2:T, j in idx_params], RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * s[j][t])
     @constraint(model, [j in idx_params], 1e-4 ≤ κ_RWS[j])
     @constraint(model, [j in idx_params], 1e-4 ≤ κ_b[j])
 end
