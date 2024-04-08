@@ -54,13 +54,13 @@
     model               = JuMP.Model(Ipopt.Optimizer)
     time_varying_params = [true, false]
     params              = UnobservedComponentsGAS.include_parameters(model, time_varying_params, T, dist, missing)
-    register(model, :log_pdf, 3, UnobservedComponentsGAS.DICT_LOGPDF[dist_name]; autodiff = true)
+    @operator(model, log_pdf, 3, UnobservedComponentsGAS.DICT_LOGPDF[dist_name])
     UnobservedComponentsGAS.include_objective_function!(model, params, zeros(T), T, false, dist_code) 
     @test(objective_function(model) == 0)
 
     # Test include_objective_function! Normal Distribution case 2
     model               = JuMP.Model(Ipopt.Optimizer)
-    register(model, :log_pdf, 3, UnobservedComponentsGAS.DICT_LOGPDF[dist_name]; autodiff = true)
+    @operator(model, log_pdf, 3, UnobservedComponentsGAS.DICT_LOGPDF[dist_name])
     UnobservedComponentsGAS.include_objective_function!(model, params, zeros(T), T, true, dist_code) 
     @test(objective_function(model) == 0)
 
@@ -71,13 +71,13 @@
     model               = JuMP.Model(Ipopt.Optimizer)
     time_varying_params = [true, true, false]
     params              = UnobservedComponentsGAS.include_parameters(model, time_varying_params, T, dist, 1)
-    register(model, :log_pdf, 4, UnobservedComponentsGAS.DICT_LOGPDF[dist_name]; autodiff = true)
+    @operator(model, log_pdf, 4, UnobservedComponentsGAS.DICT_LOGPDF[dist_name])
     UnobservedComponentsGAS.include_objective_function!(model, params, zeros(T), T, false, dist_code) 
     @test(objective_function(model) == 0)
 
     # Test include_objective_function! tLocationScale Distribution case 2
     model               = JuMP.Model(Ipopt.Optimizer)
-    register(model, :log_pdf, 4, UnobservedComponentsGAS.DICT_LOGPDF[dist_name]; autodiff = true)
+    @operator(model, log_pdf, 4, UnobservedComponentsGAS.DICT_LOGPDF[dist_name])
     UnobservedComponentsGAS.include_objective_function!(model, params, zeros(T), T, false, dist_code)
     @test(objective_function(model) == 0) 
 end
