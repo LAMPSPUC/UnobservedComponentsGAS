@@ -32,8 +32,7 @@ function scaled_score(first_param, second_param, y, d, dist_code, which_param)
         catch
             s = cholesky(pinv(FI), check = false).UL' * ∇
         end
-
-
+        
     else 
         FI = DICT_FISHER_INFORMATION[dist_name](first_param, second_param)
         try

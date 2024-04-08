@@ -379,10 +379,7 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
         end
 
         X_aux =  i == 1 && !ismissing(X) ? X : missing
-        println("Param = $i")
-        println("LEVEL ",has_level)
-        println("SLOPE ",has_slope)
-        println("seasonal ",has_seasonal)
+
         initial_values[i] = get_initial_values(initial_params[i], X_aux, has_level[i], has_level_ar1[i], has_slope[i], has_seasonal[i], seasonal_period[i], stochastic, order[i], max_order)
         
         # initialize the mean parameter as the sum of the initial values of the components

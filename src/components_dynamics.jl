@@ -245,7 +245,7 @@ function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Int64, Vector{Int
         end
     end
 
-    @NLconstraint(model, [t = (max_order + 1):T, j in idx_params], AR[t, j] == sum(ϕ[p, j] * AR[t - p, j] for p in unique_orders) + κ_AR[j] * s[j][t])
+    @constraint(model, [t = (max_order + 1):T, j in idx_params], AR[t, j] == sum(ϕ[p, j] * AR[t - p, j] for p in unique_orders) + κ_AR[j] * s[j][t])
 end
 
 """
@@ -271,8 +271,8 @@ function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_
     @variable(model, κ_RWS[idx_params])
     @variable(model, κ_b[idx_params])
 
-    @NLconstraint(model, [t = 2:T, j in idx_params], b[t, j] == b[t - 1, j] + κ_b[j] * s[j][t])
-    @NLconstraint(model, [t = 2:T, j in idx_params], RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * s[j][t])
+    @constraint(model, [t = 2:T, j in idx_params], b[t, j] == b[t - 1, j] + κ_b[j] * s[j][t])
+    @constraint(model, [t = 2:T, j in idx_params], RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * s[j][t])
     @constraint(model, [j in idx_params], 1e-4 ≤ κ_RWS[j])
     @constraint(model, [j in idx_params], 1e-4 ≤ κ_b[j])
 end
@@ -298,7 +298,7 @@ function add_random_walk!(model::Ml, s::Vector{Fl}, T::Int64, random_walk::Dict{
     @variable(model, RW[1:T, idx_params])
     @variable(model, κ_RW[idx_params])
 
-    @NLconstraint(model, [t = 2:T, j in idx_params], RW[t, j] == RW[t-1, j] + κ_RW[j] * s[j][t])
+    @constraint(model, [t = 2:T, j in idx_params], RW[t, j] == RW[t-1, j] + κ_RW[j] * s[j][t])
     @constraint(model, [j in idx_params], 1e-4 ≤ κ_RW[j])
 end
 
@@ -328,7 +328,7 @@ function add_ar1!(model::Ml, s::Vector{Fl}, T::Int64, ar1::Dict{Int64, Bool})  w
     @constraint(model, [i in idx_params], 1e-4 ≤ κ_AR1_LEVEL[i])
     @constraint(model, [i in idx_params], -0.9999 <= ϕ_AR1_LEVEL[i] <= 0.9999)
 
-    @NLconstraint(model, [t = 2:T, j in idx_params], AR1_LEVEL[t, j] == ω_AR1_LEVEL[j] + ϕ_AR1_LEVEL[j] * AR1_LEVEL[t-1, j] + κ_AR1_LEVEL[j] * s[j][t])
+    @constraint(model, [t = 2:T, j in idx_params], AR1_LEVEL[t, j] == ω_AR1_LEVEL[j] + ϕ_AR1_LEVEL[j] * AR1_LEVEL[t-1, j] + κ_AR1_LEVEL[j] * s[j][t])
 
 end
 
@@ -433,15 +433,14 @@ function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seas
         @variable(model, γ[1:unique_num_harmonic, 1:T, idx_params])
         @variable(model, γ_star[1:unique_num_harmonic, 1:T, idx_params])
 
-        @NLconstraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params], γ[i, t, j] == γ[i, t-1, j] * cos(2*π*i / seasonal_period[j]) + 
+        @constraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params], γ[i, t, j] == γ[i, t-1, j] * cos(2*π*i / seasonal_period[j]) + 
                                                                                     γ_star[i,t-1, j]*sin(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t])
-        @NLconstraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params], γ_star[i, t, j] == -γ[i, t-1, j] * sin(2*π*i / seasonal_period[j]) + 
+        @constraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params], γ_star[i, t, j] == -γ[i, t-1, j] * sin(2*π*i / seasonal_period[j]) + 
                                                                                     γ_star[i,t-1, j]*cos(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t])
 
         #@NLconstraint(model, [t = 2:T, j in idx_params], S[t, j] == sum(γ[i, t, j]  for i in 1:unique_num_harmonic))
         @expression(model, S[t = 1:T, j in idx_params], sum(γ[i, t, j]  for i in 1:unique_num_harmonic))
     else
-
         @variable(model, γ[1:unique_num_harmonic, idx_params])
         @variable(model, γ_star[1:unique_num_harmonic, idx_params])
 
@@ -449,7 +448,6 @@ function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seas
         #                                     γ_star[i, j] * sin(2 * π * i* t/seasonal_period[j])  for i in 1:unique_num_harmonic))
         @expression(model, S[t = 1:T, j in idx_params], sum(γ[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
                                             γ_star[i, j] * sin(2 * π * i* t/seasonal_period[j]) for i in 1:unique_num_harmonic))
-
     end
 
 end
