@@ -149,14 +149,6 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_Î
     @info("Including dynamics..")
     include_dynamics!(model, parameters, gas_model,  X, T)
 
-    if get_num_params(gas_model.dist) == 3
-        @operator(model, log_pdf, 4, DICT_LOGPDF[dist_name])
-        #register(model, :log_pdf, 4, DICT_LOGPDF[dist_name]; autodiff = true)
-    elseif get_num_params(gas_model.dist) == 2
-        #register(model, :log_pdf, 3, DICT_LOGPDF[dist_name]; autodiff = true)
-        @operator(model, log_pdf, 3, DICT_LOGPDF[dist_name])
-    end
-
     if log_normal_flag
         gas_model.dist = LogNormalDistribution()
     end
