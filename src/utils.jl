@@ -485,7 +485,17 @@ function fit_harmonics(y::Vector{Fl}, seasonal_period::Int64, stochastic::Bool) 
 end
 
 """
-Adicionar documentação 
+## get_seasonality_dict_and_stochastic(seasonality::Vector{String})
+
+This function parses a vector of strings representing seasonality information into a dictionary and determines if the model includes stochastic seasonality.
+
+### Arguments
+- `seasonality::Vector{String}`: A vector of strings representing seasonality information for each parameter in the GAS model.
+
+## Returns
+- `seasonality_dict::Dict{Int64, Union{Int64, Bool}}`: A dictionary where the keys represent parameter indices and the values represent either the number of seasonal periods (if deterministic) or a boolean indicating stochastic seasonality.
+- `stochastic::Bool`: A boolean indicating whether the model has stochastic seasonality.
+
 """
 function get_seasonality_dict_and_stochastic(seasonality::Vector{String})
     seasonality_dict = Dict{Int64, Union{Int64, Bool}}()

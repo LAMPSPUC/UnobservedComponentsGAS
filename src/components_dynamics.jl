@@ -1,154 +1,194 @@
 """
-has_random_walk(random_walk::Dict{Int64, Bool})   
+## has_random_walk(level::Vector{String})
 
-Checks if there is any random walk component in the provided dictionary.
+Checks if there is any "random walk" component in the provided level information.
 
-## Arguments
-    - `random_walk::Dict{Int64, Bool}`: Dictionary indicating the presence of random walk components, where the keys represent indices and the values represent the presence of a random walk at each index.
+### Arguments
+- `level::Vector{String}`: A vector indicating the presence of level components, where each element represents a level component.
 
-## Returns
-    - `true` if there is at least one random walk component, `false` otherwise.
+### Returns
+- `true` if there is at least one "random walk" component in the provided level information, `false` otherwise.
 """
 has_random_walk(level::Vector{String}) = any(level .== "random walk")
 
 """
-has_random_walk_slope(random_walk_slope::Dict{Int64, Bool}) 
+## has_random_walk_slope(level::Vector{String})
 
-Checks if there is any random walk + slope dynamic in the provided dictionary.
+Checks if there is any "random walk slope" component in the provided level information.
 
-## Arguments
-    - `random_walk_slope::Dict{Int64, Bool}`: Dictionary indicating the presence of random walk + slope dynamic, where the keys represent indices and the values represent the presence of a random walk at each index.
+### Arguments
+- `level::Vector{String}`: A vector indicating the presence of level components, where each element represents a level component.
 
-## Returns
-    - `true` if there is at least one component with a random walk + slope dynamic, `false` otherwise.
+### Returns
+- `true` if there is at least one "random walk slope" component in the provided level information, `false` otherwise.
 """
 has_random_walk_slope(level::Vector{String}) = any(level .== "random walk slope")
 
 """
-Incluir documentação
+## has_ar1_level(level::Vector{String})
+
+Checks if there is any "ar(1)" component in the provided level information.
+
+### Arguments
+- `level::Vector{String}`: A vector indicating the presence of level components, where each element represents a level component.
+
+### Returns
+- `true` if there is at least one "ar(1)" component in the provided level information, `false` otherwise.
+
 """
 has_ar1_level(level::Vector{String}) = any(level .== "ar(1)")
 
 """
-Incluir documentação
+## has_level(level::Vector{String})
+
+Checks if there is any level component present in the provided level information.
+
+### Arguments
+- `level::Vector{String}`: A vector indicating the presence of level components, where each element represents a level component.
+
+### Returns
+- `true` if there is at least one level component present in the provided level information.
+- `false` if the level information is empty or contains only empty strings.
 """
 has_level(level::Vector{String}) = any(.!isempty.(level))
 
 """
-has_seasonality(seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}})
+## has_seasonality(seasonality::Union{String, Vector{String}})
 
-Checks if there is any seasonal component in the provided dictionary.
+Checks if there is any seasonality component present in the provided seasonality information.
 
-## Arguments
-- `seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}`: A dictionary indicating the presence of seasonality. If seasonality is defined, the value of the dictionary represents the seasonal period considered.
+### Arguments
+- `seasonality::Union{String, Vector{String}}`: Seasonality information indicating the presence of seasonal components. It can be either a single string or a vector of strings, where each element represents a seasonal component.
 
-## Returns
-- `true` if there is at least one component with seasonality, `false` otherwise.
+### Returns
+- `true` if there is at least one seasonal component present in the provided seasonality information.
+- `false` if the seasonality information is empty or contains only empty strings.
 """
 has_seasonality(seasonality::Union{String, Vector{String}}) = any(.!isempty.(seasonality))
 
-
 """
-# has_AR(ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}})
+## has_AR(ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}})
 
-Checks if the provided autoregressive (AR) dictionary indicates the presence of autoregressive components.
+Checks if there is any AutoRegressive (AR) component present in the provided AR information.
 
-## Arguments
-- `ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}}`: A dictionary indicating the presence of autoregressive components. If autoregressive components are defined, the value of the dictionary varies based on the specific AR structure.
+### Arguments
+- `ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}`: AR information indicating the presence of AR components. It can be of various types including integers, vectors of integers, vectors of missing values, vectors of union types (combinations of integers and missing values), missing values, vectors of vectors of integers, or vectors of vectors of union types (combinations of vectors of integers and missing values).
 
-## Returns
-- `true` if there is at least one component with autoregressive structure, `false` otherwise.
+### Returns
+- `true` if there is at least one AutoRegressive (AR) component present in the provided AR information.
+- `false` if the AR information is empty or contains only missing values.
 """
 has_AR(ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, 
                 Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}) = !all(ismissing.(ar))
 
 
 """
-# has_random_walk(random_walk::Dict{Int64, Bool}, param::Int64)
+## has_random_walk(level::Vector{String}, param::Int64)
 
-Checks if the specified parameter has a random walk component in the given dictionary.
+Checks if there is a "random walk" component at the specified index in the provided level information.
 
-## Arguments
-- `random_walk::Dict{Int64, Bool}`: A dictionary indicating the presence of random walk components for different parameters.
-- `param::Int64`: The parameter index to check for the presence of a random walk component.
+### Arguments
+- `level::Vector{String}`: A vector indicating the presence of level components, where each element represents a level component.
+- `param::Int64`: The index indicating the position in the `level` vector to check for the presence of a "random walk" component.
 
-## Returns
-- `true` if the specified parameter has a random walk component, `false` otherwise.
+### Returns
+- `true` if the level component at the specified index is "random walk", `false` otherwise.
 """
 has_random_walk(level::Vector{String}, param::Int64) = level[param]== "random walk"
 
-
 """
-Incluir documentação
-"""
-has_level(level::Vector{String}, param::Int64) = !isempty(level[param])
-"""
-# has_random_walk_slope(random_walk_slope::Dict{Int64, Bool}, param::Int64)
+## has_random_walk_slope(level::Vector{String}, param::Int64)
 
-Checks if the specified parameter has a random walk with slope component in the given dictionary.
+Checks if there is a "random walk slope" component at the specified index in the provided level information.
 
-## Arguments
+### Arguments
+- `level::Vector{String}`: A vector indicating the presence of level components, where each element represents a level component.
+- `param::Int64`: The index indicating the position in the `level` vector to check for the presence of a "random walk slope" component.
 
-- `random_walk_slope::Dict{Int64, Bool}`: A dictionary indicating the presence of random walk with slope components for different parameters.
-- `param::Int64`: The parameter index to check for the presence of a random walk with slope component.
-
-## Returns
-- `true` if the specified parameter has a random walk with slope component, `false` otherwise.
+### Returns
+- `true` if the level component at the specified index is "random walk slope", `false` otherwise.
 """
 has_random_walk_slope(level::Vector{String}, param::Int64) = level[param]== "random walk slope"
 
 
 """
-Incluir documentação
+## has_ar1_level(level::Vector{String}, param::Int64)
+
+Checks if there is an "ar(1)" component at the specified index in the provided level information.
+
+### Arguments
+- `level::Vector{String}`: A vector indicating the presence of level components, where each element represents a level component.
+- `param::Int64`: The index indicating the position in the `level` vector to check for the presence of an "ar(1)" component.
+
+### Returns
+- `true` if the level component at the specified index is "ar(1)", `false` otherwise.
 """
 has_ar1_level(level::Vector{String}, param::Int64) = level[param] == "ar(1)"
 
+
 """
-# has_seasonality(seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}, param::Int64)
+## has_level(level::Vector{String}, param::Int64)
 
-Checks if the specified parameter has a seasonality component in the given dictionary.
+Checks if there is any level component at the specified index in the provided level information.
 
-## Arguments
+### Arguments
+- `level::Vector{String}`: A vector indicating the presence of level components, where each element represents a level component.
+- `param::Int64`: The index indicating the position in the `level` vector to check for the presence of a level component.
 
-- `seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}`: A dictionary indicating the presence of seasonality for different parameters. If the seasonal component is defined, the value of the dictionary indicates the seasonal period considered.
-- `param::Int64`: The parameter index to check for the presence of a seasonality component.
+### Returns
+- `true` if there is a level component present at the specified index, `false` otherwise.
 
-## Returns
-- `true` if the specified parameter has a seasonality component, `false` otherwise.
+"""
+has_level(level::Vector{String}, param::Int64) = !isempty(level[param])
+
+"""
+## has_seasonality(seasonality::Union{String, Vector{String}}, param::Int64)
+
+Checks if there is any seasonality component at the specified index in the provided seasonality information.
+
+### Arguments
+- `seasonality::Union{String, Vector{String}}`: Seasonality information indicating the presence of seasonal components. It can be either a single string or a vector of strings, where each element represents a seasonal component.
+- `param::Int64`: The index indicating the position in the `seasonality` information to check for the presence of a seasonality component.
+
+### Returns
+- `true` if there is a seasonality component present at the specified index, `false` otherwise.
 """
 has_seasonality(seasonality::Union{String, Vector{String}}, param::Int64) = !isempty(seasonality[param]) 
 
 """
-# has_AR
+## has_AR(ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}, param::Int64)
 
-Checks if the specified parameter has an autoregressive (AR) component in the given dictionary.
+Checks if there is any AutoRegressive (AR) component at the specified index in the provided AR information.
 
-## Arguments
-- `ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}}`: A dictionary indicating the presence of autoregressive (AR) components for different parameters. The value of the dictionary can be either an integer indicating the order of the AR process, a vector specifying the AR lags, a boolean indicating the presence of AR, or any other type.
-- `param::Int64`: The parameter index to check for the presence of an autoregressive (AR) component.
+### Arguments
+- `ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}`: AR information indicating the presence of AR components. It can be of various types including integers, vectors of integers, vectors of missing values, vectors of union types (combinations of integers and missing values), missing values, vectors of vectors of integers, or vectors of vectors of union types (combinations of vectors of integers and missing values).
+- `param::Int64`: The index indicating the position in the `ar` information to check for the presence of an AR component.
 
-## Returns
-- `true` if the specified parameter has an autoregressive (AR) component, `false` otherwise.
+### Returns
+- `true` if there is an AutoRegressive (AR) component present at the specified index, `false` otherwise.
 """
 has_AR(ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, 
        Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}, param::Int64) = !all(ismissing.(ar[param]))
 
+
 """
-# get_AR_order(ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}})
+## get_AR_order(ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}})
 
-Extracts the autoregressive (AR) orders for each parameter from the given dictionary.
+Constructs the AutoRegressive (AR) order based on the provided AR information.
 
-## Arguments
-- `ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}}`: 
-       A dictionary indicating the presence of autoregressive (AR) components for different parameters. 
-       The value of the dictionary can be either an integer indicating the order of the AR process, 
-       a vector specifying the AR lags, or a boolean indicating the absence of the AR component.
+### Arguments
+- `ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}`: AR information indicating the AR orders. It can be of various types including integers, vectors of integers, vectors of missing values, vectors of union types (combinations of integers and missing values), missing values, vectors of vectors of integers, or vectors of vectors of union types (combinations of vectors of integers and missing values).
 
-## Returns
-- An array of vectors, where each vector contains the autoregressive (AR) orders corresponding to each parameter. If no AR component is present for a parameter, the order vector will contain a single element `[nothing]`.
+### Returns
+- An array representing the AR order. Each element of the array is either a vector of integers representing the AR order or an empty vector if there is no AR component at that index.
+
+### Note
+- The function iterates over each element of the AR information and constructs the AR order based on its type and value.
+- If the AR information at an index is missing or equals 0, the corresponding element in the AR order array will be `[nothing]`.
+- If the AR information at an index is an integer, the corresponding element in the AR order array will be a vector of integers from 1 to the AR value.
+- If the AR information at an index is a vector of integers, the corresponding element in the AR order array will be the same vector of integers.
+
 """
-
-# To do: Troquei o retorno da função caso não tenha AR para nothing. Lembrar de trocar isso nos if's de outras funções.
 function get_AR_order(ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}})
     
     num_params = length(ar)
@@ -167,20 +207,19 @@ function get_AR_order(ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Un
     return order
 end
 
-
 """
-# add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}}) where {Ml, Fl}
+## add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}) where {Ml, Fl}
 
-Incorporate the autoregressive (AR) component into the dynamics of the specified parameters within a predefined model.
+Adds AutoRegressive (AR) components to the optimization model.
 
-## Arguments
-- `model::Ml`: The model to which autoregressive (AR) components will be added.
-- `s::Vector{Fl}`: The vector containing the scaled score expressions.
-- `T::Int64`: The length of the time series.
-- `ar::Union{Dict{Int64, Int64}, Dict{Int64, Vector{Int64}}, Dict{Int64, Bool}, Dict{Int64, Any}}`: A dictionary indicating the presence of autoregressive (AR) components for different parameters. The value of the dictionary can be either an integer indicating the order of the AR process, a vector specifying the AR lags, or a boolean indicating the absence of the AR component.
+### Arguments
+- `model::Ml`: The optimization model to which the AR components will be added.
+- `s::Vector{Fl}`: A vector of time series data.
+- `T::Int64`: The length of the time series data.
+- `ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}`: AR information indicating the AR orders. It can be of various types including integers, vectors of integers, vectors of missing values, vectors of union types (combinations of integers and missing values), missing values, vectors of vectors of integers, or vectors of vectors of union types (combinations of vectors of integers and missing values).
 
-## Returns
-- Modifies the input model by adding autoregressive (AR) dynamics.
+### Returns
+- Modifies the provided optimization model by adding AR components.
 """
 function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}) where {Ml, Fl}
 
@@ -263,6 +302,20 @@ function add_random_walk!(model::Ml, s::Vector{Fl}, T::Int64, random_walk::Dict{
     @constraint(model, [j in idx_params], 1e-4 ≤ κ_RW[j])
 end
 
+"""
+## add_ar1!(model::Ml, s::Vector{Fl}, T::Int64, ar1::Dict{Int64, Bool}) where {Fl, Ml}
+
+Adds AutoRegressive (AR(1)) components to the optimization model.
+
+### Arguments
+- `model::Ml`: The optimization model to which the AR(1) components will be added.
+- `s::Vector{Fl}`: A vector of time series data.
+- `T::Int64`: The length of the time series data.
+- `ar1::Dict{Int64, Bool}`: A dictionary indicating the presence of AR(1) components, where the keys represent indices and the values represent the presence of an AR(1) component at each index.
+
+### Returns
+- Modifies the provided optimization model by adding AR(1) components.
+"""
 function add_ar1!(model::Ml, s::Vector{Fl}, T::Int64, ar1::Dict{Int64, Bool})  where {Fl, Ml}
 
     idx_params = findall(i -> i == true, ar1)
@@ -279,7 +332,20 @@ function add_ar1!(model::Ml, s::Vector{Fl}, T::Int64, ar1::Dict{Int64, Bool})  w
 
 end
 
+"""
+## add_level!(model::Ml, s::Vector{Fl}, T::Int64, level::Vector{String}) where {Fl, Ml}
 
+Adds level components to the optimization model based on the provided level information.
+
+### Arguments
+- `model::Ml`: The optimization model to which the level components will be added.
+- `s::Vector{Fl}`: A vector of time series data.
+- `T::Int64`: The length of the time series data.
+- `level::Vector{String}`: A vector indicating the presence of level components, where each element represents a level component.
+
+### Returns
+- Modifies the provided optimization model by adding level components.
+"""
 function add_level!(model::Ml, s::Vector{Fl}, T::Int64, level::Vector{String}) where {Fl, Ml}
     if "random walk" ∈ level 
         random_walk = Dict{Int64, Bool}()
@@ -316,7 +382,6 @@ Retrieve the number of harmonics and seasonal periods specified in the input sea
 - `num_harmonic::Vector{Union{Int64, Nothing}}`: A vector containing the number of harmonics for each parameter with a seasonal component; otherwise, it contains nothing.
 - `seasonal_period::Vector{Int64}`: A vector containing the seasoanl period for each parameter with a seasonal component; otherwise, it contains nothing.
 """
-# To do: Troquei o retorno da função caso não tenha sazo para nothing. Lembrar de trocar isso nos if's de outras funções.
 function get_num_harmonic_and_seasonal_period(seasonality::Dict{Int64, Union{Bool, Int64}})
 
     num_params = length(seasonality)
@@ -338,39 +403,24 @@ function get_num_harmonic_and_seasonal_period(seasonality::Dict{Int64, Union{Boo
 end
 
 """
-# add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}, stochastic::Bool=true) where {Ml, Fl}
+## add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seasonality::Vector{String}) where {Ml, Fl}
 
-Incorporates trigonometric seasonality into the specified model, considering the seasonal periods defined in the `seasonality` dictionary.
+Adds trigonometric seasonality components to the optimization model based on the provided seasonality information.
 
-## Arguments
-- `model::Ml`: The model to which trigonometric seasonality will be added.
-- `s::Vector{Fl}`: A vector containing the scaled score expressions.
-- `T::Int64`: The length of the time series.
-- `seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}`: A dictionary indicating the presence of seasonality. If the seasonal component is defined, the value of the dictionary indicates the seasonal period considered.
-- `stochastic::Bool=true`: A boolean indicating whether the trigonometric seasonality is stochastic. Default is `true`.
+### Arguments
+- `model::Ml`: The optimization model to which the trigonometric seasonality components will be added.
+- `s::Vector{Fl}`: A vector of time series data.
+- `T::Int64`: The length of the time series data.
+- `seasonality::Vector{String}`: A vector indicating the presence of seasonal components, where each element represents a seasonal component.
 
-## Returns
-- Modifies the input model by adding trigonometric seasonality.
+### Returns
+- Modifies the provided optimization model by adding trigonometric seasonality components.
 """
 function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seasonality::Vector{String}) where {Ml, Fl}
     
-    # seasonality::Union{Dict{Int64, Int64}, Dict{Int64, Bool}}
-    # seasonality_dict = Dict{Int64, Union{Int64, Bool}}()
-    # stochastic       = false
-    
-    # for i in 1:length(seasonality)
-    #     if isempty(seasonality[i])
-    #         seasonality_dict[i] = false
-    #     else  
-    #         seasonal_type, seasonal_periods = split(seasonality[i])
-    #         seasonality_dict[i] = parse(Int64, seasonal_periods)
-    #         seasonal_type == "stochastic" ? stochastic = true : stochastic = false
-    #     end
-    # end
-
     seasonality_dict, stochastic = get_seasonality_dict_and_stochastic(seasonality)
     
-    num_harmonic, seasonal_period = UnobservedComponentsGAS.get_num_harmonic_and_seasonal_period(seasonality_dict)
+    num_harmonic, seasonal_period = get_num_harmonic_and_seasonal_period(seasonality_dict)
 
     idx_params = findall(i -> i != false, seasonality_dict) # Time-varying parameters with the seasonality dynamic
 
@@ -421,14 +471,6 @@ Incorporates various components into the specified model based on the configurat
 function include_components!(model::Ml, s::Vector{Fl}, gas_model::GASModel, T::Int64) where {Ml, Fl}
 
     @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
-
-    # if has_random_walk(random_walk)
-    #     add_random_walk!(model, s, T, random_walk)
-    # end
-
-    # if has_random_walk_slope(random_walk_slope)
-    #     add_random_walk_slope!(model, s, T, random_walk_slope)
-    # end
     
     if has_level(level)
         add_level!(model, s, T, level)
