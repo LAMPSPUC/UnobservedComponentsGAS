@@ -264,7 +264,7 @@ Incorporate the random walk with slope component into the dynamics of the specif
 """
 function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_slope::Dict{Int64, Bool}) where {Ml, Fl}
     
-    idx_params = findall(i -> i == true, random_walk_slope) # Time-varying parameters with the random walk with slope dynamic
+    idx_params = findall(i -> i == true, random_walk_slope) #Time-varying parameters with the random walk with slope dynamic
 
     @variable(model, RWS[1:T, idx_params])
     @variable(model, b[1:T, idx_params])
