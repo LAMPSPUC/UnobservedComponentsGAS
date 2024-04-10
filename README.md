@@ -207,6 +207,8 @@ forec = UnobservedComponentsGAS.predict(model, fitted_model, y_train, steps_ahea
 
 From the figure above, it is evident that the estimated model successfully captured the dynamics of the series during the training period and produced predictions, both point estimates and intervals, that closely align with the observed data.
 
+Please refer to the folder *examples* in order to dive deeply into the package features.
+
 ## Next steps
 
 - Broaden the range of available distributions, encompassing both continuous and discrete options.
