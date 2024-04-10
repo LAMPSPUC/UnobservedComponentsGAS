@@ -81,16 +81,18 @@ function compute_score(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, d::Floa
     s = Vector(undef, num_param)
 
     if num_param == 2
-        register(model, :scaled_score, 6, scaled_score; autodiff = true)
+        @operator(model, scaled_score_j, 6, scaled_score)
+        #register(model, :scaled_score, 6, scaled_score; autodiff = true)
         for i in idx_time_varying_params
-            s[i] = @NLexpression(model,[t = 2:T], scaled_score(parameters[t-1, 1], parameters[t-1, 2], y[t-1], d, dist_code, i))
+            s[i] = @expression(model,[t = 2:T], scaled_score_j(parameters[t-1, 1], parameters[t-1, 2], y[t-1], d, dist_code, i))
         end
     elseif num_param == 1
         #IMPLEMENTAR SCALED SCORE FUNCTION PARA 1 PARAMETRO
     else
-        register(model, :scaled_score, 7, scaled_score; autodiff = true)
+        @operator(model, scaled_score_j, 7, scaled_score)
+        #register(model, :scaled_score, 7, scaled_score; autodiff = true)
         for i in idx_time_varying_params
-            s[i] = @NLexpression(model,[t = 2:T], scaled_score(parameters[t-1, 1], parameters[t-1, 2], parameters[t-1, 3], y[t-1], d, dist_code, i))
+            s[i] = @expression(model,[t = 2:T], scaled_score_j(parameters[t-1, 1], parameters[t-1, 2], parameters[t-1, 3], y[t-1], d, dist_code, i))
         end
     end
   
@@ -153,11 +155,11 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
                              include_component_in_dynamic(model, :RWS, has_random_walk_slope(level, i), t, i) +
                              include_component_in_dynamic(model, :AR1_LEVEL, has_ar1_level(level, i), t, i ) + 
                              include_component_in_dynamic(model, :AR, has_AR(ar, i), t, i) +
-                             include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i) + 
+                             include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i) +
                              include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i)
 
         end
-        @NLconstraint(model,[t = 2:T], parameters[t, i] ==  dynamic_aux[t])
+        @constraint(model,[t = 2:T], parameters[t, i] ==  dynamic_aux[t])
     end
 
 end
@@ -194,23 +196,26 @@ function include_objective_function!(model::Ml, parameters::Matrix{Gl}, y::Vecto
         
         if num_params == 3
             #register(model, :log_pdf, 4, DICT_LOGPDF[dist_name]; autodiff = true)
-            @NLconstraint(model, [t = 2:T], δ + u[t] ≥  - (log_pdf(parameters[t, 1], parameters[t, 2], parameters[t, 3], y[t])))
+            @operator(model, log_pdf, 4, DICT_LOGPDF[dist_name])
+            @constraint(model, [t = 2:T], δ + u[t] ≥  - (log_pdf(parameters[t, 1], parameters[t, 2], parameters[t, 3], y[t])))
         elseif num_params == 2
+            @operator(model, log_pdf, 3, DICT_LOGPDF[dist_name])
             #register(model, :log_pdf, 3, DICT_LOGPDF[dist_name]; autodiff = true)
-            @NLconstraint(model, [t = 2:T], δ + u[t] ≥  - (log_pdf(parameters[t, 1], parameters[t, 2], y[t])))
+            @constraint(model, [t = 2:T], δ + u[t] ≥  - (log_pdf(parameters[t, 1], parameters[t, 2], y[t])))
         end
-        @NLobjective(model, Min, (1 - α) * (δ*k + sum(u[t] for t in 2:T)) + α * sum(κ_variables[i]^2 for i in eachindex(κ_variables)))
+        @objective(model, Min, (1 - α) * (δ*k + sum(u[t] for t in 2:T)) + α * sum(κ_variables[i]^2 for i in eachindex(κ_variables)))
 
     else
         #@info("Defining Model's Object Function")
         if num_params == 3
+            @operator(model, log_pdf, 4, DICT_LOGPDF[dist_name])
             #register(model, :log_pdf, 4, DICT_LOGPDF[dist_name]; autodiff = true)
-            @NLobjective(model, Min, (1 - α) * (-sum(log_pdf(parameters[t, 1], parameters[t, 2], parameters[t, 3], y[t]) for t in 2:T)) + α * sum(κ_variables[i]^2 for i in eachindex(κ_variables)))
+            @objective(model, Min, (1 - α) * (-sum(log_pdf(parameters[t, 1], parameters[t, 2], parameters[t, 3], y[t]) for t in 2:T)) + α * sum(κ_variables[i]^2 for i in eachindex(κ_variables)))
         elseif num_params == 2
+            @operator(model, log_pdf, 3, DICT_LOGPDF[dist_name])
             #register(model, :log_pdf, 3, DICT_LOGPDF[dist_name]; autodiff = true)
-            @NLobjective(model, Min, (1 - α) * (-sum(log_pdf(parameters[t, 1], parameters[t, 2], y[t]) for t in 2:T)) + α * sum(κ_variables[i]^2 for i in eachindex(κ_variables)))
+            @objective(model, Min, (1 - α) * (-sum(log_pdf(parameters[t, 1], parameters[t, 2], y[t]) for t in 2:T)) + α * sum(κ_variables[i]^2 for i in eachindex(κ_variables)))
         end    
     end
-    
 end
 

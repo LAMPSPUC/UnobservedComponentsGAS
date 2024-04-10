@@ -271,7 +271,7 @@ Updates the seasonality component predictions for the specified parameter, time 
 ## Returns
 Updates the seasonality component predictions for the specified parameter, time period, and scenario in the `dict_hyperparams_and_fitted_components` object.
 """
-function update_S!(dict_hyperparams_and_fitted_components::Dict{String, Any}, num_harmonic::Vector{Union{Nothing, Int64}}, param::Int64, t::Int64, s::Int64)
+function update_S!(dict_hyperparams_and_fitted_components::Dict{String, Any}, num_harmonic::Vector{Union{Nothing, Int64}},diff_T::Int64, param::Int64, t::Int64, s::Int64)
 
     if length(size( dict_hyperparams_and_fitted_components["seasonality"]["γ"])) == 4
         for j in 1:num_harmonic[param]
@@ -426,7 +426,7 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
                     update_AR1_level!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
                 end
                 if has_seasonality(seasonality, i)
-                    update_S!(dict_hyperparams_and_fitted_components, num_harmonic, i, T_fitted + t, s)
+                    update_S!(dict_hyperparams_and_fitted_components, num_harmonic, T - T_fitted, i, T_fitted + t, s)
                 end
                 if has_AR(ar, i)
                     update_AR!(dict_hyperparams_and_fitted_components, order, i, T_fitted + t, s)
@@ -499,7 +499,7 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
                     update_AR1_level!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
                 end
                 if has_seasonality(seasonality, i)
-                    update_S!(dict_hyperparams_and_fitted_components, num_harmonic, i, T_fitted + t, s)
+                    update_S!(dict_hyperparams_and_fitted_components, num_harmonic,T - T_fitted,i, T_fitted + t, s)
                 end
                 if has_AR(ar, i)
                     update_AR!(dict_hyperparams_and_fitted_components, order, i, T_fitted + t, s)

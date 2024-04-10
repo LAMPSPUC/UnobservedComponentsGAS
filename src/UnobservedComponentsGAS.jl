@@ -8,7 +8,6 @@ module UnobservedComponentsGAS
     using Distributions
     using Random 
     using SpecialFunctions
-    using Optim
     using StateSpaceModels
      
     # include("../NonParametricStructuralModels/src/NonParametricStructuralModels.jl")
@@ -24,7 +23,6 @@ module UnobservedComponentsGAS
     include("components_dynamics.jl")
     include("optimization.jl")
     include("forecast.jl")
-    # include("update_model.jl")
 
     const DICT_CODE = Dict(1 => "Normal",
                            2 => "tLocationScale" )
