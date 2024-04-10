@@ -49,6 +49,7 @@ As mentioned earlier, UnobservedComponentsGAS.jl enables users to specify the dy
 - #### Trend:
   - Random Walk;
   - Random Walk + Slope;
+  - AR(1);
   
 - #### Seasonality
   - Stochastic seasonality via trigonometric terms;
@@ -172,20 +173,18 @@ dist = UnobservedComponentsGAS.tLocationScaleDistribution();
 
 time_varying_params = [true, false, false];
 d                   = 1.0;
-random_walk         = Dict{Int64, Bool}(1 => true);
-random_walk_slope   = Dict{Int64, Bool}();
-ar                  = Dict{Int64, Any}();
-seasonality         = Dict{Int64,Int64}(1 => 12);
+level               = ["random walk", "", ""];
+seasonality         = ["deterministic 12", "", ""];
+ar                  = missing
 sample_robustness   = false;
-stochastic          = false;
 
-model =  UnobservedComponentsGAS.GASModel(dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust,stochastic);
+model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.tLocationScaleDistribution(), time_varying_params, d, level, seasonality, ar)
 ```
 
 Once specified, you can initiate the optimization process to actually estimate the model. This is accomplished using the *fit* function, which takes as arguments the previously defined model (GASModel object) and the estimation data. Furthermore, you'll notice the use of arguments $\alpha = 0.0$, indicating that the regularization method was not applied, and *initial_values* = missing, which means that the initialization process proposed by the package will be adopted.
 
 ```julia
-fitted_model = UnobservedComponentsGAS.fit(model, y_train; α = 0.0, initial_values = missing);
+fitted_model = UnobservedComponentsGAS.fit(model, y_train; α = 0.0, robust = sample_robustness, initial_values = missing);
 ```
 After completing the model estimation process, you can access some of its results using the codes below. It is worth noting that these results should be used to evaluate the adequacy of the defined model, which is a crucial step in time series modeling.
 
