@@ -200,7 +200,7 @@ Finally, once the adequacy of the model has been checked, the last step involves
 steps_ahead    = 12;
 num_scenarious = 500;
 
-forec = UnobservedComponentsGAS.predict(model, fitted_model, y_train, stpes_ahead, num_scenarious; probabilistic_intervals = [0.8, 0.95])
+forec = UnobservedComponentsGAS.predict(model, fitted_model, y_train, steps_ahead, num_scenarious; probabilistic_intervals = [0.8, 0.95])
 ```
 
 ![Observed](Figures/HS_forec.png)
