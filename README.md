@@ -178,7 +178,7 @@ seasonality         = ["deterministic 12", "", ""];
 ar                  = missing
 sample_robustness   = false;
 
-model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.tLocationScaleDistribution(), time_varying_params, d, level, seasonality, ar)
+model = UnobservedComponentsGAS.GASModel(dist, time_varying_params, d, level, seasonality, ar)
 ```
 
 Once specified, you can initiate the optimization process to actually estimate the model. This is accomplished using the *fit* function, which takes as arguments the previously defined model (GASModel object) and the estimation data. Furthermore, you'll notice the use of arguments $\alpha = 0.0$, indicating that the regularization method was not applied, and *initial_values* = missing, which means that the initialization process proposed by the package will be adopted.
