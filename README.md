@@ -146,12 +146,16 @@ This section aims to illustrate how this package can be used for time series mod
 import Pkg;
 
 Pkg.add("https://github.com/LAMPSPUC/UnobservedComponentsGAS.git")
+
+using UnobservedComponentsGAS
 ```
 To carry out this example, we will consider sales data for new single-family homes in the US. Let's assume the data can be loaded using the code below.
 
 ```julia
-Pkg.add("CSV")
-Pkg.add("DataFrames")
+Pkg.add("CSV")        #if not already installed
+Pkg.add("DataFrames") #if not already installed
+
+using CSV, DataFrames
 
 data = CSV.read("Data/hsales.csv", DataFrame)
 
