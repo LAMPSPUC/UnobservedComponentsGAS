@@ -87,7 +87,11 @@ function compute_score(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, d::Floa
             s[i] = @expression(model,[t = 2:T], scaled_score_j(parameters[t-1, 1], parameters[t-1, 2], y[t-1], d, dist_code, i))
         end
     elseif num_param == 1
-        #IMPLEMENTAR SCALED SCORE FUNCTION PARA 1 PARAMETRO
+        @operator(model, scaled_score_j, 4, scaled_score)
+        #register(model, :scaled_score, 6, scaled_score; autodiff = true)
+        for i in idx_time_varying_params
+            s[i] = @expression(model,[t = 2:T], scaled_score_j(parameters[t-1, 1], y[t-1], d, dist_code))
+        end
     else
         @operator(model, scaled_score_j, 7, scaled_score)
         #register(model, :scaled_score, 7, scaled_score; autodiff = true)

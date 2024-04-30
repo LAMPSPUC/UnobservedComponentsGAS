@@ -297,7 +297,6 @@ function add_random_walk!(model::Ml, s::Vector{Fl}, T::Int64, random_walk::Dict{
 
     @variable(model, RW[1:T, idx_params])
     @variable(model, κ_RW[idx_params])
-
     @constraint(model, [t = 2:T, j in idx_params], RW[t, j] == RW[t-1, j] + κ_RW[j] * s[j][t])
     @constraint(model, [j in idx_params], 1e-4 ≤ κ_RW[j])
 end

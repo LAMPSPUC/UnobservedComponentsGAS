@@ -1,3 +1,23 @@
+"""
+Dict with log_pdf expressions
+"""
+
+const DICT_MEAN_CONVERSION = Dict(
+    "Exponential" => mean_conversion_exponential 
+)
+
+
+function scaled_score(first_param, y, d, dist_code)
+
+    dist_name = DICT_CODE[dist_code]
+
+    ∇  = DICT_SCORE[dist_name](first_param, y)
+    FI = DICT_FISHER_INFORMATION[dist_name](first_param)
+
+    s = FI.^(-d) .* ∇
+    return s[1]
+end
+
 
 """
 scaled_score(first_param, second_param, y, d, dist_code, which_param)

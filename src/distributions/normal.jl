@@ -38,9 +38,20 @@ Compute the score vector of the Normal distribution, taking into account the spe
     # Returns
     - A vector of type Float64, where the first element corresponds to the score related to the mean parameter, and the second element corresponds to the score related to the variance parameter.
 """
-function score_normal(μ, σ², y) 
+function score_normal(μ_val, σ²_val, y) 
   
-    return [(y - μ)/σ²; -(0.5/σ²) * (1 - ((y - μ)^2)/σ²)]
+    Symbolics.@variables μ, σ²
+
+    expr_logpdf = -log(sqrt(σ²)) - 0.5*log(2*π) - (((y-μ)^2) / (2*σ²))
+    
+    d_μ  = Symbolics.derivative(expr_logpdf, μ)
+    d_σ² = Symbolics.derivative(expr_logpdf, σ²)
+
+    d_μ_val = substitute(d_μ, Dict(μ => μ_val, σ² => σ²_val))
+    d_σ²_val = substitute(d_σ², Dict(μ => μ_val, σ² => σ²_val))        
+
+    return [d_μ_val ;d_σ²_val]
+    # return [(y - μ)/σ²; -(0.5/σ²) * (1 - ((y - μ)^2)/σ²)]
 end
 
 
@@ -57,6 +68,24 @@ Compute the Fisher Information matrix of the Normal distribution, taking into ac
     - The Fisher Information matrix of the Normal distribution.
 """
 function fisher_information_normal(μ, σ²)
+
+    # @variables μ, σ²
+
+    # expr_logpdf = -log(sqrt(σ²)) - 0.5*log(2*π) - (((y-μ)^2) / (2*σ²))
+    
+    # d_μ   = Symbolics.derivative(expr_logpdf, μ)
+    # d_σ²  = Symbolics.derivative(expr_logpdf, σ²)
+    # d2_μ  = Symbolics.derivative(d_μ , μ)
+    # d2_σ² = Symbolics.derivative(d_σ², σ²)
+    # d_μσ  = Symbolics.derivative(d_μ, σ²)
+
+    # # d_μ = substitute(d_μ, Dict(μ => 0.0, σ² => 1.0))
+    # # d2_μ = substitute(d2_μ, Dict(μ => 0.0, σ² => 1.0))
+    # # expr_pdf = substitute(expr_pdf, Dict(μ => 0.0, σ² => 1.0))
+
+    # f11 = integrate(-d2_μ * expr_pdf, x;num_steps = 200, num_trials = 100, abstol =1e-3)
+    # f22 = integrate(-d2_σ²* expr_pdf, x)
+    # f21 = integrate(-d_μσ* expr_pdf, x)
 
     return [1/(σ²) 0; 0 1/(2*(σ²^2))]
 end
