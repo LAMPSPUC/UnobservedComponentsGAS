@@ -38,16 +38,16 @@ Compute the score vector of the Exponential distribution, taking into account th
 """
 function score_exponential(θ_val, y_val) 
   
-    Symbolics.@variables y, θ
+    # Symbolics.@variables y, θ
 
-    log_pdf_exp = logpdf_exponential(θ, y)
+    # log_pdf_exp = logpdf_exponential(θ, y)
 
-    d_θ  = Symbolics.derivative(log_pdf_exp, θ)
+    # d_θ  = Symbolics.derivative(log_pdf_exp, θ)
 
-    d_θ_val = parse(Float64, substitute(d_θ, Dict(θ => θ_val, y => y_val)))
-    f_fun = eval(build_function(f, a,b))
-    return [d_θ_val]
-    # return [-1/θ + y/(θ^2)]
+    # d_θ_val = parse(Float64, substitute(d_θ, Dict(θ => θ_val, y => y_val)))
+    # f_fun = eval(build_function(f, a,b))
+    # return [d_θ_val]
+    return [-1/θ_val + y_val/(θ_val^2)]
 end
 
 
@@ -79,7 +79,7 @@ function fisher_information_exponential(θ)
 end
 
 " Returns the distribution mean, given the specified parameter"
-function mean_conversion_exponencial(θ)
+function mean_conversion_exponential(θ)
     return θ
     # return mean(dist) # opção 2, se passar a Exponencial(θ) para a mean, ela retorna o valor da média, θ.
     # Talvez usar isso para generalizar as expressões de média de outras distribuições.

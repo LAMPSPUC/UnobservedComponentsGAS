@@ -10,15 +10,15 @@ module UnobservedComponentsGAS
     using SpecialFunctions
     using StateSpaceModels
     using Symbolics
-    using SymbolicNumericIntegration
+    #using SymbolicNumericIntegration
     # include("../NonParametricStructuralModels/src/NonParametricStructuralModels.jl")
 
     include("structures.jl")
-    include("distributions/common.jl")
     include("distributions/normal.jl")
     include("distributions/t_location_scale.jl")
     include("distributions/log_normal.jl")
     include("distributions/exponential.jl")
+    include("distributions/common.jl")
     include("initialization.jl")
     include("fit.jl")
     include("utils.jl")
