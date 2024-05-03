@@ -688,10 +688,10 @@ function initialize_components!(model::Ml, initial_values::Dict{String, Any}, ga
     end
 
     if has_AR(ar)
-        size(initial_values["ar"]["values"], 2) == 1  ? cols = 1 : cols = 1:length(time_varying_params)
+        size(initial_values["ar"]["values"], 2) == 1  ? cols = 1 : cols = 1:size(initial_values["ar"]["values"], 2)
         set_start_value.(model[:AR][:, cols], initial_values["ar"]["values"])
         set_start_value.(model[:ϕ][:, cols], initial_values["ar"]["ϕ"])
-        set_start_value.(model[:κ_AR][], initial_values["ar"]["κ"])
+        set_start_value.(model[:κ_AR][cols], initial_values["ar"]["κ"])
     end
 
     if haskey(initial_values, "explanatories")
