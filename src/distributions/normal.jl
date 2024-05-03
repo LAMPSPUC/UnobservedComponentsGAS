@@ -214,7 +214,7 @@ Compute the initial values for the parameters of the Normal distribution that wi
 """
 function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, dist::NormalDistribution, seasonality::Dict{Int64, Union{Bool, Int64}}) where Fl
 
-    #T         = length(y)
+    T         = length(y)
     #dist_code = get_dist_code(dist)
     seasonal_period = get_num_harmonic_and_seasonal_period(seasonality)[2]
 
@@ -227,7 +227,7 @@ function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, di
     end
 
     if time_varying_params[2]
-        initial_params[2] = get_seasonal_var(y, maximum(seasonal_period), dist) #(scaled_score.(y, ones(T) * var(diff(y)) , y, 0.5, dist_code, 2)).^2
+        initial_params[2] = var(diff(y))*ones(T)#get_seasonal_var(y, maximum(seasonal_period), dist) #(scaled_score.(y, ones(T) * var(diff(y)) , y, 0.5, dist_code, 2)).^2
     else
         initial_params[2] = var(diff(y))
     end

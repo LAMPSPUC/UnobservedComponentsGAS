@@ -352,16 +352,18 @@ function add_level!(model::Ml, s::Vector{Fl}, T::Int64, level::Vector{String}) w
         for i in 1:length(level)
             level[i] == "random walk" ? random_walk[i] = true : random_walk[i] = false
         end
-
         add_random_walk!(model, s, T, random_walk)
-    elseif "random walk slope" ∈ level 
+    end
+    
+    if "random walk slope" ∈ level 
         random_walk_slope = Dict{Int64, Bool}()
         for i in 1:length(level)
             level[i] == "random walk slope" ? random_walk_slope[i] = true : random_walk_slope[i] = false
         end
-        
         add_random_walk_slope!(model, s, T, random_walk_slope)
-    else
+    end
+    
+    if "ar(1)" ∈ level 
         ar1 = Dict{Int64, Bool}()
         for i in 1:length(level)
             level[i] == "ar(1)" ? ar1[i] = true : ar1[i] = false
