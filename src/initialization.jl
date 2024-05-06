@@ -661,7 +661,7 @@ function initialize_components!(model::Ml, initial_values::Dict{String, Any}, ga
     end
 
     if has_ar1_level(level)
-        size(initial_values["ar(1)"]["values"], 2) == 1  ? cols = 1 : cols = 1:size(initial_values["ar(1)"]["values"], 2)
+        size(initial_values["ar1_level"]["values"], 2) == 1  ? cols = 1 : cols = 1:size(initial_values["ar1_level"]["values"], 2)
         set_start_value.(model[:AR1_LEVEL][:, cols], round.(initial_values["ar1_level"]["values"]; digits = 5))
         set_start_value.(model[:κ_AR1_LEVEL][cols], round.(initial_values["ar1_level"]["κ"]; digits = 5))
         set_start_value.(model[:ϕ_AR1_LEVEL][cols],  round.(initial_values["ar1_level"]["ϕ"]; digits = 5))

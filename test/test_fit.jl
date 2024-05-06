@@ -1,7 +1,4 @@
-@testset "Fit" begin
-    
-    "FALTAM TESTES RELATIVOS ÀS EXPLICATIVAS"
-    
+@testset "Fit" begin  
     
     time_series = CSV.read(joinpath(@__DIR__, "data/timeseries_lognormal_rws_d1.csv"), DataFrame)
     y = time_series[:,1]
