@@ -286,7 +286,6 @@
     @test(all(initial_values["explanatories"] .== initial_values_state_space["explanatory"]))
     
 
-
     @info("Test with AR(1) with seasonality and with explanatory")
     order            = [nothing]
     max_order        = 0
@@ -310,7 +309,7 @@
 
 
     @info("Test create_output_initialization_from_fit")
-    dist = UnobservedComponentsGAS.NormalDistribution(missing, missing)
+    dist = UnobservedComponentsGAS.NormalDistribution()
     gas_model = UnobservedComponentsGAS.GASModel(dist, [true, false], 0.0, "random walk slope", "deterministic 12", 1)
 
     fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
@@ -322,17 +321,17 @@
     @test(all(output_initial_values["slope"]["values"] .!= zeros(T)))
     @test(all(output_initial_values["rws"]["values"] .!=  zeros(T)))
 
-    #Erro no state space models quando usamos 2 parametros !!!
-    # y = collect(1.:T) + 10*rand(T)
-    # dist                  = UnobservedComponentsGAS.NormalDistribution(missing, missing)
-    # gas_model             = UnobservedComponentsGAS.GASModel(dist, [true, true], 1.0, ["random walk", ""], ["deterministic 12", "deterministic 12"], [missing, missing])
-    # fitted_model          = UnobservedComponentsGAS.fit(gas_model, y; number_max_iterations = 80000, max_optimization_time = 360.0)
-    # output_initial_values = UnobservedComponentsGAS.create_output_initialization_from_fit(fitted_model, gas_model)
+    dist                  = UnobservedComponentsGAS.NormalDistribution()
+    gas_model             = UnobservedComponentsGAS.GASModel(dist, [true, true], 0.0, ["random walk slope", "random walk"], 
+                                                            ["deterministic 12", "deterministic 12"], [missing, missing])
+    fitted_model          = UnobservedComponentsGAS.fit(gas_model, y)
+    output_initial_values = UnobservedComponentsGAS.create_output_initialization_from_fit(fitted_model, gas_model)
 
-    # @test(all(output_initial_values["rw"]["values"] .== 0))
-    # @test(all(output_initial_values["seasonality"]["values"] .!= 0))
-    # @test(all(output_initial_values["ar"]["values"] .!= 0))
-    # @test(all(output_initial_values["slope"]["values"] .!= zeros(T)))
-    # @test(all(output_initial_values["rws"]["values"] .!=  zeros(T)))
+    @test(all(output_initial_values["rw"]["values"][:,1] .== 0))
+    @test(all(output_initial_values["rw"]["values"][:,2] .!= 0))
+    @test(all(output_initial_values["seasonality"]["values"] .!= 0))
+    @test(all(output_initial_values["ar"]["values"] .== 0))
+    @test(all(output_initial_values["slope"]["values"] .!= 0))
+    @test(all(output_initial_values["rws"]["values"] .!= 0))
 
 end
