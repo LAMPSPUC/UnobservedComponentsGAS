@@ -224,7 +224,7 @@
     fitted_values_lognormal = zeros(T,N)
     # ~ 80 sec to run
     for j in 1:N
-        y         = time_series_lognormal[:,j+9]
+        y         = time_series_lognormal[:,j]
         gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.LogNormalDistribution(), [true, false],
                                                      1.0, "random walk slope", "deterministic 12", missing)
         fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
