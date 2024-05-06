@@ -267,4 +267,25 @@
     end
     
     @test(isapprox(mean(fitted_values_t[2:end,:], dims = 2), mean(Matrix(time_series_t[2:end,:]), dims = 2); rtol = 1e-1))
+
+    @info(" --- Test quality of fit - Normal with robust")
+
+    time_series_normal      = CSV.read(joinpath(@__DIR__,  "data/timeseries_normal_rws_d1.csv"), DataFrame)
+    benchmark_values_normal = JSON3.read(joinpath(@__DIR__, "data/benchmark_values_normal_rws.json"))
+
+    initial_values_normal = convert_dict_keys_to_string(initial_values_normal)
+    N = 10
+
+    fitted_values_normal_2params = zeros(T,N)
+
+    for j in 1:N
+        y         = time_series_normal[:,j]
+        gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false],
+                                                     1.0, "random walk slope", "deterministic 12", 1)
+        fitted_model = UnobservedComponentsGAS.fit(gas_model, y; α = 0.5, robust = true)
+        fitted_values_normal_2params[:,j] .= fitted_model.fit_in_sample
+    end
+
+    @test(isapprox(mean(fitted_values_normal_2params[2:end,:], dims = 2), mean(Matrix(time_series_normal[2:end,:]), dims = 2); rtol = 1e-1))
 end
+
