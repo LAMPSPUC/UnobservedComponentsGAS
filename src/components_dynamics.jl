@@ -421,10 +421,15 @@ Adds trigonometric seasonality components to the optimization model based on the
 function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seasonality::Vector{String}) where {Ml, Fl}
     
     seasonality_dict, stochastic = get_seasonality_dict_and_stochastic(seasonality)
-    
+    println(stochastic)
     num_harmonic, seasonal_period = get_num_harmonic_and_seasonal_period(seasonality_dict)
 
     idx_params = findall(i -> i != false, seasonality_dict) # Time-varying parameters with the seasonality dynamic
+    # idx_params_stochastic    = idx_params[stochastic]
+    # idx_params_deterministic = idx_params[stochastic .== false]
+
+    # println(idx_params_stochastic)
+    # println(idx_params_deterministic)
 
     unique_num_harmonic = unique(num_harmonic)[minimum(idx_params)]
 

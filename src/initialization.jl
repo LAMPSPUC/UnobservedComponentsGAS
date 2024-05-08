@@ -406,7 +406,6 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
        end
     end
 
-
     output_initial_values = initial_values[minimum(idx_time_varying_params)]
 
     output_initial_values["param"] = aux_params[:, idx_time_varying_params]
@@ -648,11 +647,13 @@ function initialize_components!(model::Ml, initial_values::Dict{String, Any}, ga
     if haskey(initial_values, "fixed_param")
         set_start_value.(model[:fixed_params], round.(initial_values["fixed_param"]; digits = 5))
     end
-    
 
-    if has_random_walk_slope(level)
-        size(initial_values["rws"]["values"], 2) == 1  ? cols = 1 : cols = 1:size(initial_values["rws"]["values"], 2)
 
+    if has_random_walk_slope(level, 1)
+        # size(initial_values["rws"]["values"], 2) == 1  ? cols = 1 : cols = 1:size(initial_values["rws"]["values"], 2)
+        # cols = collect(1:length(level))[level .== "random walk slope"]
+        # println(model[:RWS])
+        cols = 1
         set_start_value.(model[:RWS][:, cols], round.(initial_values["rws"]["values"]; digits = 5))
         set_start_value.(model[:κ_RWS][cols], round.(initial_values["rws"]["κ"]; digits = 5))
         set_start_value.(model[:b][:, cols],  round.(initial_values["slope"]["values"]; digits = 5))
@@ -660,16 +661,22 @@ function initialize_components!(model::Ml, initial_values::Dict{String, Any}, ga
     
     end
 
-    if has_ar1_level(level)
-        size(initial_values["ar1_level"]["values"], 2) == 1  ? cols = 1 : cols = 1:size(initial_values["ar1_level"]["values"], 2)
+    if has_ar1_level(level, 1)
+        # println("Entrou has ar 1 level")
+        # size(initial_values["ar1_level"]["values"], 2) == 1  ? cols = 1 : cols = 1:size(initial_values["ar1_level"]["values"], 2)
+        # cols = collect(1:length(level))[level .== "ar(1)"]
+        # println(model[:AR1_LEVEL])
+        cols = 1
         set_start_value.(model[:AR1_LEVEL][:, cols], round.(initial_values["ar1_level"]["values"]; digits = 5))
         set_start_value.(model[:κ_AR1_LEVEL][cols], round.(initial_values["ar1_level"]["κ"]; digits = 5))
         set_start_value.(model[:ϕ_AR1_LEVEL][cols],  round.(initial_values["ar1_level"]["ϕ"]; digits = 5))
     end
 
-
     if has_random_walk(level, 1) 
-        size(initial_values["rw"]["values"], 2) == 1  ? cols = 1 : cols = 1:size(initial_values["rw"]["values"], 2)
+        # println(model[:RW])
+        # cols = collect(1:length(level))[level .== "random walk"]
+        # size(initial_values["rw"]["values"], 2) == 1  ? cols = 1 : cols = 1:size(initial_values["rw"]["values"], 2)
+        cols = 1
         set_start_value.(model[:RW][:, cols], round.(initial_values["rw"]["values"]; digits = 5))
         set_start_value.(model[:κ_RW][cols], round.(initial_values["rw"]["κ"]; digits = 5))
     end
@@ -677,7 +684,11 @@ function initialize_components!(model::Ml, initial_values::Dict{String, Any}, ga
     if has_seasonality(seasonality, 1)
         size(model[:γ], 3) == 1  ? cols = 1 : cols = 1:size(model[:γ], 3)
         seasonality_dict, stochastic = get_seasonality_dict_and_stochastic(seasonality)
+        println(seasonality_dict)
+        println(stochastic)
         if stochastic
+            println(model[:κ_S][1])
+            println(initial_values["seasonality"]["κ"])
             set_start_value.(model[:κ_S][:, cols], round.(initial_values["seasonality"]["κ"]; digits = 5))
         end
 
@@ -687,8 +698,10 @@ function initialize_components!(model::Ml, initial_values::Dict{String, Any}, ga
         end
     end
 
-    if has_AR(ar)
-        size(initial_values["ar"]["values"], 2) == 1  ? cols = 1 : cols = 1:size(initial_values["ar"]["values"], 2)
+    if has_AR(ar, 1)
+        # size(initial_values["ar"]["values"], 2) == 1  ? cols = 1 : cols = 1:size(initial_values["ar"]["values"], 2)
+        # cols = collect(1:length(ar))[.!ismissing.(ar)]
+        cols = 1
         set_start_value.(model[:AR][:, cols], initial_values["ar"]["values"])
         set_start_value.(model[:ϕ][:, cols], initial_values["ar"]["ϕ"])
         set_start_value.(model[:κ_AR][cols], initial_values["ar"]["κ"])
