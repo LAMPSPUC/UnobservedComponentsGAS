@@ -423,10 +423,10 @@ function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seas
     seasonality_dict, stochastic, stochastic_params = get_seasonality_dict_and_stochastic(seasonality)
     
     num_harmonic, seasonal_period = get_num_harmonic_and_seasonal_period(seasonality_dict)
-
+    println("Dentro da fit")
+    println(num_harmonic)
     idx_params = sort(findall(i -> i != false, seasonality_dict)) # Time-varying parameters with the seasonality dynamic
-
-    idx_params_deterministic = idx_params[stochastic_params .== false]
+    idx_params_deterministic = idx_params[.!stochastic_params[idx_params]]
 
     unique_num_harmonic = unique(num_harmonic)[minimum(idx_params)]
 

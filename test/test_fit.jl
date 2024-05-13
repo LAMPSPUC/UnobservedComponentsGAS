@@ -58,8 +58,8 @@
     model_lognormal, parameters_lognormal, initial_values_lognormal                = UnobservedComponentsGAS.create_model(gas_model_lognormal, y, missing)
     model_t, parameters_t, initial_values_t                                        = UnobservedComponentsGAS.create_model(gas_model_t, y, 1)
     # Create model with explanatory series
-    model_normal_X, parameters_normal_X, initial_values_normal_X                         = UnobservedComponentsGAS.create_model(gas_model_normal_X, y, X, missing)
-    model_normal_X_2params, parameters_normal_X_2params, initial_values_normal_X_2params = UnobservedComponentsGAS.create_model(gas_model_normal_X_2params, y, X, missing)
+    model_normal_X, parameters_normal_X, initial_values_normal_X                         = UnobservedComponentsGAS.create_model(gas_model_normal_X, y, X, missing);
+    model_normal_X_2params, parameters_normal_X_2params, initial_values_normal_X_2params = UnobservedComponentsGAS.create_model(gas_model_normal_X_2params, y, X, missing);
     model_lognormal_X, parameters_lognormal_X, initial_values_lognormal_X                = UnobservedComponentsGAS.create_model(gas_model_lognormal_X, y, X, missing)
     model_t_X, parameters_t_X, initial_values_t_X                                        = UnobservedComponentsGAS.create_model(gas_model_t_X, y, X, 1)
     

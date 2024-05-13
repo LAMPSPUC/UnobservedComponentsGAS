@@ -552,7 +552,7 @@ function create_output_initialization_from_fit(output::Output, gas_model::GASMod
         seasonality_dict, stochastic = get_seasonality_dict_and_stochastic(seasonality)
         output_initial_values["seasonality"]["values"] = components["param_1"]["seasonality"]["value"]
         if stochastic
-            output_initial_values["seasonality"]["κ"]      = components["param_1"]["seasonality"]["hyperparameters"]["κ"]
+            output_initial_values["seasonality"]["κ"]  = components["param_1"]["seasonality"]["hyperparameters"]["κ"]
         end
         output_initial_values["seasonality"]["γ"]      = components["param_1"]["seasonality"]["hyperparameters"]["γ"]
         output_initial_values["seasonality"]["γ_star"] = components["param_1"]["seasonality"]["hyperparameters"]["γ_star"]
@@ -686,9 +686,16 @@ function initialize_components!(model::Ml, initial_values::Dict{String, Any}, ga
         seasonality_dict, stochastic, stochastic_params = get_seasonality_dict_and_stochastic(seasonality)
         # Próximas linhas para inicializar apenas os kappas que forem de params com sazo estocástica
         idx_params = sort(findall(i -> i != false, seasonality_dict))
-        idx_params_deterministic = idx_params[stochastic_params .== false]
+        
+        println("initialize_components")
+        println(idx_params)
+        println(stochastic_params)
+        println(findall(stochastic_params .!= false))
+        
+        idx_params_stochastic = idx_params[findall(stochastic_params .!= false)]
+        
         if stochastic
-            set_start_value.(model[:κ_S][idx_params_deterministic], round.(initial_values["seasonality"]["κ"]; digits = 5))
+            set_start_value.(model[:κ_S][idx_params_stochastic], round.(initial_values["seasonality"]["κ"]; digits = 5))
         end
 
         if haskey(initial_values["seasonality"], "γ")
