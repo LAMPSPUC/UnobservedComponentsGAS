@@ -499,7 +499,8 @@ This function parses a vector of strings representing seasonality information in
 """
 function get_seasonality_dict_and_stochastic(seasonality::Vector{String})
     seasonality_dict = Dict{Int64, Union{Int64, Bool}}()
-    stochastic = Bool.(zeros(length(seasonality)))
+    num_time_varying = count(values(seasonality) .!= "")
+    stochastic       = Bool.(zeros(num_time_varying))
     for i in 1:length(seasonality)
         if isempty(seasonality[i])
             seasonality_dict[i] = false
