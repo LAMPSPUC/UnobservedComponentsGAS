@@ -330,7 +330,6 @@ Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticit
 function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.5, robust::Bool = false, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
 
     if typeof(gas_model.dist) == LogNormalDistribution
-        #println("Log Normal distribution")
         gas_model.dist = NormalDistribution()
         y = log.(y)
         log_normal_flag = true

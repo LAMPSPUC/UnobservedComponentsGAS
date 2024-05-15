@@ -155,7 +155,7 @@
     σ2_values        = zeros(N)
     level_κ_values   = zeros(N)
     slope_κ_values   = zeros(N)
-    intercept_values = zeros(N)
+    # intercept_values = zeros(N)
     fitted_values_normal = zeros(T,N)
 
     for j in 1:N
@@ -168,7 +168,7 @@
         σ2_values[j]               = fitted_model.fitted_params["param_2"][1]        
         level_κ_values[j]          = fitted_model.components["param_1"]["level"]["hyperparameters"]["κ"]
         slope_κ_values[j]          = fitted_model.components["param_1"]["slope"]["hyperparameters"]["κ"]
-        intercept_values[j]        = fitted_model.components["param_1"]["intercept"]
+        # intercept_values[j]        = fitted_model.components["param_1"]["intercept"]
         fitted_values_normal[:,j] .= fitted_model.fit_in_sample
         
     end
@@ -187,7 +187,7 @@
     σ2_values        = zeros(N)
     level_κ_values   = zeros(N)
     slope_κ_values   = zeros(N)
-    intercept_values = zeros(N)
+    # intercept_values = zeros(N)
     fitted_values_normal_2params = zeros(T,N)
 
     for j in 1:N
@@ -200,7 +200,7 @@
         σ2_values[j]                       = fitted_model.fitted_params["param_2"][1]        
         level_κ_values[j]                  = fitted_model.components["param_1"]["level"]["hyperparameters"]["κ"]
         slope_κ_values[j]                  = fitted_model.components["param_1"]["slope"]["hyperparameters"]["κ"]
-        intercept_values[j]                = fitted_model.components["param_1"]["intercept"]
+        # intercept_values[j]                = fitted_model.components["param_1"]["intercept"]
         fitted_values_normal_2params[:,j] .= fitted_model.fit_in_sample
         
     end
@@ -217,7 +217,7 @@
     ν_values         = zeros(N)
     level_κ_values   = zeros(N)
     slope_κ_values   = zeros(N)
-    intercept_values = zeros(N)
+    # intercept_values = zeros(N)
     fitted_values_lognormal = zeros(T,N)
     # ~ 80 sec to run
     for j in 1:N
@@ -229,7 +229,7 @@
         σ2_values[j]                  = fitted_model.fitted_params["param_2"][1]      
         level_κ_values[j]             = fitted_model.components["param_1"]["level"]["hyperparameters"]["κ"]
         slope_κ_values[j]             = fitted_model.components["param_1"]["slope"]["hyperparameters"]["κ"]
-        intercept_values[j]           = fitted_model.components["param_1"]["intercept"]
+        # intercept_values[j]           = fitted_model.components["param_1"]["intercept"]
         fitted_values_lognormal[:,j] .= fitted_model.fit_in_sample
         
     end
@@ -248,7 +248,7 @@
     ν_values         = zeros(N)
     level_κ_values   = zeros(N)
     slope_κ_values   = zeros(N)
-    intercept_values = zeros(N)
+    # intercept_values = zeros(N)
     fitted_values_t = zeros(T,N)
     for j in 1:N
         y         = time_series_t[:,j]
@@ -261,7 +261,7 @@
         ν_values[j]           = fitted_model.fitted_params["param_3"][1]        
         level_κ_values[j]     = fitted_model.components["param_1"]["level"]["hyperparameters"]["κ"]
         slope_κ_values[j]     = fitted_model.components["param_1"]["slope"]["hyperparameters"]["κ"]
-        intercept_values[j]   = fitted_model.components["param_1"]["intercept"]
+        # intercept_values[j]   = fitted_model.components["param_1"]["intercept"]
         fitted_values_t[:,j] .= fitted_model.fit_in_sample
         
     end

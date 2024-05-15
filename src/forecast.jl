@@ -21,7 +21,8 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     num_params = get_num_params(dist)
     components = output.components
 
-    seasonality_dict, stochastic = get_seasonality_dict_and_stochastic(seasonality)
+    seasonality_dict, stochastic, stochastic_params = get_seasonality_dict_and_stochastic(seasonality)
+    
     num_harmonic, seasonal_period = UnobservedComponentsGAS.get_num_harmonic_and_seasonal_period(seasonality_dict)
 
     if isempty(num_harmonic) #caso não tenha sazonalidade, assume 1 harmonico para nao quebrar a função update_S!
@@ -40,7 +41,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     dict_hyperparams_and_fitted_components["ar"]          = Dict{String, Any}()
 
     dict_hyperparams_and_fitted_components["params"]       = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
-    dict_hyperparams_and_fitted_components["intercept"]    = zeros(num_params)
+    # dict_hyperparams_and_fitted_components["intercept"]    = zeros(num_params)
     dict_hyperparams_and_fitted_components["score"]        = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
   
     dict_hyperparams_and_fitted_components["rw"]["value"]  = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
@@ -59,10 +60,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     dict_hyperparams_and_fitted_components["seasonality"]["value"]   = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
     dict_hyperparams_and_fitted_components["seasonality"]["κ"]       = zeros(num_params)
 
-    if has_seasonality(seasonality)
-        println("Dentro da forecast")
-        println(idx_params)
-        println(num_harmonic)
+    if has_seasonality(seasonality) 
         if stochastic
             dict_hyperparams_and_fitted_components["seasonality"]["γ"]       = zeros(num_harmonic[idx_params[1]], T_fitted + steps_ahead, num_params, num_scenarios) 
             dict_hyperparams_and_fitted_components["seasonality"]["γ_star"]  = zeros(num_harmonic[idx_params[1]], T_fitted + steps_ahead, num_params, num_scenarios)
@@ -83,9 +81,9 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     for i in 1:num_params
         dict_hyperparams_and_fitted_components["params"][i, 1:T_fitted, :] .= output.fitted_params["param_$i"]
 
-        if i in idx_params
-            dict_hyperparams_and_fitted_components["intercept"][i] = components["param_$i"]["intercept"]
-        end
+        # if i in idx_params
+        #     dict_hyperparams_and_fitted_components["intercept"][i] = components["param_$i"]["intercept"]
+        # end
 
         if has_random_walk(level, i)
             dict_hyperparams_and_fitted_components["rw"]["value"][i, 1:T_fitted, :] .= components["param_$i"]["level"]["value"]
@@ -116,12 +114,12 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
             dict_hyperparams_and_fitted_components["seasonality"]["value"][i, 1:T_fitted, :]    .= components["param_$i"]["seasonality"]["value"]
             # dict_hyperparams_and_fitted_components["seasonality"]["κ"][i]                        = components["param_$i"]["seasonality"]["hyperparameters"]["κ"]
             if stochastic
-                dict_hyperparams_and_fitted_components["seasonality"]["κ"][i]                        = components["param_$i"]["seasonality"]["hyperparameters"]["κ"]
+                if stochastic_params[i]
+                    dict_hyperparams_and_fitted_components["seasonality"]["κ"][i]                        = components["param_$i"]["seasonality"]["hyperparameters"]["κ"]
+                end
                 dict_hyperparams_and_fitted_components["seasonality"]["γ"][:, 1:T_fitted, i, :]     .= components["param_$i"]["seasonality"]["hyperparameters"]["γ"]
                 dict_hyperparams_and_fitted_components["seasonality"]["γ_star"][:, 1:T_fitted, i,:] .= components["param_$i"]["seasonality"]["hyperparameters"]["γ_star"]
-            else
-                # println(dict_hyperparams_and_fitted_components["seasonality"]["γ"][:, i])
-                # println(components["param_$i"]["seasonality"]["hyperparameters"]["γ"])
+            else 
                 dict_hyperparams_and_fitted_components["seasonality"]["γ"][:, i]       .= components["param_$i"]["seasonality"]["hyperparameters"]["γ"]
                 dict_hyperparams_and_fitted_components["seasonality"]["γ_star"][:, i,] .= components["param_$i"]["seasonality"]["hyperparameters"]["γ_star"]
             end

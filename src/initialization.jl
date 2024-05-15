@@ -338,7 +338,7 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
     order                   = get_AR_order(ar)
     max_order               = has_AR(ar) ? max_order = maximum(filter(x -> !isnothing(x), vcat(order...))) : 0
 
-    seasonality_dict, stochastic = get_seasonality_dict_and_stochastic(seasonality)
+    seasonality_dict, stochastic, stochastic_params = get_seasonality_dict_and_stochastic(seasonality)
     initial_params = get_initial_params(y, time_varying_params, dist, seasonality_dict)
 
     initial_values = Vector{Any}(undef, maximum(idx_time_varying_params))
@@ -381,7 +381,7 @@ function create_output_initialization(y::Vector{Fl}, X::Union{Matrix{Fl}, Missin
         X_aux =  i == 1 && !ismissing(X) ? X : missing
 
         if i != 2
-            initial_values[i] = get_initial_values(initial_params[i], X_aux, has_level[i], has_level_ar1[i], has_slope[i], has_seasonal[i], seasonal_period[i], stochastic, order[i], max_order)
+            initial_values[i] = get_initial_values(initial_params[i], X_aux, has_level[i], has_level_ar1[i], has_slope[i], has_seasonal[i], seasonal_period[i], stochastic_params[i], order[i], max_order)
         end
         # initialize the mean parameter as the sum of the initial values of the components
         # initial_params[i] = zeros(T)
@@ -516,7 +516,7 @@ function create_output_initialization_from_fit(output::Output, gas_model::GASMod
     output_initial_values["seasonality"]         = Dict()
     output_initial_values["ar"]                  = Dict()
     output_initial_values["intercept"]           = Dict()
-    output_initial_values["intercept"]["values"] = components["param_1"]["intercept"]
+    # output_initial_values["intercept"]["values"] = components["param_1"]["intercept"]
 
     if has_random_walk(level, 1)
         output_initial_values["rw"]["values"] = components["param_1"]["level"]["value"]
@@ -549,9 +549,9 @@ function create_output_initialization_from_fit(output::Output, gas_model::GASMod
     end
 
     if has_seasonality(seasonality, 1)
-        seasonality_dict, stochastic = get_seasonality_dict_and_stochastic(seasonality)
+        seasonality_dict, stochastic, stochastic_params = get_seasonality_dict_and_stochastic(seasonality)
         output_initial_values["seasonality"]["values"] = components["param_1"]["seasonality"]["value"]
-        if stochastic
+        if stochastic_params[1]
             output_initial_values["seasonality"]["κ"]  = components["param_1"]["seasonality"]["hyperparameters"]["κ"]
         end
         output_initial_values["seasonality"]["γ"]      = components["param_1"]["seasonality"]["hyperparameters"]["γ"]
@@ -579,7 +579,7 @@ function create_output_initialization_from_fit(output::Output, gas_model::GASMod
 
     if length(components) > 1
         for i in setdiff(idx_time_varying_params, 1)
-            output_initial_values["intercept"]["values"]  = vcat(output_initial_values["intercept"]["values"], components["param_$i"]["intercept"])
+            # output_initial_values["intercept"]["values"]  = vcat(output_initial_values["intercept"]["values"], components["param_$i"]["intercept"])
 
             if has_random_walk(level, i)
                 output_initial_values["rw"]["values"] = hcat(output_initial_values["rw"]["values"], components["param_$i"]["level"]["value"])
@@ -601,7 +601,7 @@ function create_output_initialization_from_fit(output::Output, gas_model::GASMod
 
             if has_seasonality(seasonality, i)
                 output_initial_values["seasonality"]["values"] = hcat(output_initial_values["seasonality"]["values"], components["param_$i"]["seasonality"]["value"])
-                if stochastic
+                if stochastic_params[i]
                     output_initial_values["seasonality"]["κ"]      = vcat(output_initial_values["seasonality"]["κ"], components["param_$i"]["seasonality"]["hyperparameters"]["κ"])
                     output_initial_values["seasonality"]["γ"]      = cat(output_initial_values["seasonality"]["γ"], components["param_$i"]["seasonality"]["hyperparameters"]["γ"], dims = 3)
                     output_initial_values["seasonality"]["γ_star"] = cat(output_initial_values["seasonality"]["γ_star"], components["param_$i"]["seasonality"]["hyperparameters"]["γ_star"], dims = 3)
@@ -686,22 +686,16 @@ function initialize_components!(model::Ml, initial_values::Dict{String, Any}, ga
         cols = 1
         seasonality_dict, stochastic, stochastic_params = get_seasonality_dict_and_stochastic(seasonality)
         # Próximas linhas para inicializar apenas os kappas que forem de params com sazo estocástica
-        idx_params = sort(findall(i -> i != false, seasonality_dict))
-        
-        # println("initialize_components")
-        # println(idx_params)
-        # println(stochastic_params)
-        # println(findall(stochastic_params .!= false))
-        
+        idx_params = sort(findall(i -> i != false, seasonality_dict))        
         idx_params_stochastic = idx_params[findall(stochastic_params .!= false)]
-        
-        if stochastic[1]
+        if stochastic_params[1]
             #println("Inicializando sazo estocastica")
             set_start_value.(model[:κ_S][idx_params_stochastic], round.(initial_values["seasonality"]["κ"]; digits = 5))
             set_start_value.(model[:γ_sto][:, :, cols], round.(initial_values["seasonality"]["γ"]; digits = 5))
             set_start_value.(model[:γ_star_sto][:, :, cols], round.(initial_values["seasonality"]["γ_star"]; digits = 5))
         else
             #println("Inicializando sazo deterministica")
+            # println(round.(initial_values["seasonality"]["γ"]; digits = 5))
             set_start_value.(model[:γ_det][:, cols], round.(initial_values["seasonality"]["γ"]; digits = 5))
             set_start_value.(model[:γ_star_det][:, cols], round.(initial_values["seasonality"]["γ_star"]; digits = 5)) 
         end
