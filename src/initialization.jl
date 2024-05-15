@@ -682,26 +682,33 @@ function initialize_components!(model::Ml, initial_values::Dict{String, Any}, ga
     end
 
     if has_seasonality(seasonality, 1)
-        size(model[:γ], 3) == 1  ? cols = 1 : cols = 1:size(model[:γ], 3)
+        #size(model[:γ], 3) == 1  ? cols = 1 : cols = 1:size(model[:γ], 3)
+        cols = 1
         seasonality_dict, stochastic, stochastic_params = get_seasonality_dict_and_stochastic(seasonality)
         # Próximas linhas para inicializar apenas os kappas que forem de params com sazo estocástica
         idx_params = sort(findall(i -> i != false, seasonality_dict))
         
-        println("initialize_components")
-        println(idx_params)
-        println(stochastic_params)
-        println(findall(stochastic_params .!= false))
+        # println("initialize_components")
+        # println(idx_params)
+        # println(stochastic_params)
+        # println(findall(stochastic_params .!= false))
         
         idx_params_stochastic = idx_params[findall(stochastic_params .!= false)]
         
-        if stochastic
+        if stochastic[1]
+            #println("Inicializando sazo estocastica")
             set_start_value.(model[:κ_S][idx_params_stochastic], round.(initial_values["seasonality"]["κ"]; digits = 5))
+            set_start_value.(model[:γ_sto][:, :, cols], round.(initial_values["seasonality"]["γ"]; digits = 5))
+            set_start_value.(model[:γ_star_sto][:, :, cols], round.(initial_values["seasonality"]["γ_star"]; digits = 5))
+        else
+            #println("Inicializando sazo deterministica")
+            set_start_value.(model[:γ_det][:, cols], round.(initial_values["seasonality"]["γ"]; digits = 5))
+            set_start_value.(model[:γ_star_det][:, cols], round.(initial_values["seasonality"]["γ_star"]; digits = 5)) 
         end
-
-        if haskey(initial_values["seasonality"], "γ")
-            set_start_value.(model[:γ][:, :, cols], round.(initial_values["seasonality"]["γ"]; digits = 5))
-            set_start_value.(model[:γ_star][:, :, cols], round.(initial_values["seasonality"]["γ_star"]; digits = 5))        
-        end
+        # if haskey(initial_values["seasonality"], "γ")
+        #     set_start_value.(model[:γ][:, :, cols], round.(initial_values["seasonality"]["γ"]; digits = 5))
+        #     set_start_value.(model[:γ_star][:, :, cols], round.(initial_values["seasonality"]["γ_star"]; digits = 5))        
+        # end
     end
 
     if has_AR(ar, 1)

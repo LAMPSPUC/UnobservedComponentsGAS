@@ -423,34 +423,83 @@ function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seas
     seasonality_dict, stochastic, stochastic_params = get_seasonality_dict_and_stochastic(seasonality)
     
     num_harmonic, seasonal_period = get_num_harmonic_and_seasonal_period(seasonality_dict)
-    println("Dentro da fit")
-    println(num_harmonic)
     idx_params = sort(findall(i -> i != false, seasonality_dict)) # Time-varying parameters with the seasonality dynamic
     idx_params_deterministic = idx_params[.!stochastic_params[idx_params]]
+    idx_params_stochastic    = idx_params[stochastic_params[idx_params]]
 
     unique_num_harmonic = unique(num_harmonic)[minimum(idx_params)]
 
-    if stochastic
-        @variable(model, κ_S[idx_params])
-        @constraint(model, [i in idx_params], 1e-4 ≤ κ_S[i])    
-        JuMP.fix.(model[:κ_S][idx_params_deterministic], 1e-4)
+    S_aux = Matrix(undef, T, length(seasonality))
 
-        @variable(model, γ[1:unique_num_harmonic, 1:T, idx_params])
-        @variable(model, γ_star[1:unique_num_harmonic, 1:T, idx_params])
+    if !isempty(idx_params_stochastic)
 
-        @constraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params], γ[i, t, j] == γ[i, t-1, j] * cos(2*π*i / seasonal_period[j]) + 
-                                                                                    γ_star[i,t-1, j]*sin(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t])
-        @constraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params], γ_star[i, t, j] == -γ[i, t-1, j] * sin(2*π*i / seasonal_period[j]) + 
-                                                                                    γ_star[i,t-1, j]*cos(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t])
 
-        @expression(model, S[t = 1:T, j in idx_params], sum(γ[i, t, j]  for i in 1:unique_num_harmonic))
-    else
-        @variable(model, γ[1:unique_num_harmonic, idx_params])
-        @variable(model, γ_star[1:unique_num_harmonic, idx_params])
+        @variable(model, κ_S[idx_params_stochastic])
+        @constraint(model, [i in idx_params_stochastic], 1e-4 ≤ κ_S[i])    
+        #JuMP.fix.(model[:κ_S][idx_params_deterministic], 1e-4)
 
-        @expression(model, S[t = 1:T, j in idx_params], sum(γ[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
-                                            γ_star[i, j] * sin(2 * π * i* t/seasonal_period[j]) for i in 1:unique_num_harmonic))
+        @variable(model, γ_sto[1:unique_num_harmonic, 1:T, idx_params_stochastic])
+        @variable(model, γ_star_sto[1:unique_num_harmonic, 1:T, idx_params_stochastic])
+
+        @constraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params_stochastic], γ_sto[i, t, j] == γ_sto[i, t-1, j] * cos(2*π*i / seasonal_period[j]) + 
+                                                                                    γ_star_sto[i,t-1, j]*sin(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t])
+        @constraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params_stochastic], γ_star_sto[i, t, j] == -γ_sto[i, t-1, j] * sin(2*π*i / seasonal_period[j]) + 
+                                                                                    γ_star_sto[i,t-1, j]*cos(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t])
+
+        for j in idx_params_stochastic  
+            for t in 1:T
+                S_aux[t, j] = sum(γ_sto[i, t, j]  for i in 1:unique_num_harmonic)
+            end
+        end
+        #@expression(model, S[t = 1:T, j in idx_params], sum(γ[i, t, j]  for i in 1:unique_num_harmonic))
     end
+
+    if !isempty(idx_params_deterministic)
+
+        @variable(model, γ_det[1:unique_num_harmonic, idx_params_deterministic])
+        @variable(model, γ_star_det[1:unique_num_harmonic, idx_params_deterministic])
+
+        for j in idx_params_deterministic  
+            for t in 1:T
+                S_aux[t, j] = sum(γ_det[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
+                                            γ_star_det[i, j] * sin(2 * π * i* t/seasonal_period[j]) for i in 1:unique_num_harmonic)
+            end
+        end
+        #@expression(model, S[t = 1:T, j in idx_params], sum(γ[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
+                #                            γ_star[i, j] * sin(2 * π * i* t/seasonal_period[j]) for i in 1:unique_num_harmonic))
+    end
+
+    @expression(model, S[t=1:T, j in idx_params], S_aux[t, j])
+
+    # for i in idx_params
+    #     if idx_params[i] ∈ stochastic_params
+
+
+    #     elseif idx_params[i] ∈ idx_params_deterministic
+    #     end
+    # end
+
+    # if stochastic
+    #     @variable(model, κ_S[idx_params])
+    #     @constraint(model, [i in idx_params], 1e-4 ≤ κ_S[i])    
+    #     JuMP.fix.(model[:κ_S][idx_params_deterministic], 1e-4)
+
+    #     @variable(model, γ[1:unique_num_harmonic, 1:T, idx_params])
+    #     @variable(model, γ_star[1:unique_num_harmonic, 1:T, idx_params])
+
+    #     @constraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params], γ[i, t, j] == γ[i, t-1, j] * cos(2*π*i / seasonal_period[j]) + 
+    #                                                                                 γ_star[i,t-1, j]*sin(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t])
+    #     @constraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params], γ_star[i, t, j] == -γ[i, t-1, j] * sin(2*π*i / seasonal_period[j]) + 
+    #                                                                                 γ_star[i,t-1, j]*cos(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t])
+
+    #     @expression(model, S[t = 1:T, j in idx_params], sum(γ[i, t, j]  for i in 1:unique_num_harmonic))
+    # else
+    #     @variable(model, γ[1:unique_num_harmonic, idx_params])
+    #     @variable(model, γ_star[1:unique_num_harmonic, idx_params])
+
+    #     @expression(model, S[t = 1:T, j in idx_params], sum(γ[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
+    #                                         γ_star[i, j] * sin(2 * π * i* t/seasonal_period[j]) for i in 1:unique_num_harmonic))
+    # end
 
 end
 
