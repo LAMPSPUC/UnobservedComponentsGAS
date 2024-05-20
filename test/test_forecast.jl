@@ -161,6 +161,7 @@
     forecast_t       = UnobservedComponentsGAS.predict(gas_model_t, fitted_model_t, y_t, steps_ahead, num_scenarious)
     forecast_t_X     = UnobservedComponentsGAS.predict(gas_model_t, fitted_model_t_X, y_t, X_t_forec, steps_ahead, num_scenarious)
 
+    println(hcat(forecast_t["mean"]), vec(mean(forecast_t["scenarios"], dims = 2)))
     @test(isapprox(forecast_t["mean"], vec(mean(forecast_t["scenarios"], dims = 2)); rtol = 1e-3)) 
     @test(size(forecast_t["scenarios"]) == (steps_ahead, num_scenarious))
     
