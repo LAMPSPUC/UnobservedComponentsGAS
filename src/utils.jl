@@ -30,7 +30,8 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
     
     @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
 
-    idx_params = get_idxs_time_varying_params(time_varying_params)
+    idx_params                                      = get_idxs_time_varying_params(time_varying_params)
+    seasonality_dict, stochastic, stochastic_params = get_seasonality_dict_and_stochastic(seasonality)
 
     # Getting Fit in sample
     if 1 ∈ idx_params
@@ -55,7 +56,7 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
     for i in idx_params
 
         components["param_$i"] = Dict{String, Any}()
-        components["param_$i"]["intercept"] = value(model[:c][i])
+        #components["param_$i"]["intercept"] = value(model[:c][i])
 
         if has_random_walk(level, i)
             components["param_$i"]["level"]                    = Dict{String, Any}()
@@ -88,18 +89,18 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
         end
 
         if has_seasonality(seasonality, i)
-            seasonality_dict, stochastic = get_seasonality_dict_and_stochastic(seasonality)
+            #seasonality_dict, stochastic = get_seasonality_dict_and_stochastic(seasonality)
             components["param_$i"]["seasonality"]                    = Dict{String, Any}()
             components["param_$i"]["seasonality"]["hyperparameters"] = Dict{String, Any}()
 
             components["param_$i"]["seasonality"]["value"]                     = Vector(value.(model[:S][:, i]).data)
-            if stochastic
-                components["param_$i"]["seasonality"]["hyperparameters"]["γ"]      = Matrix(value.(model[:γ][:,:, i]))
-                components["param_$i"]["seasonality"]["hyperparameters"]["γ_star"] = Matrix(value.(model[:γ_star][:,:, i]))
+            if stochastic_params[i]
+                components["param_$i"]["seasonality"]["hyperparameters"]["γ"]      = Matrix(value.(model[:γ_sto][:,:, i]))
+                components["param_$i"]["seasonality"]["hyperparameters"]["γ_star"] = Matrix(value.(model[:γ_star_sto][:,:, i]))
                 components["param_$i"]["seasonality"]["hyperparameters"]["κ"]      = value(model[:κ_S][i])
             else
-                components["param_$i"]["seasonality"]["hyperparameters"]["γ"]      = Vector(value.(model[:γ][:, i]))
-                components["param_$i"]["seasonality"]["hyperparameters"]["γ_star"] = Vector(value.(model[:γ_star][:, i]))
+                components["param_$i"]["seasonality"]["hyperparameters"]["γ"]      = Vector(value.(model[:γ_det][:, i]))
+                components["param_$i"]["seasonality"]["hyperparameters"]["γ_star"] = Vector(value.(model[:γ_star_det][:, i]))
             end
 
         end
@@ -499,15 +500,18 @@ This function parses a vector of strings representing seasonality information in
 """
 function get_seasonality_dict_and_stochastic(seasonality::Vector{String})
     seasonality_dict = Dict{Int64, Union{Int64, Bool}}()
-    stochastic = false
+    num_seasonality  = count(values(seasonality) .!= "")
+    stochastic       = Bool.(zeros(length(seasonality)))
+    
     for i in 1:length(seasonality)
         if isempty(seasonality[i])
             seasonality_dict[i] = false
         else  
             seasonal_type, seasonal_periods = split(seasonality[i])
             seasonality_dict[i] = parse(Int64, seasonal_periods)
-            seasonal_type == "stochastic" ? stochastic = true : stochastic = false
+            seasonal_type == "stochastic" ? stochastic[i] = true : stochastic[i] = false
         end
     end
-    return seasonality_dict, stochastic
+    
+    return seasonality_dict, any(stochastic), stochastic
 end

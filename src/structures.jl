@@ -68,17 +68,21 @@ mutable struct GASModel
         @assert all([split(seasonality[i], " ")[1] ∈ ["deterministic", "stochastic", ""] for i in 1:num_params]) "Invalid seasonality dynamic!"
 
         idx_fixed_params = findall(x -> x == false, time_varying_params)
-
+        
         if all(.!isempty.(level[idx_fixed_params])) & !isempty(idx_fixed_params)
            @warn "Non missing level dynamic found for a fixed paramater. This dynamic will be ignored."
+           level[time_varying_params .== false] .= ""
         end
 
-        if all(.!isempty.(seasonality[idx_fixed_params])) & !isempty(idx_fixed_params)
+        if all(.!isempty.(seasonality[idx_fixed_params])) & !isempty(idx_fixed_params)      
             @warn "Non missing seasonality dynamic found for a fixed paramater. This dynamic will be ignored."
+            seasonality[time_varying_params .== false] .= ""
         end
 
         if all(.!ismissing.(ar[idx_fixed_params])) & !isempty(idx_fixed_params)
             @warn "Non missing ar dynamic found for a fixed paramater. This dynamic will be ignored."
+            ar = Vector{Union{Missing, Int64}}(ar)
+            ar[time_varying_params .== false] .= missing
         end
 
         return new(dist, time_varying_params, d, level, seasonality, ar)

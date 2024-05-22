@@ -277,7 +277,7 @@ function get_initial_params(y::Vector{Fl}, time_varying_params::Vector{Bool}, di
     end
 
     if time_varying_params[2]
-        initial_params[2] = get_seasonal_var(y, maximum(seasonal_period), dist)#(scaled_score.(y ,ones(T) * var(diff(y)), (y.^2) ./ (ones(T) * var(diff(y))) , y, 0.5, dist_code, 2)).^2
+        initial_params[2] = var(diff(y))*ones(T) #get_seasonal_var(y, maximum(seasonal_period), dist)#(scaled_score.(y ,ones(T) * var(diff(y)), (y.^2) ./ (ones(T) * var(diff(y))) , y, 0.5, dist_code, 2)).^2
     else
         initial_params[2] = var(diff(y)) #* (initial_params[3] - 2) / initial_params[3]
     end

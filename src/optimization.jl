@@ -139,7 +139,7 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
     
     idx_time_varying_params = get_idxs_time_varying_params(time_varying_params) 
 
-    @variable(model, c[idx_time_varying_params])
+    #@variable(model, c[idx_time_varying_params])
 
     has_explanatory = !ismissing(X) ? true : false
 

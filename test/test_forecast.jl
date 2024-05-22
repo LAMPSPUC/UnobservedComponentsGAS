@@ -12,9 +12,16 @@
     # path_dir = "test\\"
     path_dir = @__DIR__
     
-    time_series_normal    = CSV.read(joinpath(path_dir, "data/timeseries_normal_rws_d1.csv"), DataFrame)
-    time_series_lognormal = CSV.read(joinpath(path_dir, "data/timeseries_lognormal_rws_d1.csv"), DataFrame)
-    time_series_t         = CSV.read(joinpath(path_dir, "data/timeseries_t_rws_d1.csv"), DataFrame)
+    time_series_normal      = CSV.read(joinpath(path_dir, "data/timeseries_normal_rws_d1.csv"), DataFrame)
+    time_series_lognormal   = CSV.read(joinpath(path_dir, "data/timeseries_lognormal_rws_d1.csv"), DataFrame)
+    time_series_t           = CSV.read(joinpath(path_dir, "data/timeseries_t_rws_d1.csv"), DataFrame)
+    T,N = size(time_series_normal)
+
+    time_series_normal_stac = zeros(T-1,N)
+    for i in 1:N
+        time_series_normal_stac[:,i] = diff(time_series_normal[:,i])
+    end
+
 
     @info(" ---  ---------- Test for normal distribution ---------- ")
     y_normal           = time_series_normal[:,1]
@@ -46,6 +53,68 @@
     @test(isapprox(forecast_normal_X["intervals"]["80"]["upper"], [quantile(forecast_normal_X["scenarios"][t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
     @test(isapprox(forecast_normal_X["intervals"]["95"]["lower"], [quantile(forecast_normal_X["scenarios"][t,:], 0.05/2) for t in 1:steps_ahead]))
     @test(isapprox(forecast_normal_X["intervals"]["95"]["upper"], [quantile(forecast_normal_X["scenarios"][t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
+
+
+    @info(" ---  ---------- Test for normal distribution with stacionary series ---------- ")
+    y_normal           = time_series_normal_stac[:,1]
+    T                  = length(y_normal)
+    X_normal           = hcat(y_normal.+5*rand(T), y_normal.+10*rand(T))
+    X_normal_forec     = hcat(y_normal[end-steps_ahead+1:end].+5*rand(steps_ahead), y_normal[end-steps_ahead+1:end].+10*rand(steps_ahead))
+    dist_normal        = UnobservedComponentsGAS.NormalDistribution()
+    gas_model_normal   = UnobservedComponentsGAS.GASModel(dist_normal, [true, false], 1.0, "ar(1)", "deterministic 12", 1)
+    gas_model_normal_X = deepcopy(gas_model_normal)
+    
+
+    fitted_model_normal   = UnobservedComponentsGAS.fit(gas_model_normal, y_normal)
+    fitted_model_normal_X = UnobservedComponentsGAS.fit(gas_model_normal_X, y_normal, X_normal)
+    forecast_normal       = UnobservedComponentsGAS.predict(gas_model_normal, fitted_model_normal, y_normal, steps_ahead, num_scenarious)
+    forecast_normal_X     = UnobservedComponentsGAS.predict(gas_model_normal_X, fitted_model_normal_X, y_normal, X_normal_forec, steps_ahead, num_scenarious)
+
+    @test(isapprox(forecast_normal["mean"], vec(mean(forecast_normal["scenarios"], dims = 2)); rtol = 1e-3)) 
+    @test(size(forecast_normal["scenarios"]) == (steps_ahead, num_scenarious))
+
+    @test(isapprox(forecast_normal["intervals"]["80"]["lower"], [quantile(forecast_normal["scenarios"][t,:], 0.2/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_normal["intervals"]["80"]["upper"], [quantile(forecast_normal["scenarios"][t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_normal["intervals"]["95"]["lower"], [quantile(forecast_normal["scenarios"][t,:], 0.05/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_normal["intervals"]["95"]["upper"], [quantile(forecast_normal["scenarios"][t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
+
+    @test(isapprox(forecast_normal_X["mean"], vec(mean(forecast_normal_X["scenarios"], dims = 2)); rtol = 1e-3)) 
+    @test(size(forecast_normal_X["scenarios"]) == (steps_ahead, num_scenarious))
+
+    @test(isapprox(forecast_normal_X["intervals"]["80"]["lower"], [quantile(forecast_normal_X["scenarios"][t,:], 0.2/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_normal_X["intervals"]["80"]["upper"], [quantile(forecast_normal_X["scenarios"][t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_normal_X["intervals"]["95"]["lower"], [quantile(forecast_normal_X["scenarios"][t,:], 0.05/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_normal_X["intervals"]["95"]["upper"], [quantile(forecast_normal_X["scenarios"][t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
+
+    @info(" ---  ---------- Test for normal distribution with 2 params---------- ")
+    y_normal                   = time_series_normal[:,1]
+    T                          = length(y_normal)
+    X_normal                   = hcat(y_normal.+5*rand(T), y_normal.+10*rand(T))
+    X_normal_forec             = hcat(y_normal[end-steps_ahead+1:end].+5*rand(steps_ahead), y_normal[end-steps_ahead+1:end].+10*rand(steps_ahead))
+    dist_normal                = UnobservedComponentsGAS.NormalDistribution()
+    gas_model_normal_2params   = UnobservedComponentsGAS.GASModel(dist_normal, [true, true], 1.0, ["random walk slope", "random walk"], ["deterministic 12", ""], [1, missing])
+    gas_model_normal_X_2params = deepcopy(gas_model_normal_2params)
+
+    fitted_model_normal_2params   = UnobservedComponentsGAS.fit(gas_model_normal_2params, y_normal)
+    fitted_model_normal_X_2params = UnobservedComponentsGAS.fit(gas_model_normal_X_2params, y_normal, X_normal)
+    forecast_normal_2params       = UnobservedComponentsGAS.predict(gas_model_normal_2params, fitted_model_normal_2params, y_normal, steps_ahead, num_scenarious)
+    forecast_normal_X_2params     = UnobservedComponentsGAS.predict(gas_model_normal_X_2params, fitted_model_normal_X_2params, y_normal, X_normal_forec, steps_ahead, num_scenarious)
+
+    @test(isapprox(forecast_normal_2params["mean"], vec(mean(forecast_normal_2params["scenarios"], dims = 2)); rtol = 1e-3)) 
+    @test(size(forecast_normal_2params["scenarios"]) == (steps_ahead, num_scenarious))
+
+    @test(isapprox(forecast_normal_2params["intervals"]["80"]["lower"], [quantile(forecast_normal_2params["scenarios"][t,:], 0.2/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_normal_2params["intervals"]["80"]["upper"], [quantile(forecast_normal_2params["scenarios"][t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_normal_2params["intervals"]["95"]["lower"], [quantile(forecast_normal_2params["scenarios"][t,:], 0.05/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_normal_2params["intervals"]["95"]["upper"], [quantile(forecast_normal_2params["scenarios"][t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
+
+    @test(isapprox(forecast_normal_X["mean"], vec(mean(forecast_normal_X["scenarios"], dims = 2)); rtol = 1e-3)) 
+    @test(size(forecast_normal_X["scenarios"]) == (steps_ahead, num_scenarious))
+
+    @test(isapprox(forecast_normal_X_2params["intervals"]["80"]["lower"], [quantile(forecast_normal_X_2params["scenarios"][t,:], 0.2/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_normal_X_2params["intervals"]["80"]["upper"], [quantile(forecast_normal_X_2params["scenarios"][t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_normal_X_2params["intervals"]["95"]["lower"], [quantile(forecast_normal_X_2params["scenarios"][t,:], 0.05/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_normal_X_2params["intervals"]["95"]["upper"], [quantile(forecast_normal_X_2params["scenarios"][t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
 
 
     @info(" ---  ---------- Test for LogNormal distribution ---------- ")
@@ -92,6 +161,7 @@
     forecast_t       = UnobservedComponentsGAS.predict(gas_model_t, fitted_model_t, y_t, steps_ahead, num_scenarious)
     forecast_t_X     = UnobservedComponentsGAS.predict(gas_model_t, fitted_model_t_X, y_t, X_t_forec, steps_ahead, num_scenarious)
 
+    println(hcat(forecast_t["mean"]), vec(mean(forecast_t["scenarios"], dims = 2)))
     @test(isapprox(forecast_t["mean"], vec(mean(forecast_t["scenarios"], dims = 2)); rtol = 1e-3)) 
     @test(size(forecast_t["scenarios"]) == (steps_ahead, num_scenarious))
     
