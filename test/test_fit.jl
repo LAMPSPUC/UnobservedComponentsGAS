@@ -1,7 +1,7 @@
 @testset "Fit" begin  
     
     time_series = CSV.read(joinpath(@__DIR__, "data/timeseries_lognormal_rws_d1.csv"), DataFrame)
-    y = time_series[:,1]
+    y = time_series[:,2]
     T = length(y)
     X = [2*y y/2 rand(T)]
    
@@ -95,7 +95,6 @@
     fitted_model_normal_X_2params = UnobservedComponentsGAS.fit(gas_model_normal_X_2params, y, X)
     fitted_model_lognormal_X      = UnobservedComponentsGAS.fit(gas_model_lognormal_X, y, X)
     fitted_model_t_X              = UnobservedComponentsGAS.fit(gas_model_t_X, y, X)
-
 
     # "Test if termination_status is correct"
     possible_status = ["LOCALLY_SOLVED"]#, "INVALID_MODEL", "ALMOST_LOCALLY_SOLVED"]
