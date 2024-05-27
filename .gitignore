@@ -5,3 +5,4 @@ residuals_diagnostic_example.jl
 test_numeric_integration.jl
 test_m3.jl
 test_dynamic_comb.jl
+inovations_ssmodels.jl

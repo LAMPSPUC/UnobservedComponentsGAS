@@ -151,6 +151,7 @@
 
     initial_values_normal = convert_dict_keys_to_string(initial_values_normal)
     N = 10
+    T = size(time_series_normal, 1)
 
     σ2_values        = zeros(N)
     level_κ_values   = zeros(N)
@@ -163,7 +164,7 @@
         gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false],
                                                      1.0, "random walk slope", "deterministic 12", missing)
         
-        fitted_model = UnobservedComponentsGAS.fit(gas_model, y; α = 0.5)
+        fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
 
         σ2_values[j]               = fitted_model.fitted_params["param_2"][1]        
         level_κ_values[j]          = fitted_model.components["param_1"]["level"]["hyperparameters"]["κ"]
@@ -183,6 +184,7 @@
 
     initial_values_normal = convert_dict_keys_to_string(initial_values_normal)
     N = 10
+    T = size(time_series_normal, 1)
 
     σ2_values        = zeros(N)
     level_κ_values   = zeros(N)
@@ -195,7 +197,7 @@
         gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, true],
                                                      1.0, ["random walk slope", "random walk"], ["deterministic 12", "deterministic 12"], [missing, missing])
         
-        fitted_model = UnobservedComponentsGAS.fit(gas_model, y; α = 0.5)
+        fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
 
         σ2_values[j]                       = fitted_model.fitted_params["param_2"][1]        
         level_κ_values[j]                  = fitted_model.components["param_1"]["level"]["hyperparameters"]["κ"]
@@ -209,9 +211,10 @@
 
     @info(" --- Test quality of fit - lognormal")
 
-    time_series_lognormal      = CSV.read(joinpath(@__DIR__, "data/timeseries_lognormal_rws_d1.csv"), DataFrame)
+    time_series_lognormal      = CSV.read(joinpath(@__DIR__,  "data/timeseries_lognormal_rws_d1.csv"), DataFrame)
     benchmark_values_lognormal = JSON3.read(joinpath(@__DIR__, "data/benchmark_values_lognormal_rws.json"))
     N = 10
+
 
     σ2_values        = zeros(N)
     ν_values         = zeros(N)
@@ -240,8 +243,8 @@
     
     @info(" --- Test quality of fit - t")
 
-    time_series_t      = CSV.read(joinpath(@__DIR__,  "data/timeseries_t_rws_d1.csv"), DataFrame)
-    benchmark_values_t = JSON3.read(joinpath(@__DIR__, "data/benchmark_values_t_rws.json"))
+    time_series_t      = CSV.read(joinpath(@__DIR__,   "test/data/timeseries_t_rws_d1.csv"), DataFrame)
+    benchmark_values_t = JSON3.read(joinpath(@__DIR__, "test/data/benchmark_values_t_rws.json"))
     N = 10
 
     σ2_values        = zeros(N)

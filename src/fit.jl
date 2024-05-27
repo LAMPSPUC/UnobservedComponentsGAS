@@ -157,7 +157,7 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_�
 end
 
 """
-## fit(gas_model::GASModel, y::Vector{Fl}; α::Float64 = 0.5, robust::Bool = false, robust_prop::Float64 = 0.7, number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+## fit(gas_model::GASModel, y::Vector{Fl}; α::Float64 = 0.0, robust::Bool = false, robust_prop::Float64 = 0.7, number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
 
 Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticity) model to the given time series data.
 
@@ -180,7 +180,7 @@ Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticit
 - Otherwise, it creates a GAS model based on the specifications and fits it to the data.
 """
 function fit(gas_model::GASModel, y::Vector{Fl}; 
-                α::Float64 = 0.5, robust::Bool = false, robust_prop::Float64 = 0.7, 
+                α::Float64 = 0.0, robust::Bool = false, robust_prop::Float64 = 0.7, 
                 number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
 
     dist = gas_model.dist
@@ -203,7 +203,7 @@ function fit(gas_model::GASModel, y::Vector{Fl};
 end
 
 """
-## fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; α::Float64 = 0.5, robust::Bool=false, robust_prop::Float64 = 0.7, number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing,tol::Float64 = 0.005) where Fl
+## fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; α::Float64 = 0.0, robust::Bool=false, robust_prop::Float64 = 0.7, number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing,tol::Float64 = 0.005) where Fl
 
 Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticity) model with exogenous variables to the given time series data.
 
@@ -227,7 +227,7 @@ Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticit
 - Otherwise, it creates a GAS model based on the specifications and fits it to the data.
 """
 function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; 
-                α::Float64 = 0.5, robust::Bool=false, robust_prop::Float64 = 0.7, 
+                α::Float64 = 0.0, robust::Bool=false, robust_prop::Float64 = 0.7, 
                 number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, initial_values::Union{Dict{String, Any}, Missing} = missing,tol::Float64 = 0.005) where Fl
 
     dist = gas_model.dist
@@ -249,7 +249,7 @@ function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl};
 end
 
 """
-## fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.5, robust::Bool=false, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
+## fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.0, robust::Bool=false, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
 
 Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticity) model to the given time series data.
 
@@ -270,7 +270,7 @@ Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticit
 - If the distribution of the GAS model is `LogNormalDistribution`, it transforms the dependent variable data to natural logarithms.
 - Includes the objective function, initializes variables, optimizes the model, and returns the fitted GAS model.
 """
-function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.5, robust::Bool=false, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
+function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.0, robust::Bool=false, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
 
     if typeof(gas_model.dist) == LogNormalDistribution
         gas_model.dist = NormalDistribution()
@@ -305,7 +305,7 @@ function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{G
 end
 
 """
-## fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.5, robust::Bool = false, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
+## fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.0, robust::Bool = false, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
 
 Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticity) model to the given time series data with exogenous variables.
 
@@ -327,7 +327,7 @@ Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticit
 - If the distribution of the GAS model is `LogNormalDistribution`, it transforms the dependent variable data to natural logarithms.
 - Includes the objective function, initializes variables, optimizes the model, and returns the fitted GAS model.
 """
-function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.5, robust::Bool = false, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
+function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, parameters::Matrix{Gl}, initial_values::Dict{String, Any}; α::Float64 = 0.0, robust::Bool = false, robust_prop::Float64 = 0.7) where{Fl, Ml, Gl}
 
     if typeof(gas_model.dist) == LogNormalDistribution
         gas_model.dist = NormalDistribution()
