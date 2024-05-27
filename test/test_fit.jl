@@ -223,7 +223,7 @@
     fitted_values_lognormal = zeros(T,N)
     # ~ 80 sec to run
     for j in 1:N
-        y         = time_series_lognormal[:,j]
+        y         = time_series_lognormal[:,j+9]
         gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.LogNormalDistribution(), [true, false],
                                                      1.0, "random walk slope", "deterministic 12", missing)
         fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
@@ -242,8 +242,8 @@
     
     @info(" --- Test quality of fit - t")
 
-    time_series_t      = CSV.read(joinpath(@__DIR__,   "test/data/timeseries_t_rws_d1.csv"), DataFrame)
-    benchmark_values_t = JSON3.read(joinpath(@__DIR__, "test/data/benchmark_values_t_rws.json"))
+    time_series_t      = CSV.read(joinpath(@__DIR__,   "data/timeseries_t_rws_d1.csv"), DataFrame)
+    benchmark_values_t = JSON3.read(joinpath(@__DIR__, "data/benchmark_values_t_rws.json"))
     N = 10
 
     σ2_values        = zeros(N)
