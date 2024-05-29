@@ -38,7 +38,7 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missin
     
     T = length(y)
 
-    @info("Creating GAS model...")
+    # #@info("Creating GAS model...")
     model = JuMP.Model(Ipopt.Optimizer)
 
     set_optimizer_attribute(model, "max_iter", number_max_iterations)
@@ -46,22 +46,22 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missin
     set_optimizer_attribute(model, "tol", tol)
     set_silent(model)
 
-    @info("Including parameters...")
+    # #@info("Including parameters...")
     parameters = include_parameters(model, time_varying_params, T, dist, fixed_ν);
 
-    @info("Computing score...")
+    # #@info("Computing score...")
     s = compute_score(model, parameters, y, d, time_varying_params, T, dist);
     
-    @info("Including components...")
+    # #@info("Including components...")
     include_components!(model, s, gas_model, T);
 
-    @info("Computing initial values...")
+    # #@info("Computing initial values...")
     if ismissing(initial_values)
         Random.seed!(123)
         initial_values = create_output_initialization(y, missing, gas_model);
     end
 
-    @info("Including dynamics..")
+    # #@info("Including dynamics..")
     include_dynamics!(model,parameters, gas_model,  missing, T);
 
     # if get_num_params(gas_model.dist) == 3
@@ -120,7 +120,7 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_�
     
     T = length(y)
 
-    @info("Creating GAS model...")
+    # #@info("Creating GAS model...")
     model = JuMP.Model(Ipopt.Optimizer)
 
     set_optimizer_attribute(model, "max_iter", number_max_iterations)
@@ -128,25 +128,25 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_�
     set_optimizer_attribute(model, "tol", tol)
     set_silent(model)
 
-    @info("Including parameters...")
+    #@info("Including parameters...")
     parameters = include_parameters(model, time_varying_params, T, dist, fixed_ν);
 
-    @info("Computing score...")
+    #@info("Computing score...")
     s = compute_score(model, parameters,  y, d, time_varying_params, T, dist);
     
-    @info("Including components...")
+    #@info("Including components...")
     include_components!(model, s, gas_model, T);
 
-    @info("Computing initial values...")
+    #@info("Computing initial values...")
     if ismissing(initial_values)
         Random.seed!(123)
         initial_values = create_output_initialization(y, X, gas_model)
     end
 
-    @info("Including explanatory variables...")
+    #@info("Including explanatory variables...")
     include_explanatory_variables!(model, X)
 
-    @info("Including dynamics..")
+    #@info("Including dynamics..")
     include_dynamics!(model, parameters, gas_model,  X, T)
 
     if log_normal_flag
@@ -287,15 +287,15 @@ function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{G
     
     T = length(y)
 
-    @info("Including objective funcion...")
+    #@info("Including objective funcion...")
     include_objective_function!(model, parameters, y, T, robust, dist_code; α = α, robust_prop = robust_prop);
 
-    @info("Initializing variables...")
+    #@info("Initializing variables...")
     initialize_components!(model, initial_values, gas_model);
 
-    @info("Optimizing the model...")
+    #@info("Optimizing the model...")
     optimize!(model)
-    @info termination_status(model)
+    #@info termination_status(model)
 
     if log_normal_flag
         gas_model.dist = LogNormalDistribution()
@@ -343,15 +343,15 @@ function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, model::Ml, param
     
     T = length(y)
     
-    @info("Including objective funcion...")
+    #@info("Including objective funcion...")
     include_objective_function!(model, parameters, y, T, robust, dist_code; α = α, robust_prop = robust_prop)
 
-    @info("Initializing variables...")
+    #@info("Initializing variables...")
     initialize_components!(model, initial_values, gas_model)
 
-    @info("Optimizing the model...")
+    #@info("Optimizing the model...")
     optimize!(model)
-    @info termination_status(model)
+    #@info termination_status(model)
 
     if log_normal_flag
         gas_model.dist = LogNormalDistribution()
@@ -430,7 +430,7 @@ end
 #         new_gas_model = deepcopy(gas_model)
 #     end
 
-#     @info("Finding optimal value of α")
+#     #@info("Finding optimal value of α")
 
 #     y_train = y[1:end-validation_horizont]
 #     y_val   = y[end-(validation_horizont-1):end]
@@ -580,7 +580,7 @@ end
 #         new_gas_model = deepcopy(gas_model)
 #     end
 
-#     @info("Finding optimal value of α")
+#     #@info("Finding optimal value of α")
 
 #     y_train = y[1:end-validation_horizont]
 #     y_val   = y[end-(validation_horizont-1):end]
