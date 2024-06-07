@@ -170,3 +170,4 @@
     @test(isapprox(forec["mean"], y_test; rtol = 1e2))
 
 end
+

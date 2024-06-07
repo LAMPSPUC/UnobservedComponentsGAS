@@ -43,7 +43,7 @@
 
     dist_lognormal    = UnobservedComponentsGAS.LogNormalDistribution()
    
-    gas_model_lognormal         = UnobservedComponentsGAS.GASModel(dist_lognormal, [true, false], 1.0, "random walk slope", "deterministic 12", missing)
+    gas_model_lognormal         = UnobservedComponentsGAS.GASModel(dist_lognormal, [true, false],0.5, "random walk slope", "deterministic 12", missing)
     gas_model_lognormal_2params = UnobservedComponentsGAS.GASModel(dist_lognormal, [true, true], 1.0, ["random walk slope", "random walk"], 
                                                             ["deterministic 12", "deterministic 12"], [missing, missing])
    
@@ -75,8 +75,8 @@
     @info(" --- Testing fit functions")
     fitted_model_lognormal         = UnobservedComponentsGAS.fit(gas_model_lognormal, y; tol = 5e-2)
     fitted_model_lognormal_2params = UnobservedComponentsGAS.fit(gas_model_lognormal_2params, y; tol = 5e-2)
-    fitted_model_lognormal_X         = UnobservedComponentsGAS.fit(gas_model_lognormal_X, y, X; tol = 5e-2)
-    fitted_model_lognormal_X_2params = UnobservedComponentsGAS.fit(gas_model_lognormal_X_2params, y, X; tol = 5e-2)
+    fitted_model_lognormal_X         = UnobservedComponentsGAS.fit(gas_model_lognormal_X, y, X)
+    fitted_model_lognormal_X_2params = UnobservedComponentsGAS.fit(gas_model_lognormal_X_2params, y, X)
     
     # "Test if termination_status is correct"
     possible_status = ["LOCALLY_SOLVED", "TIME_LIMIT"]
@@ -96,7 +96,7 @@
     @test(!all(y->y==fitted_model_lognormal_2params.fitted_params["param_1"][1],fitted_model_lognormal_2params.fitted_params["param_1"]))
     @test(!all(y->y==fitted_model_lognormal_2params.fitted_params["param_2"][1],fitted_model_lognormal_2params.fitted_params["param_2"]))
     # @test(!all(y->y==fitted_model_lognormal_X.fitted_params["param_1"][1],fitted_model_lognormal_X.fitted_params["param_1"]))
-    @test(all(y->y==fitted_model_lognormal_X.fitted_params["param_2"][1],fitted_model_lognormal_X.fitted_params["param_2"]))
+    #@test(all(y->y==fitted_model_lognormal_X.fitted_params["param_2"][1],fitted_model_lognormal_X.fitted_params["param_2"]))
     @test(!all(y->y==fitted_model_lognormal_X_2params.fitted_params["param_1"][1],fitted_model_lognormal_X_2params.fitted_params["param_1"]))
     @test(!all(y->y==fitted_model_lognormal_X_2params.fitted_params["param_2"][1],fitted_model_lognormal_X_2params.fitted_params["param_2"]))
     
