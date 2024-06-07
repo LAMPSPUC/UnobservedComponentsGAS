@@ -2,7 +2,7 @@
     
     time_series = CSV.read(joinpath(@__DIR__, "test/data/timeseries_t_rws_d1.csv"), DataFrame)
     T,N = size(time_series)
-    y = time_series[:,2]
+    y = time_series[:,3]
     X = [2*y y/2 rand(T)]
     
     steps_ahead    = 12
@@ -75,7 +75,7 @@
     
     @info(" --- Testing fit functions")
     fitted_model_t         = UnobservedComponentsGAS.fit(gas_model_t, y; tol = 5e-2)
-    fitted_model_t_2params = UnobservedComponentsGAS.fit(gas_model_t_2params, y; tol = 1e-2)
+    fitted_model_t_2params = UnobservedComponentsGAS.fit(gas_model_t_2params, y; tol = 5e-2)
     fitted_model_t_X         = UnobservedComponentsGAS.fit(gas_model_t_X, y, X; tol = 5e-2)
     fitted_model_t_X_2params = UnobservedComponentsGAS.fit(gas_model_t_X_2params, y, X; tol = 5e-2)
     
