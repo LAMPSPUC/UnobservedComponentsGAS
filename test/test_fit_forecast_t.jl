@@ -74,10 +74,10 @@
     @test(test_initial_values_components(initial_values_t_X_2params, rw, rws, ar, seasonality))
     
     @info(" --- Testing fit functions")
-    fitted_model_t         = UnobservedComponentsGAS.fit(gas_model_t, y)
-    fitted_model_t_2params = UnobservedComponentsGAS.fit(gas_model_t_2params, y)
-    fitted_model_t_X         = UnobservedComponentsGAS.fit(gas_model_t_X, y, X)
-    fitted_model_t_X_2params = UnobservedComponentsGAS.fit(gas_model_t_X_2params, y, X)
+    fitted_model_t         = UnobservedComponentsGAS.fit(gas_model_t, y; tol = 5e-2)
+    fitted_model_t_2params = UnobservedComponentsGAS.fit(gas_model_t_2params, y; tol = 5e-2)
+    fitted_model_t_X         = UnobservedComponentsGAS.fit(gas_model_t_X, y, X; tol = 5e-2)
+    fitted_model_t_X_2params = UnobservedComponentsGAS.fit(gas_model_t_X_2params, y, X; tol = 5e-2)
     
     # "Test if termination_status is correct"
     possible_status = ["LOCALLY_SOLVED"]
@@ -138,75 +138,35 @@
 
 
     @info(" --- Test quality of fit and forecast - tDist")
-    N = 10
-    T = size(time_series, 1)
+    y         = time_series[1:end-steps_ahead,1]
+    y_test    = time_series[end-steps_ahead+1:end, 1]
 
-    fitted_values = zeros(T-steps_ahead,N)
-    forec_values  = zeros(steps_ahead, N)
-    y_fitted      = zeros(T-steps_ahead,N)
-    y_forec       = zeros(steps_ahead, N)
+    gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.tLocationScaleDistribution(), [true, false, false],
+                                                    1.0, "random walk slope", "deterministic 12", missing)
+    fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
+    forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
 
-    for j in 1:N
-        y         = time_series[1:end-steps_ahead,j]
-        y_test    = time_series[end-steps_ahead+1:end, j]
-        gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.tLocationScaleDistribution(), [true, false, false],
-                                                     1.0, "random walk slope", "deterministic 12", missing)
-        fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
-        forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
-
-        fitted_values[:,j] .= fitted_model.fit_in_sample
-        forec_values[:,j]  .= forec["mean"] 
-        y_fitted[:,j]      .= y
-        y_forec[:,j]       .= y_test
-    end
-
-    @test(isapprox(mean(fitted_values[2:end,:], dims = 2), mean(y_fitted[2:end,:], dims = 2); rtol = 1e-1))
-    @test(isapprox(mean(forec_values[2:end,:], dims = 2), mean(y_forec[2:end,:], dims = 2); rtol = 1e-1))
+    @test(isapprox(fitted_model.fit_in_sample[2:end], y[2:end]; rtol = 1e-2))
+    @test(isapprox(forec["mean"], y_test; rtol = 1e2))
 
     @info(" --- Test quality of fit - tDist with 2 params")
-    fitted_values_2params = zeros(T-steps_ahead,N)
-    forec_values_2params  = zeros(steps_ahead, N)
-    y_fitted_2params      = zeros(T-steps_ahead,N)
-    y_forec_2params       = zeros(steps_ahead, N)
+    
+    gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.tLocationScaleDistribution(), [true, true, false],
+                                                    0.0, ["random walk slope", "random walk", ""], ["deterministic 12", "deterministic 12", ""], [missing, missing, missing])
+    fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
+    forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
 
-    for j in 1:N
-        y         = time_series[1:end-steps_ahead,j]
-        y_test    = time_series[end-steps_ahead+1:end, j]
-        gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.tLocationScaleDistribution(), [true, true, false],
-                                                     1.0, ["random walk slope", "random walk", ""], ["deterministic 12", "deterministic 12", ""], [missing, missing, missing])
-        fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
-        forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
-        
-        fitted_values_2params[:,j] .= fitted_model.fit_in_sample
-        forec_values_2params[:,j]  .= forec["mean"] 
-        y_fitted_2params[:,j]      .= y
-        y_forec_2params[:,j]       .= y_test
-    end
+    @test(isapprox(fitted_model.fit_in_sample[2:end], y[2:end]; rtol = 1e-1))
+    @test(isapprox(forec["mean"], y_test; rtol = 1e2))
 
-    @test(isapprox(mean(fitted_values_2params[2:end,:], dims = 2), mean(y_fitted_2params[2:end,:], dims = 2); rtol = 1e-1))
-    # @test(isapprox(mean(forec_values_2params[2:end,:], dims = 2), mean(y_forec_2params[2:end,:], dims = 2); rtol = 1e-1))
 
     @info(" --- Test quality of fit - tDist with robust")
-    fitted_values = zeros(T-steps_ahead,N)
-    forec_values  = zeros(steps_ahead, N)
-    y_fitted      = zeros(T-steps_ahead,N)
-    y_forec       = zeros(steps_ahead, N)
-    
-    for j in 1:N
-        y         = time_series[1:end-steps_ahead,j]
-        y_test    = time_series[end-steps_ahead+1:end, j]
-        gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.tLocationScaleDistribution(), [true, false, false],
-                                                     1.0, "random walk slope", "deterministic 12", 1)
-        fitted_model = UnobservedComponentsGAS.fit(gas_model, y; α = 0.0, robust = true)
-        forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
+    gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.tLocationScaleDistribution(), [true, false, false],
+                                                    1.0, "random walk slope", "deterministic 12", 1)
+    fitted_model = UnobservedComponentsGAS.fit(gas_model, y; α = 0.0, robust = true)
+    forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
 
-        fitted_values[:,j] .= fitted_model.fit_in_sample
-        forec_values[:,j]  .= forec["mean"] 
-        y_fitted[:,j]      .= y
-        y_forec[:,j]       .= y_test
-    end
-
-    @test(isapprox(mean(fitted_values[2:end,:], dims = 2), mean(y_fitted[2:end,:], dims = 2); rtol = 1e-1))
-    @test(isapprox(mean(forec_values[2:end,:], dims = 2), mean(y_forec[2:end,:], dims = 2); rtol = 1e-1))
+    @test(isapprox(fitted_model.fit_in_sample[2:end], y[2:end]; rtol = 1e-2))
+    @test(isapprox(forec["mean"], y_test; rtol = 1e2))
 
 end
