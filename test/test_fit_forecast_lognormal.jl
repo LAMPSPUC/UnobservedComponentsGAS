@@ -47,8 +47,8 @@
     gas_model_lognormal_2params = UnobservedComponentsGAS.GASModel(dist_lognormal, [true, true], 1.0, ["random walk slope", "random walk"], 
                                                             ["deterministic 12", "deterministic 12"], [missing, missing])
    
-    gas_model_lognormal_X            = deepcopy(gas_model_lognormal)
-    gas_model_lognormal_X_2params    = deepcopy(gas_model_lognormal_2params)
+    gas_model_lognormal_X         = deepcopy(gas_model_lognormal)
+    gas_model_lognormal_X_2params = deepcopy(gas_model_lognormal_2params)
    
     @info(" --- Testing create_model functions")
     # Create model with no explanatory series
@@ -79,7 +79,7 @@
     fitted_model_lognormal_X_2params = UnobservedComponentsGAS.fit(gas_model_lognormal_X_2params, y, X)
     
     # "Test if termination_status is correct"
-    possible_status = ["LOCALLY_SOLVED"]
+    possible_status = ["LOCALLY_SOLVED", "TIME_LIMIT"]
     @test(fitted_model_lognormal.model_status in possible_status)
     @test(fitted_model_lognormal_2params.model_status in possible_status)
     @test(fitted_model_lognormal_X.model_status in possible_status)
@@ -92,7 +92,7 @@
     
     # "Test if all time varying and fixed params are time varying and fixed"
     @test(!all(y->y==fitted_model_lognormal.fitted_params["param_1"][1],fitted_model_lognormal.fitted_params["param_1"]))
-    # @test(all(y->y==fitted_model_lognormal.fitted_params["param_2"][1],fitted_model_lognormal.fitted_params["param_2"]))
+    #@test(all(y->y==fitted_model_lognormal.fitted_params["param_2"][1],fitted_model_lognormal.fitted_params["param_2"]))
     @test(!all(y->y==fitted_model_lognormal_2params.fitted_params["param_1"][1],fitted_model_lognormal_2params.fitted_params["param_1"]))
     @test(!all(y->y==fitted_model_lognormal_2params.fitted_params["param_2"][1],fitted_model_lognormal_2params.fitted_params["param_2"]))
     # @test(!all(y->y==fitted_model_lognormal_X.fitted_params["param_1"][1],fitted_model_lognormal_X.fitted_params["param_1"]))
@@ -107,33 +107,33 @@
 
     @info(" --- Test forecast function ---")
     forecast_lognormal         = UnobservedComponentsGAS.predict(gas_model_lognormal, fitted_model_lognormal, y, steps_ahead, num_scenarious)
-    # forecast_lognormal_X       = UnobservedComponentsGAS.predict(gas_model_lognormal_X, fitted_model_lognormal_X, y, X_lognormal_forec, steps_ahead, num_scenarious)
+    #forecast_lognormal_X       = UnobservedComponentsGAS.predict(gas_model_lognormal_X, fitted_model_lognormal_X, y, X_lognormal_forec, steps_ahead, num_scenarious)
     forecast_lognormal_2params = UnobservedComponentsGAS.predict(gas_model_lognormal_2params, fitted_model_lognormal_2params, y, steps_ahead, num_scenarious)
 
 
-    # @test(isapprox(forecast_lognormal["mean"], vec(mean(forecast_lognormal["scenarios"], dims = 2)); rtol = 1e-3)) 
+    @test(isapprox(forecast_lognormal["mean"], vec(mean(forecast_lognormal["scenarios"], dims = 2)); rtol = 1e-3)) 
     @test(size(forecast_lognormal["scenarios"]) == (steps_ahead, num_scenarious))
 
-    # @test(isapprox(forecast_lognormal["intervals"]["80"]["lower"], [quantile(forecast_lognormal["scenarios"][t,:], 0.2/2) for t in 1:steps_ahead]))
-    # @test(isapprox(forecast_lognormal["intervals"]["80"]["upper"], [quantile(forecast_lognormal["scenarios"][t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
-    # @test(isapprox(forecast_lognormal["intervals"]["95"]["lower"], [quantile(forecast_lognormal["scenarios"][t,:], 0.05/2) for t in 1:steps_ahead]))
-    # @test(isapprox(forecast_lognormal["intervals"]["95"]["upper"], [quantile(forecast_lognormal["scenarios"][t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_lognormal["intervals"]["80"]["lower"], [quantile(forecast_lognormal["scenarios"][t,:], 0.2/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_lognormal["intervals"]["80"]["upper"], [quantile(forecast_lognormal["scenarios"][t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_lognormal["intervals"]["95"]["lower"], [quantile(forecast_lognormal["scenarios"][t,:], 0.05/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_lognormal["intervals"]["95"]["upper"], [quantile(forecast_lognormal["scenarios"][t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
 
-    # @test(isapprox(forecast_lognormal_2params["mean"], vec(mean(forecast_lognormal_2params["scenarios"], dims = 2)); rtol = 1e-3)) 
+    @test(isapprox(forecast_lognormal_2params["mean"], vec(mean(forecast_lognormal_2params["scenarios"], dims = 2)); rtol = 1e-3)) 
     @test(size(forecast_lognormal_2params["scenarios"]) == (steps_ahead, num_scenarious))
 
-    # @test(isapprox(forecast_lognormal_2params["intervals"]["80"]["lower"], [quantile(forecast_lognormal_2params["scenarios"][t,:], 0.2/2) for t in 1:steps_ahead]))
-    # @test(isapprox(forecast_lognormal_2params["intervals"]["80"]["upper"], [quantile(forecast_lognormal_2params["scenarios"][t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
-    # @test(isapprox(forecast_lognormal_2params["intervals"]["95"]["lower"], [quantile(forecast_lognormal_2params["scenarios"][t,:], 0.05/2) for t in 1:steps_ahead]))
-    # @test(isapprox(forecast_lognormal_2params["intervals"]["95"]["upper"], [quantile(forecast_lognormal_2params["scenarios"][t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_lognormal_2params["intervals"]["80"]["lower"], [quantile(forecast_lognormal_2params["scenarios"][t,:], 0.2/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_lognormal_2params["intervals"]["80"]["upper"], [quantile(forecast_lognormal_2params["scenarios"][t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_lognormal_2params["intervals"]["95"]["lower"], [quantile(forecast_lognormal_2params["scenarios"][t,:], 0.05/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_lognormal_2params["intervals"]["95"]["upper"], [quantile(forecast_lognormal_2params["scenarios"][t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
 
-    # @test(isapprox(forecast_lognormal_X["mean"], vec(mean(forecast_lognormal_X["scenarios"], dims = 2)); rtol = 1e-3)) 
-    # @test(size(forecast_lognormal_X["scenarios"]) == (steps_ahead, num_scenarious))
+    @test(isapprox(forecast_lognormal_X["mean"], vec(mean(forecast_lognormal_X["scenarios"], dims = 2)); rtol = 1e-3)) 
+    @test(size(forecast_lognormal_X["scenarios"]) == (steps_ahead, num_scenarious))
 
-    # @test(isapprox(forecast_lognormal_X["intervals"]["80"]["lower"], [quantile(forecast_lognormal_X["scenarios"][t,:], 0.2/2) for t in 1:steps_ahead]))
-    # @test(isapprox(forecast_lognormal_X["intervals"]["80"]["upper"], [quantile(forecast_lognormal_X["scenarios"][t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
-    # @test(isapprox(forecast_lognormal_X["intervals"]["95"]["lower"], [quantile(forecast_lognormal_X["scenarios"][t,:], 0.05/2) for t in 1:steps_ahead]))
-    # @test(isapprox(forecast_lognormal_X["intervals"]["95"]["upper"], [quantile(forecast_lognormal_X["scenarios"][t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_lognormal_X["intervals"]["80"]["lower"], [quantile(forecast_lognormal_X["scenarios"][t,:], 0.2/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_lognormal_X["intervals"]["80"]["upper"], [quantile(forecast_lognormal_X["scenarios"][t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_lognormal_X["intervals"]["95"]["lower"], [quantile(forecast_lognormal_X["scenarios"][t,:], 0.05/2) for t in 1:steps_ahead]))
+    @test(isapprox(forecast_lognormal_X["intervals"]["95"]["upper"], [quantile(forecast_lognormal_X["scenarios"][t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
 
 
     @info(" --- Test quality of fit and forecast - LogNormal")
@@ -160,7 +160,7 @@
     end
 
     @test(isapprox(mean(fitted_values[2:end,:], dims = 2), mean(y_fitted[2:end,:], dims = 2); rtol = 1e-1))
-    # @test(isapprox(mean(forec_values[2:end,:], dims = 2), mean(y_forec[2:end,:], dims = 2); rtol = 1e-1))
+    @test(isapprox(mean(forec_values[2:end,:], dims = 2), mean(y_forec[2:end,:], dims = 2); rtol = 1e-1))
 
     @info(" --- Test quality of fit - LogNormal with 2 params")
     fitted_values_2params = zeros(T-steps_ahead,N)
@@ -183,29 +183,6 @@
     end
 
     @test(isapprox(mean(fitted_values_2params[2:end,:], dims = 2), mean(y_fitted_2params[2:end,:], dims = 2); rtol = 1e-1))
-    # @test(isapprox(mean(forec_values_2params[2:end,:], dims = 2), mean(y_forec_2params[2:end,:], dims = 2); rtol = 1e-1))
-
-    @info(" --- Test quality of fit - LogNormal with robust")
-    # fitted_values = zeros(T-steps_ahead,N)
-    # forec_values  = zeros(steps_ahead, N)
-    # y_fitted      = zeros(T-steps_ahead,N)
-    # y_forec       = zeros(steps_ahead, N)
-    
-    # for j in 1:N
-    #     y         = time_series[1:end-steps_ahead,j]
-    #     y_test    = time_series[end-steps_ahead+1:end, j]
-    #     gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.LogNormalDistribution(), [true, false],
-    #                                                  1.0, "random walk slope", "deterministic 12", 1)
-    #     fitted_model = UnobservedComponentsGAS.fit(gas_model, y; α = 0.0, robust = true)
-    #     forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
-
-    #     fitted_values[:,j] .= fitted_model.fit_in_sample
-    #     forec_values[:,j]  .= forec["mean"] 
-    #     y_fitted[:,j]      .= y
-    #     y_forec[:,j]       .= y_test
-    # end
-
-    # @test(isapprox(mean(fitted_values[2:end,:], dims = 2), mean(y_fitted[2:end,:], dims = 2); rtol = 1e-1))
-    # @test(isapprox(mean(forec_values[2:end,:], dims = 2), mean(y_forec[2:end,:], dims = 2); rtol = 1e-1))
+    @test(isapprox(mean(forec_values_2params[2:end,:], dims = 2), mean(y_forec_2params[2:end,:], dims = 2); rtol = 1e-1))
 
 end

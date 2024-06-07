@@ -598,12 +598,12 @@ function predict(gas_model::GASModel, output::Output, y::Vector{Float64}, steps_
 
     dict_hyperparams_and_fitted_components = get_dict_hyperparams_and_fitted_components_with_forecast(gas_model, new_output, steps_ahead, num_scenarios)
     pred_y                                 = simulate(gas_model, new_output, dict_hyperparams_and_fitted_components, y, steps_ahead, num_scenarios)
-
-    dict_forec = get_mean_and_intervals_prediction(pred_y, steps_ahead, probabilistic_intervals)
-
+    
     if typeof(gas_model.dist) == LogNormalDistribution
-        dict_forec = convert_forecast_to_exp_scale(dict_forec)
+        pred_y = convert_forecast_scenarios_to_exp_scale(pred_y)
     end
+    
+    dict_forec = get_mean_and_intervals_prediction(pred_y, steps_ahead, probabilistic_intervals)
 
     return dict_forec
 end
@@ -642,12 +642,12 @@ function predict(gas_model::GASModel, output::Output, y::Vector{Float64}, X_fore
 
     dict_hyperparams_and_fitted_components = get_dict_hyperparams_and_fitted_components_with_forecast(gas_model, new_output, X_forecast, steps_ahead, num_scenarios)
     pred_y                                 = simulate(gas_model, new_output, dict_hyperparams_and_fitted_components, y, X_forecast, steps_ahead, num_scenarios)
-
-    dict_forec = get_mean_and_intervals_prediction(pred_y, steps_ahead, probabilistic_intervals)
-
+    
     if typeof(gas_model.dist) == LogNormalDistribution
-        dict_forec = convert_forecast_to_exp_scale(dict_forec)
+        pred_y = convert_forecast_scenarios_to_exp_scale(pred_y)
     end
+    
+    dict_forec = get_mean_and_intervals_prediction(pred_y, steps_ahead, probabilistic_intervals)
 
     return dict_forec
 end

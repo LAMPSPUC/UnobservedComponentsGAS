@@ -39,34 +39,35 @@
     rw          = false
     rws         = true
     ar          = false
-    seasonality = 12    
+    seasonality = 12 
+    ν           = 5   
 
     dist_t    = UnobservedComponentsGAS.tLocationScaleDistribution()
    
-    gas_model_t         = UnobservedComponentsGAS.GASModel(dist_t, [true, false], 1.0, "random walk slope", "deterministic 12", missing)
-    gas_model_t_2params = UnobservedComponentsGAS.GASModel(dist_t, [true, true], 1.0, ["random walk slope", "random walk"], 
-                                                            ["deterministic 12", "deterministic 12"], [missing, missing])
+    gas_model_t         = UnobservedComponentsGAS.GASModel(dist_t, [true, false, false], 1.0, "random walk slope", "deterministic 12", missing)
+    gas_model_t_2params = UnobservedComponentsGAS.GASModel(dist_t, [true, true, false], 1.0, ["random walk slope", "random walk"], 
+                                                            ["deterministic 12", "deterministic 12"], [missing, missing, missing])
    
     gas_model_t_X            = deepcopy(gas_model_t)
     gas_model_t_X_2params    = deepcopy(gas_model_t_2params)
    
     @info(" --- Testing create_model functions")
     # Create model with no explanatory series
-    model_t, parameters_t, initial_values_t                         = UnobservedComponentsGAS.create_model(gas_model_t, y, missing)
-    model_t_2params, parameters_t_2params, initial_values_t_2params = UnobservedComponentsGAS.create_model(gas_model_t_2params, y, missing)
+    model_t, parameters_t, initial_values_t                         = UnobservedComponentsGAS.create_model(gas_model_t, y, ν)
+    model_t_2params, parameters_t_2params, initial_values_t_2params = UnobservedComponentsGAS.create_model(gas_model_t_2params, y,  ν)
     
-    model_t_X, parameters_t_X, initial_values_t_X                         = UnobservedComponentsGAS.create_model(gas_model_t_X, y, X, missing);
-    model_t_X_2params, parameters_t_X_2params, initial_values_t_X_2params = UnobservedComponentsGAS.create_model(gas_model_t_X_2params, y, X, missing);
+    model_t_X, parameters_t_X, initial_values_t_X                         = UnobservedComponentsGAS.create_model(gas_model_t_X, y, X,  ν);
+    model_t_X_2params, parameters_t_X_2params, initial_values_t_X_2params = UnobservedComponentsGAS.create_model(gas_model_t_X_2params, y, X,  ν);
     
-    @test(size(parameters_t)         == (T,2))
-    @test(size(parameters_t_2params) == (T,2))
+    @test(size(parameters_t)         == (T,3))
+    @test(size(parameters_t_2params) == (T,3))
     @test(typeof(model_t)            == JuMP.Model)
     @test(typeof(model_t_2params)    == JuMP.Model)
     @test(test_initial_values_components(initial_values_t, rw, rws, ar, seasonality))
     @test(test_initial_values_components(initial_values_t_2params, rw, rws, ar, seasonality))
     
-    @test(size(parameters_t_X)         == (T,2))
-    @test(size(parameters_t_X_2params) == (T,2))
+    @test(size(parameters_t_X)         == (T,3))
+    @test(size(parameters_t_X_2params) == (T,3))
     @test(typeof(model_t_X)            == JuMP.Model)
     @test(typeof(model_t_X_2params)    == JuMP.Model)
     @test(test_initial_values_components(initial_values_t_X, rw, rws, ar, seasonality))
@@ -87,8 +88,8 @@
     @test(ismissing(fitted_model_t.selected_variables))
     @test(ismissing(fitted_model_t_2params.selected_variables))
      # "Test if fitted_params has the right keys -> order may be a problem"
-    @test(all(keys(fitted_model_t.fitted_params) .== ["param_2","param_1"]))
-    @test(all(keys(fitted_model_t_2params.fitted_params) .== ["param_2","param_1"]))
+    @test(all(keys(fitted_model_t.fitted_params) .== ["param_2","param_1","param_3"]))
+    @test(all(keys(fitted_model_t_2params.fitted_params) .== ["param_2","param_1","param_3"]))
     
     # "Test if all time varying and fixed params are time varying and fixed"
     @test(!all(y->y==fitted_model_t.fitted_params["param_1"][1],fitted_model_t.fitted_params["param_1"]))
@@ -172,7 +173,7 @@
         y         = time_series[1:end-steps_ahead,j]
         y_test    = time_series[end-steps_ahead+1:end, j]
         gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.tLocationScaleDistribution(), [true, true, false],
-                                                     1.0, ["random walk slope", "random walk", ""], ["deterministic 12", "deterministic 12",, ""], [missing, missing, missing])
+                                                     1.0, ["random walk slope", "random walk", ""], ["deterministic 12", "deterministic 12", ""], [missing, missing, missing])
         fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
         forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
         

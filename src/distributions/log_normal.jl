@@ -93,21 +93,22 @@ Convert the dictionary of forecasts, originally in the Normal distribution scale
         - "scenarios": Matrix containing all the simulated predicted values.
 """
 
-function convert_forecast_to_exp_scale(dict_forec::Dict{String, Any})
+function convert_forecast_scenarios_to_exp_scale(scenarios::Matrix{Fl}) where Fl
 
-    new_dict_forec = deepcopy(dict_forec)
-    new_dict_forec["mean"] = exp.(dict_forec["mean"])
+    new_scenarios = deepcopy(scenarios)
 
-    for s in 1:size(dict_forec["scenarios"], 2)
-        new_dict_forec["scenarios"][:, s] = exp.(dict_forec["scenarios"][:, s])
+    for s in 1:size(new_scenarios, 2)
+        new_scenarios[:, s] = exp.(new_scenarios[:, s])
     end
 
-    for k in keys(dict_forec["intervals"])
-        new_dict_forec["intervals"][k]["lower"] = exp.(dict_forec["intervals"][k]["lower"])
-        new_dict_forec["intervals"][k]["upper"] = exp.(dict_forec["intervals"][k]["upper"])
-    end
+    # new_dict_forec["mean"] = exp.(dict_forec["mean"])
+
+    # for k in keys(dict_forec["intervals"])
+    #     new_dict_forec["intervals"][k]["lower"] = exp.(dict_forec["intervals"][k]["lower"])
+    #     new_dict_forec["intervals"][k]["upper"] = exp.(dict_forec["intervals"][k]["upper"])
+    # end
     
-    return new_dict_forec
+    return new_scenarios
 end
 
 """
