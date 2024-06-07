@@ -1,6 +1,6 @@
 @testset "Fit & Forecast tDist" begin  
     
-    time_series = CSV.read(joinpath(@__DIR__, "test/data/timeseries_t_rws_d1.csv"), DataFrame)
+    time_series = CSV.read(joinpath(@__DIR__, "data/timeseries_t_rws_d1.csv"), DataFrame)
     T,N = size(time_series)
     y = time_series[:,3]
     X = [2*y y/2 rand(T)]
