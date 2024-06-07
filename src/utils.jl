@@ -93,7 +93,7 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
             components["param_$i"]["seasonality"]                    = Dict{String, Any}()
             components["param_$i"]["seasonality"]["hyperparameters"] = Dict{String, Any}()
 
-            components["param_$i"]["seasonality"]["value"]                     = Vector(value.(model[:S][:, i]).data)
+            components["param_$i"]["seasonality"]["value"]                     = Vector(value.(model[:S][:, i]))
             if stochastic_params[i]
                 components["param_$i"]["seasonality"]["hyperparameters"]["γ"]      = Matrix(value.(model[:γ_sto][:,:, i]))
                 components["param_$i"]["seasonality"]["hyperparameters"]["γ_star"] = Matrix(value.(model[:γ_star_sto][:,:, i]))
