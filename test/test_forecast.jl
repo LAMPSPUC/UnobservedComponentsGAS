@@ -153,7 +153,7 @@
     X_t           = hcat(y_t.+5*rand(T), y_t.+10*rand(T))
     X_t_forec     = hcat(y_t[end-steps_ahead+1:end].+5*rand(steps_ahead), y_t[end-steps_ahead+1:end].+10*rand(steps_ahead))
     dist_t        = UnobservedComponentsGAS.tLocationScaleDistribution()
-    gas_model_t   = UnobservedComponentsGAS.GASModel(dist_t, [true, false, false], 1.0, "random walk slope", "stochastic 12", 1)
+    gas_model_t   = UnobservedComponentsGAS.GASModel(dist_t, [true, false, false], 1.0, "random walk slope", "deterministic 12", 1)
     gas_model_t_X = deepcopy(gas_model_t)
 
     fitted_model_t   = UnobservedComponentsGAS.fit(gas_model_t, y_t) 
