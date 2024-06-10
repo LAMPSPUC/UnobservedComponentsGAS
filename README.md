@@ -145,7 +145,7 @@ This section aims to illustrate how this package can be used for time series mod
 ```julia
 import Pkg;
 
-Pkg.add("https://github.com/LAMPSPUC/UnobservedComponentsGAS.git")
+Pkg.add(url="https://github.com/LAMPSPUC/UnobservedComponentsGAS.git")
 
 using UnobservedComponentsGAS
 ```
