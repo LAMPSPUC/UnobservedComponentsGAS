@@ -6,11 +6,18 @@ Pkg.activate(".")
 Pkg.instantiate()
 include("src/UnobservedComponentsGAS.jl")
 
-
 function read_dataframes(granularity::String)::Tuple{DataFrame, DataFrame}
 
     train_set = CSV.read("$granularity-train.csv", DataFrame)
     test_set  =  CSV.read("$granularity-test.csv", DataFrame)
+
+    return train_set, test_set
+end
+
+function read_MEB()::Tuple{DataFrame, DataFrame}
+
+    train_set =  CSV.read("SimulacaoMEB_Train.csv", DataFrame)
+    test_set  =  CSV.read("SimulacaoMEB_Test.csv", DataFrame)
 
     return train_set, test_set
 end
@@ -30,11 +37,11 @@ function build_train_test_dict(df_train::DataFrame, df_test::DataFrame, N::Union
     println(size(df_test))
 
     for i in eachindex(df_train[:, 1])
-        y_raw = Vector(df_train[i, :])[2:end]
+        y_raw = Vector(df_train[i, :])#[2:end]
         y_train_raw = y_raw[1:findlast(i->!ismissing(i), y_raw)]
         T = length(y_train_raw)
         y_train = y_train_raw
-        y_test  = Vector(df_test[i, :])[2:end]
+        y_test  = Vector(df_test[i, :])#[2:end]
 
         train_test_dict[i] = Dict()
         train_test_dict[i]["train"] = Float64.(y_train)
@@ -57,75 +64,7 @@ function logpdf_normal(param, y)
     return -0.5 * log(2 * π * param[2]) - ((y - param[1])^2)/(2 * param[2])
 end
 
-function create_ts_seasonal(T)
-    σ2ϵ = 0.8  # Variance of the observation noise
-    σ2η = 0.5  # Variance of the level noise
-    σ2κ = 0.05  # Variance of the slope noise
-    σ2ζ = 0.5  # Variance of the seasonal noise
-    
-    # Initialization
-    β = zeros(T+1)
-    μ = zeros(T+1)
-    S1 = zeros(T+1)
-    C1 = zeros(T+1)
-    S2 = zeros(T+1)
-    C2 = zeros(T+1)
-    y = zeros(T)
-    
-    # Initial values for level, slope, and seasonal components
-    μ[1] = rand(Uniform(0, 10))
-    β[1] = rand(Uniform(-1, 1))
-    S1[1] = rand(Uniform(-1, 1))
-    C1[1] = rand(Uniform(-1, 1))
-    S2[1] = rand(Uniform(-1, 1))
-    C2[1] = rand(Uniform(-1, 1))
-    
-    # Time series generation
-    for t in 1:T
-        seasonal_component = S1[t] * sin(2π*t/T) + C1[t] * cos(2π*t/T) + S2[t] * sin(4π*t/T) + C2[t] * cos(4π*t/T)
-        y[t] = μ[t] + seasonal_component + rand(Normal(0, σ2ϵ))
-        
-        # Update level and slope
-        μ[t+1] = μ[t] + β[t] + rand(Normal(0, σ2η))
-        β[t+1] = β[t] + rand(Normal(0, σ2κ))
-        
-        # Update seasonal components
-        S1[t+1] = S1[t] + rand(Normal(0, σ2ζ))
-        C1[t+1] = C1[t] + rand(Normal(0, σ2ζ))
-        S2[t+1] = S2[t] + rand(Normal(0, σ2ζ))
-        C2[t+1] = C2[t] + rand(Normal(0, σ2ζ))
-    end
-    
-    # Output the generated time series
-    return y
-end
-
-function create_ts(T)
-    β = zeros(T+1)
-    μ = zeros(T+1)
-
-    σ2ϵ  = 0.8
-    σ2η  = 0.5
-    σ2κ  = 0.05
-
-    y = zeros(T)
-
-    μ[1] = rand(Uniform(0,10))
-    β[1] = rand(Uniform(-1,1))
-
-    for t in 1:T
-        y[t]   = μ[t] + rand(Normal(0,σ2ϵ)) 
-        μ[t+1] = μ[t] + β[t] + rand(Normal(0,σ2η))
-        β[t+1] = β[t] + rand(Normal(0,σ2κ))
-    end
-
-    for t in 1:T
-        y[t] = y[t] + 4*sin(t*π/6) + rand(Normal(0,0.5)) 
-    end
-    return y
-end
-
-function define_model_param_variable_dyn_expression(y, solver, deterministic)
+function define_model_param_variable_dyn_expression(y, solver, deterministic, initial_values)
     T = length(y)
     model = JuMP.Model(solver)
     set_silent(model)
@@ -135,25 +74,27 @@ function define_model_param_variable_dyn_expression(y, solver, deterministic)
     @variable(model, params[1:T])
     @variable(model, fixed_params[2] ≥ 1e-4)
     @variable(model, RW1)
-    @variable(model, -2 <= κ_RWS[1] <= 2)
+    @variable(model, -5 <= κ_RWS[1] <= 5)
     @variable(model, b1)
-    @variable(model, -2 <= κ_b[1] <= 2)
+    @variable(model, -5 <= κ_b[1] <= 5)
     @variable(model, S1)
 
     set_start_value.(model[:params], y)
-
-    parameters = Matrix(undef, T, 2)
-    parameters[:, 1] .= model[:params]
-    parameters[:, 2] .= model[:fixed_params][2]
+    #parameters = Matrix(undef, T, 2)
+    #parameters[:, 1] .= model[:params]
+    #parameters[:, 2] .= model[:fixed_params][2]
 
     #criando variaveis da dinamica
-    s = UnobservedComponentsGAS.compute_score(model, parameters, y, 1.0, [true, false], T, UnobservedComponentsGAS.NormalDistribution())
+    #s = UnobservedComponentsGAS.compute_score(model, parameters, y, 1.0, [true, false], T, UnobservedComponentsGAS.NormalDistribution())
+    @variable(model, s[1:T])
+    @operator(model, scaled_score_int, 6, UnobservedComponentsGAS.scaled_score)
+    @constraint(model, [t = 1:T], s[t] == scaled_score_int(model[:params][t], model[:fixed_params][2],y[t], 1.0, 1, 1))
 
     if deterministic
         @variable(model, γ_det[1:6, 1])
         @variable(model, γ_star_det[1:6, 1])
     else
-        @variable(model, -2 <= κ_S[1] <= 2)
+        @variable(model, -5 <= κ_S[1] <= 5)
         @variable(model, γ_sto1[1:6, 1])
         @variable(model, γ_star_sto1[1:6, 1])
         γ_sto            = Matrix(undef, 6, T)
@@ -172,26 +113,33 @@ function define_model_param_variable_dyn_expression(y, solver, deterministic)
     S[1] = model[:S1]
 
     for t in 2:T
-        RWS[t] = RWS[t-1] + b[t-1] + model[:κ_RWS][1]*s[1][t]
-        b[t]  = b[t-1] + model[:κ_b][1]*s[1][t]
+        RWS[t] = RWS[t-1] + b[t-1] + model[:κ_RWS][1]*model[:s][t]#s[1][t]
+        b[t]  = b[t-1] + model[:κ_b][1]*model[:s][t]#s[1][t]
         if deterministic
             S[t] =  sum(γ_det[i, 1]*cos(2 * π * i * t/12) + γ_star_det[i, 1] * sin(2 * π * i* t/12) for i in 1:6)
         else
             for i in 1:6
-                γ_sto[i, t]      = γ_sto[i, t-1] * cos(2*π*i / 12)  + γ_star_sto[i,t-1]*sin(2*π*i / 12) + κ_S[1] * s[1][t]
-                γ_star_sto[i, t] = -γ_sto[i, t-1] * sin(2*π*i / 12) + γ_star_sto[i,t-1]*cos(2*π*i / 12) + κ_S[1] * s[1][t]
+                γ_sto[i, t]      = γ_sto[i, t-1] * cos(2*π*i / 12)  + γ_star_sto[i,t-1]*sin(2*π*i / 12) + κ_S[1] *model[:s][t]#* s[1][t]
+                γ_star_sto[i, t] = -γ_sto[i, t-1] * sin(2*π*i / 12) + γ_star_sto[i,t-1]*cos(2*π*i / 12) + κ_S[1] *model[:s][t]#* s[1][t]
             end
             S[t] =  sum(γ_sto[i, t]  for i in 1:6)
         end
     end
 
-    @expression(model, RWS, RWS)
+    @expression(model, RWS, RWS);
     @expression(model, b, b);
     @expression(model, S, S);
     @constraint(model, [t in 1:T], params[t] == RWS[t] + S[t]);
 
+    set_start_value.(model[:params], round.(initial_values["param"]; digits = 5))
+    set_start_value.(model[:fixed_params], round.(initial_values["fixed_param"]; digits = 5))
+    set_start_value.(model[:s], round.(UnobservedComponentsGAS.scaled_score.(initial_values["param"][:, 1], initial_values["fixed_param"][1], y, 1.0, 1, 1); digits = 5))
+   
     @operator(model, log_pdf, 3, logpdf_normal)
-    @objective(model, Max, sum(log_pdf(parameters[t, 1],parameters[t, 2], y[t]) for t in 1:T));
+    #@variable(model, θ[1:T])
+    #@constraint(model, [t=1:T], model[:θ][t] ≤  s[t])
+    #@constraint(model, [t=1:T], model[:θ][t] ≤ -s[t])
+    @objective(model, Max, sum(log_pdf(model[:params][t],model[:fixed_params][2], y[t]) for t in 1:T));
     return model
 end
 
@@ -206,10 +154,12 @@ function define_model_param_expression_dyn_variable(y, solver, deterministic, in
     #@variable(model, μ[1:T])
     @variable(model, fixed_params[2] ≥ 1e-4)
     @variable(model, RWS[1:T])
-    @variable(model, -2 <= κ_RWS[1] <= 2)
+    @variable(model, -5 <= κ_RWS[1] <= 5)
     @variable(model, b[1:T])
-    @variable(model, -2 <= κ_b[1] <= 2)
+    @variable(model, -5 <= κ_b[1] <= 5)
     @variable(model, S[1:T])
+
+    # set_start_value.(model[:RWS], y)
 
     @expression(model, params, RWS + S)
 
@@ -218,10 +168,13 @@ function define_model_param_expression_dyn_variable(y, solver, deterministic, in
     parameters[:, 2] .= model[:fixed_params][2]
 
     #criando variaveis da dinamica
-    s = UnobservedComponentsGAS.compute_score(model, parameters, y, 1.0, [true, false], T, UnobservedComponentsGAS.NormalDistribution());
+    #s = UnobservedComponentsGAS.compute_score(model, parameters, y, 1.0, [true, false], T, UnobservedComponentsGAS.NormalDistribution());
+    @variable(model, s[1:T])
+    @operator(model, scaled_score_int, 6, UnobservedComponentsGAS.scaled_score)
+    @constraint(model, [t = 1:T], s[t] == scaled_score_int(model[:params][t], model[:fixed_params][2],y[t], 1.0, 1, 1))
 
-    @constraint(model, [t = 2:T], b[t] == b[t - 1] + κ_b[1] * s[1][t])
-    @constraint(model, [t = 2:T], RWS[t] == RWS[t - 1] + b[t - 1] + κ_RWS[1] * s[1][t])
+    @constraint(model, [t = 2:T], b[t] == b[t - 1] + κ_b[1] * s[t]) #* s[1][t])
+    @constraint(model, [t = 2:T], RWS[t] == RWS[t - 1] + b[t - 1] + κ_RWS[1]* s[t]) #* s[1][t])
 
     if deterministic
         @variable(model, γ_det[1:6, 1])
@@ -230,26 +183,30 @@ function define_model_param_expression_dyn_variable(y, solver, deterministic, in
                                                 γ_star_det[i, 1] * sin(2 * π * i* t/12) for i in 1:6))
     else
         @variable(model, κ_S[1])
-        @constraint(model, [i in 1], -2 ≤ κ_S[1] ≤ 2)    
+        @constraint(model, [i in 1], -5 ≤ κ_S[1] ≤ 5)    
 
         @variable(model, γ_sto[1:6, 1:T, 1])
         @variable(model, γ_star_sto[1:6, 1:T, 1])
 
         @constraint(model, [i = 1:6, t = 2:T], γ_sto[i, t, 1] == γ_sto[i, t-1, 1] * cos(2*π*i / 12) + 
-                                                                                    γ_star_sto[i,t-1, 1]*sin(2*π*i / 12) + κ_S[1] * s[1][t])
+                                                                                    γ_star_sto[i,t-1, 1]*sin(2*π*i / 12) + κ_S[1] * s[t])#* s[1][t])
         @constraint(model, [i = 1:6, t = 2:T], γ_star_sto[i, t, 1] == -γ_sto[i, t-1, 1] * sin(2*π*i / 12) + 
-                                                                                    γ_star_sto[i,t-1, 1]*cos(2*π*i / 12) + κ_S[1] * s[1][t])
+                                                                                    γ_star_sto[i,t-1, 1]*cos(2*π*i / 12) + κ_S[1] * s[t])#* s[1][t])
         @constraint(model, [t = 1:T], S[t] == sum(γ_sto[i, t, 1]  for i in 1:6))
     end
 
     @operator(model, log_pdf, 3, logpdf_normal)
-    @objective(model, Max, sum(log_pdf(parameters[t, 1],parameters[t, 2], y[t]) for t in 1:T));
-
+    #@variable(model, θ[1:T])
+    #@constraint(model, [t=1:T], model[:θ][t] ≤  s[t])
+    #@constraint(model, [t=1:T], model[:θ][t] ≤ -s[t])
+    @objective(model, Max, sum(log_pdf(model[:params][t],model[:fixed_params][2], y[t]) for t in 1:T));
+  
     set_start_value.(model[:RWS][:, 1], round.(initial_values["rws"]["values"]; digits = 5))
     set_start_value.(model[:κ_RWS][1], round.(initial_values["rws"]["κ"]; digits = 5))
     set_start_value.(model[:b][:, 1],  round.(initial_values["slope"]["values"]; digits = 5))
     set_start_value.(model[:κ_b][1], round.(initial_values["slope"]["κ"]; digits = 5))
-
+    set_start_value.(model[:s], round.(UnobservedComponentsGAS.scaled_score.(initial_values["param"][:, 1], initial_values["fixed_param"][1], y, 1.0, 1, 1); digits = 5))
+   
     set_start_value.(model[:fixed_params], round.(initial_values["fixed_param"]; digits = 5))
 
     seasonality_dict, stochastic, stochastic_params = UnobservedComponentsGAS.get_seasonality_dict_and_stochastic([seasonality])
@@ -285,20 +242,25 @@ function define_model_all_variable(y, gas_model, solver, deterministic, initial_
     @variable(model, params[1:T])
     @variable(model, fixed_params[2] ≥ 1e-4)
     @variable(model, RWS[1:T])
-    @variable(model, -2 <= κ_RWS[1] <= 2)
+    @variable(model, -5 <= κ_RWS[1] <= 5)
     @variable(model, b[1:T])
-    @variable(model, -2 <= κ_b[1] <= 2)
+    @variable(model, -5 <= κ_b[1] <= 5)
     @variable(model, S[1:T])
 
-    parameters = Matrix(undef, T, 2)
-    parameters[:, 1] .= model[:params]
-    parameters[:, 2] .= model[:fixed_params][2]
+    # set_start_value.(model[:params], y)
+
+    #parameters = Matrix(undef, T, 2)
+    #parameters[:, 1] .= model[:params]
+    #parameters[:, 2] .= model[:fixed_params][2]
 
     #criando variaveis da dinamica
-    s = UnobservedComponentsGAS.compute_score(model, parameters, y, 1.0, [true, false], T, UnobservedComponentsGAS.NormalDistribution())
+    #s = UnobservedComponentsGAS.compute_score(model, parameters, y, 1.0, [true, false], T, UnobservedComponentsGAS.NormalDistribution())
+    @variable(model, s[1:T])
+    @operator(model, scaled_score_int, 6, UnobservedComponentsGAS.scaled_score)
+    @constraint(model, [t = 1:T], s[t] == scaled_score_int(model[:params][t], model[:fixed_params][2],y[t], 1.0, 1, 1))
 
-    @constraint(model, [t = 2:T], b[t]  == b[t - 1] + κ_b[1] * s[1][t])
-    @constraint(model, [t = 2:T], RWS[t] == RWS[t - 1] + b[t - 1] + κ_RWS[1] * s[1][t])
+    @constraint(model, [t = 2:T], b[t]  == b[t - 1] + κ_b[1] * s[t])
+    @constraint(model, [t = 2:T], RWS[t] == RWS[t - 1] + b[t - 1] + κ_RWS[1] * s[t])
 
     if deterministic
         @variable(model, γ_det[1:6, 1])
@@ -308,15 +270,15 @@ function define_model_all_variable(y, gas_model, solver, deterministic, initial_
                                                 γ_star_det[i, 1] * sin(2 * π * i* t/12) for i in 1:6))
     else
         @variable(model, κ_S[1])
-        @constraint(model, [i in 1], -2 ≤ κ_S[1] ≤ 2)    
+        @constraint(model, [i in 1], -5 ≤ κ_S[1] ≤ 5)    
 
         @variable(model, γ_sto[1:6, 1:T, 1])
         @variable(model, γ_star_sto[1:6, 1:T, 1])
 
         @constraint(model, [i = 1:6, t = 2:T], γ_sto[i, t, 1] == γ_sto[i, t-1, 1] * cos(2*π*i / 12) + 
-                                                                                    γ_star_sto[i,t-1, 1]*sin(2*π*i / 12) + κ_S[1] * s[1][t])
+                                                                                    γ_star_sto[i,t-1, 1]*sin(2*π*i / 12) + κ_S[1] * s[t])
         @constraint(model, [i = 1:6, t = 2:T], γ_star_sto[i, t, 1] == -γ_sto[i, t-1, 1] * sin(2*π*i / 12) + 
-                                                                                    γ_star_sto[i,t-1, 1]*cos(2*π*i / 12) + κ_S[1] * s[1][t])
+                                                                                    γ_star_sto[i,t-1, 1]*cos(2*π*i / 12) + κ_S[1] * s[t])
 
         @constraint(model, [t = 1:T], S[t] == sum(γ_sto[i, t, 1]  for i in 1:6))
         
@@ -324,11 +286,15 @@ function define_model_all_variable(y, gas_model, solver, deterministic, initial_
     @constraint(model, [t = 2:T], params[t]  == RWS[t] + S[t])
 
     @operator(model, log_pdf, 3, logpdf_normal)
-    @objective(model, Max, sum(log_pdf(parameters[t, 1],parameters[t, 2], y[t]) for t in 1:T));
-
+    #@variable(model, θ[1:T])
+    #@constraint(model, [t=1:T], model[:θ][t] ≤  s[t])
+    #@constraint(model, [t=1:T], model[:θ][t] ≤ -s[t])
+    @objective(model, Max, sum(log_pdf(model[:params][t],model[:fixed_params][2], y[t]) for t in 1:T));
+  
     UnobservedComponentsGAS.initialize_components!(model, initial_values, gas_model)
     set_start_value.(model[:S], round.(initial_values["seasonality"]["values"]; digits = 5)) 
-
+    set_start_value.(model[:s], round.(UnobservedComponentsGAS.scaled_score.(initial_values["param"][:, 1], initial_values["fixed_param"][1], y, 1.0, 1, 1); digits = 5))
+   
     return model
 end
 
@@ -336,7 +302,7 @@ function create_and_optimize(y, gas_model, modelo, deterministic, initial_values
 
     T = length(y)
     if modelo == 1
-        t_create = @elapsed model = define_model_param_variable_dyn_expression(y, Ipopt.Optimizer, deterministic)
+        t_create = @elapsed model = define_model_param_variable_dyn_expression(y, Ipopt.Optimizer, deterministic, initial_values)
     elseif modelo == 2
         t_create = @elapsed model = define_model_param_expression_dyn_variable(y, Ipopt.Optimizer, deterministic, initial_values, seasonality)
     else
@@ -346,18 +312,24 @@ function create_and_optimize(y, gas_model, modelo, deterministic, initial_values
     t_optim = @elapsed optimize!(model)
     output = UnobservedComponentsGAS.create_output_fit(model, zeros(T,2), y, missing, missing, gas_model, 0.0)
     rmse_param = sqrt(Metrics.mse(output.fit_in_sample, y))
-    mape_param = mape(y, output.fit_in_sample)
 
-    return output, t_create, t_optim, rmse_param, mape_param
+    return output, t_create, t_optim, rmse_param, value.(model[:s])
 end
 
-function mape(y_true, y_pred)
-    return mean(abs.((y_true .- y_pred) ./ y_true)) * 100
+function MASE(y_train::Vector{Fl}, y_test::Vector{Fl}, y_forecast::Vector{Fl}; s::Int64=12)::Float64 where {Fl}
+    T = length(y_train)
+    H = length(y_test)
+
+    numerator   = (1/H) * sum(abs(y_test[i] - y_forecast[i]) for i in 1:H)
+    denominator = (1/(T - s)) * sum(abs(y_train[j] - y_train[j - s]) for j in s+1:T)
+    return numerator/denominator
 end
 
 granularity = "Monthly"
-N = 5000
+N = 100
 data_dict  = build_train_test_dict(read_dataframes(granularity)..., N);
+
+data_dict  = build_train_test_dict(read_MEB()..., N);
 
 #T_values = [74, 124, 224, 524]
 #N        = 10
@@ -365,92 +337,63 @@ timeout = 300
 deterministic = true
 deterministic ? seasonality = "deterministic 12" : seasonality = "stochastic 12"
 
-df_results = DataFrame([[],[],[], [], [], [], [], [], []], ["serie", "T", "modelo", "t_create", "t_optim", "rmse_train", "rmse_test", "mape_train", "mape_test"])
+df_results = DataFrame([[],[],[], [], [], [], [], []], ["serie", "T", "model", "t create", "t optim", "rmse train", "rmse test", "mase test"])
 #for T in T_values
-    # println("Tamanho = $T")
+println("Tamanho = $T")
 for n in 1:N
-    n % 100 == 0 ? println("   Série = $n") : nothing
+    println("   Série = $n")
     y_train = data_dict[n]["train"]
     y_test  = data_dict[n]["test"]
-    T = length(y_train)
 
+    # plot(vcat(y_train, y_test))
     gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false], 1.0, "random walk slope", seasonality, missing)
     initial_values = UnobservedComponentsGAS.create_output_initialization(y_train, missing, gas_model)
 
-    # # println("       Modelo = 1")
-    # gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false], 1.0, "random walk slope", seasonality, missing)
-    # output1, t_create1, t_optim1, rmse_param1, mape_param1 = create_and_optimize(y_train, gas_model, 1, deterministic, initial_values, seasonality)
-    # forec1 = UnobservedComponentsGAS.predict(gas_model, output1, y_train, length(y_test), 500)
-    # rmse1 = sqrt(Metrics.mse(forec1["mean"], y_test))
-    # mape1 = mape(y_test, forec1["mean"])
-    
-    # println("       Modelo = 2")
+    println("       Modelo = 1")
     gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false], 1.0, "random walk slope", seasonality, missing)
-    output2, t_create2, t_optim2, rmse_param2, mape_param2 = create_and_optimize(y_train, gas_model, 2, deterministic, initial_values, seasonality)
-    forec2 = UnobservedComponentsGAS.predict(gas_model, output2, y_train, length(y_test), 500)
-    rmse2 = sqrt(Metrics.mse(forec2["mean"], y_test))
-    mape2 = mape(y_test, forec2["mean"])
+    output1, t_create1, t_optim1, rmse_param1, score1 = create_and_optimize(y_train, gas_model, 1, deterministic, initial_values, seasonality)
+    forec1 = UnobservedComponentsGAS.predict(gas_model, output1, y_train, 18, 500)
+    rmse1 = sqrt(Metrics.mse(forec1["mean"], y_test))
+    mase1 = MASE(y_train, y_test, forec1["mean"])
 
-    # Y[T][n]["output2"] = output2
-    # Y[T][n]["forec2"] = forec2
-
-    # plot(y_train)
-    # plot!(output2.fit_in_sample)
+    println("       Modelo = 2")
+    gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false], 1.0, "random walk slope", seasonality, missing)
+    output2, t_create2, t_optim2, rmse_param2, score2 = create_and_optimize(y_train, gas_model, 2, deterministic, initial_values, seasonality)
+    forec2 = UnobservedComponentsGAS.predict(gas_model, output2, y_train, 18, 500)
+    mase2 = MASE(y_train, y_test, forec2["mean"])
+    
+    println("       Modelo = 3")
+    gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false], 1.0, "random walk slope", seasonality, missing)
+    output3, t_create3, t_optim3, rmse_param3, score3 = create_and_optimize(y_train, gas_model, 3, deterministic, initial_values, seasonality)
+    forec3 = UnobservedComponentsGAS.predict(gas_model, output3, y_train, 18, 500)
+    mase3 = MASE(y_train, y_test, forec3["mean"])
+    
+    # plot(vcat(y_train, y_test), label = "observed", color = :black)
+    # plot!(vcat(output1.fit_in_sample, ones(18) * NaN), label = "fit1")
+    # plot!(vcat(output2.fit_in_sample, ones(18) * NaN), label = "fit2")
+    # plot!(vcat(output3.fit_in_sample, ones(18) * NaN), label = "fit3")
+    # plot!(vcat(ones(length(y_train)) * NaN,  forec1["mean"]), label = "forec1")
+    # plot!(vcat(ones(length(y_train)) * NaN,  forec2["mean"]), label = "forec2")
+    # plot!(vcat(ones(length(y_train)) * NaN,  forec3["mean"]), label = "forec3")
 
     # plot(y_test)
-    # plot!(forec2["mean"])
-    
-    # println("       Modelo = 3")
-    gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false], 1.0, "random walk slope", seasonality, missing)
-    output3, t_create3, t_optim3, rmse_param3, mape_param3 = create_and_optimize(y_train, gas_model, 3, deterministic, initial_values, seasonality)
-    forec3 = UnobservedComponentsGAS.predict(gas_model, output3, y_train, length(y_test), 500)
-    rmse3 = sqrt(Metrics.mse(forec3["mean"], y_test))
-    mape3 = mape(y_test, forec3["mean"])
-    
-    # Y[T][n]["output3"] = output3
-    # Y[T][n]["forec3"] = forec3
+    # plot!(forec1["mean"], label = "forec1")
+    # plot!(forec2["mean"], label = "forec2")
+    # plot!(forec3["mean"], label = "forec3")
 
-    # plot(y_train)
-    # plot!(output3.fit_in_sample)
+    push!(df_results, [n, T, "model 1", t_create1, t_optim1, rmse_param1, rmse1, mase1])
+    push!(df_results, [n, T, "model 2", t_create2, t_optim2, rmse_param2, rmse2, mase2])
+    push!(df_results, [n, T, "model 3", t_create3, t_optim3, rmse_param3, rmse3, mase3])
 
-    # plot(y_test)
-    # plot!(forec3["mean"])
-
-    # push!(df_results, [n, T, "model 1", t_create1, t_optim1, rmse_param1, rmse1])
-    # push!(df_results, [n, T, "modelo 1", t_create1, t_optim1, rmse_param1, rmse1, mape_param1, mape1])
-    push!(df_results, [n, T, "modelo 2", t_create2, t_optim2, rmse_param2, rmse2, mape_param2, mape2])
-    push!(df_results, [n, T, "modelo 3", t_create3, t_optim3, rmse_param3, rmse3, mape_param3, mape3])
-  CSV.write("results_variables_expressions.csv", df_results)
+    CSV.write("results_variables_expressions_MEB.csv", df_results)
 end   
 #end
 
 
 
-model = Model(Ipopt.Optimizer)
-@variable(model, α1)
-@variable(model, -1 ≤ ϕ ≤ 1)
-exp = Vector(undef, 5)
-exp[1] = model[:α1]
-for i in 1:4
-    exp[i+1] = model[:ϕ] * exp[i]
-end
-println(model)
-
-model = Model(Ipopt.Optimizer)
-@variable(model, α[1:5])
-@variable(model, -1 ≤ ϕ ≤ 1)
-
-for i in 1:4
-    @constraint(model, model[:α][i+1] == model[:ϕ] * model[:α][i])
-end
-
-α[2] == ϕ*α[1]
-α[3] == ϕ*α[2]
-α[4] == ϕ*α[3]
-α[5] == ϕ*α[4]
 
 
-print(model)
+
 # function define_model_all_expression(y, solver)
 #     T = length(y)
 #     model = JuMP.Model(Ipopt.Optimizer)
