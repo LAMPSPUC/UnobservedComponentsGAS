@@ -87,8 +87,8 @@ function define_model_param_variable_dyn_expression(y, solver, deterministic, in
     #criando variaveis da dinamica
     #s = UnobservedComponentsGAS.compute_score(model, parameters, y, 1.0, [true, false], T, UnobservedComponentsGAS.NormalDistribution())
     @variable(model, s[1:T])
-    # @constraint(model, [t = 1:T], s[t] == y[t] - model[:params][t]) # d = 1
-    @constraint(model, [t = 1:T], s[t] * model[:fixed_params][2] == y[t] - model[:params][t]) # d = 0
+    @constraint(model, [t = 1:T], s[t] == y[t] - model[:params][t]) # d = 1
+    # @constraint(model, [t = 1:T], s[t] * model[:fixed_params][2] == y[t] - model[:params][t]) # d = 0
     # @operator(model, scaled_score_int, 6, UnobservedComponentsGAS.scaled_score)
     # @constraint(model, [t = 1:T], s[t] == scaled_score_int(model[:params][t], model[:fixed_params][2],y[t], 1.0, 1, 1))
 
@@ -117,22 +117,26 @@ function define_model_param_variable_dyn_expression(y, solver, deterministic, in
     S[1] = model[:S1]
 
     for t in 2:T
-        RWS[t] = RWS[t-1] + b[t-1] + model[:κ_RWS][1]*model[:s][t]#s[1][t]
-        b[t]  = b[t-1] + model[:κ_b][1]*model[:s][t]#s[1][t]
+
+        RWS[t] = @expression(model, RWS[t-1] + b[t-1] + model[:κ_RWS][1]*model[:s][t])
+        b[t]   = @expression(model, b[t-1] + model[:κ_b][1]*model[:s][t])
         if deterministic
-            S[t] =  sum(γ_det[i, 1]*cos(2 * π * i * t/12) + γ_star_det[i, 1] * sin(2 * π * i* t/12) for i in 1:6)
+            S[t] = @expression(model, sum(γ_det[i, 1]*cos(2 * π * i * t/12) + γ_star_det[i, 1] * sin(2 * π * i* t/12) for i in 1:6))
         else
             for i in 1:6
-                γ_sto[i, t]      = γ_sto[i, t-1] * cos(2*π*i / 12)  + γ_star_sto[i,t-1]*sin(2*π*i / 12) + κ_S[1] *model[:s][t]#* s[1][t]
-                γ_star_sto[i, t] = -γ_sto[i, t-1] * sin(2*π*i / 12) + γ_star_sto[i,t-1]*cos(2*π*i / 12) + κ_S[1] *model[:s][t]#* s[1][t]
+                γ_sto[i, t] = @expression(model,  γ_sto[i, t-1] * cos(2*π*i / 12)  + γ_star_sto[i,t-1]*sin(2*π*i / 12) + κ_S[1] *model[:s][t])
+                γ_star_sto[i, t] = @expression(model, -γ_sto[i, t-1] * sin(2*π*i / 12) + γ_star_sto[i,t-1]*cos(2*π*i / 12) + κ_S[1] *model[:s][t])
             end
-            S[t] =  sum(γ_sto[i, t]  for i in 1:6)
+            S[t] = @expression(model, sum(γ_sto[i, t]  for i in 1:6))
         end
+        drop_zeros!(RWS[t])
+        drop_zeros!(b[t])
+        drop_zeros!(S[t])
     end
 
-    @expression(model, RWS, RWS);
-    @expression(model, b, b);
-    @expression(model, S, S);
+    # @expression(model, RWS, RWS);
+    # @expression(model, b, b);
+    # @expression(model, S, S);
     @constraint(model, [t in 1:T], params[t] == RWS[t] + S[t]);
 
     set_start_value.(model[:params], round.(initial_values["param"]; digits = 5))
@@ -167,17 +171,17 @@ function define_model_param_expression_dyn_variable(y, solver, deterministic, in
 
     @expression(model, params, RWS + S)
 
-    parameters = Matrix(undef, T, 2)
-    parameters[:, 1] .= model[:params]
-    parameters[:, 2] .= model[:fixed_params][2]
+    # parameters = Matrix(undef, T, 2)
+    # parameters[:, 1] .= model[:params]
+    # parameters[:, 2] .= model[:fixed_params][2]
 
     #criando variaveis da dinamica
     #s = UnobservedComponentsGAS.compute_score(model, parameters, y, 1.0, [true, false], T, UnobservedComponentsGAS.NormalDistribution());
     @variable(model, s[1:T])
     # @constraint(model, [t = 1:T], s[t] == y[t] - model[:params][t]) # d = 1
-    @constraint(model, [t = 1:T], s[t] * model[:fixed_params][2] == y[t] - model[:params][t]) # d = 0
-    # @operator(model, scaled_score_int, 6, UnobservedComponentsGAS.scaled_score)
-    # @constraint(model, [t = 1:T], s[t] == scaled_score_int(model[:params][t], model[:fixed_params][2],y[t], 1.0, 1, 1))
+    # @constraint(model, [t = 1:T], s[t] * model[:fixed_params][2] == y[t] - model[:params][t]) # d = 0
+    @operator(model, scaled_score_int, 6, UnobservedComponentsGAS.scaled_score)
+    @constraint(model, [t = 1:T], s[t] == scaled_score_int(model[:params][t], model[:fixed_params][2],y[t], 1.0, 1, 1))
 
     @constraint(model, [t = 2:T], b[t] == b[t - 1] + κ_b[1] * s[t]) #* s[1][t])
     @constraint(model, [t = 2:T], RWS[t] == RWS[t - 1] + b[t - 1] + κ_RWS[1]* s[t]) #* s[1][t])
@@ -394,7 +398,7 @@ for n in 1:N
     push!(df_results, [n, T, "model 2", t_create2, t_optim2, rmse_param2, rmse2, mase2, output2.model_status])
     push!(df_results, [n, T, "model 3", t_create3, t_optim3, rmse_param3, rmse3, mase3, output3.model_status])
 
-    CSV.write("results_variables_expressions_MEB_score_manual_d0.csv", df_results)
+    CSV.write("results_variables_expressions_MEB_correctexpression_d1.csv", df_results)
 end   
 
 
