@@ -87,8 +87,12 @@ function define_model_param_variable_dyn_expression(y, solver, deterministic, in
     #criando variaveis da dinamica
     #s = UnobservedComponentsGAS.compute_score(model, parameters, y, 1.0, [true, false], T, UnobservedComponentsGAS.NormalDistribution())
     @variable(model, s[1:T])
-    @operator(model, scaled_score_int, 6, UnobservedComponentsGAS.scaled_score)
-    @constraint(model, [t = 1:T], s[t] == scaled_score_int(model[:params][t], model[:fixed_params][2],y[t], 1.0, 1, 1))
+    # @constraint(model, [t = 1:T], s[t] == y[t] - model[:params][t]) # d = 1
+    @constraint(model, [t = 1:T], s[t] * model[:fixed_params][2] == y[t] - model[:params][t]) # d = 0
+    # @operator(model, scaled_score_int, 6, UnobservedComponentsGAS.scaled_score)
+    # @constraint(model, [t = 1:T], s[t] == scaled_score_int(model[:params][t], model[:fixed_params][2],y[t], 1.0, 1, 1))
+
+    # [(y - μ)/σ²; -(0.5/σ²) * (1 - ((y - μ)^2)/σ²)]
 
     if deterministic
         @variable(model, γ_det[1:6, 1])
@@ -170,8 +174,10 @@ function define_model_param_expression_dyn_variable(y, solver, deterministic, in
     #criando variaveis da dinamica
     #s = UnobservedComponentsGAS.compute_score(model, parameters, y, 1.0, [true, false], T, UnobservedComponentsGAS.NormalDistribution());
     @variable(model, s[1:T])
-    @operator(model, scaled_score_int, 6, UnobservedComponentsGAS.scaled_score)
-    @constraint(model, [t = 1:T], s[t] == scaled_score_int(model[:params][t], model[:fixed_params][2],y[t], 1.0, 1, 1))
+    # @constraint(model, [t = 1:T], s[t] == y[t] - model[:params][t]) # d = 1
+    @constraint(model, [t = 1:T], s[t] * model[:fixed_params][2] == y[t] - model[:params][t]) # d = 0
+    # @operator(model, scaled_score_int, 6, UnobservedComponentsGAS.scaled_score)
+    # @constraint(model, [t = 1:T], s[t] == scaled_score_int(model[:params][t], model[:fixed_params][2],y[t], 1.0, 1, 1))
 
     @constraint(model, [t = 2:T], b[t] == b[t - 1] + κ_b[1] * s[t]) #* s[1][t])
     @constraint(model, [t = 2:T], RWS[t] == RWS[t - 1] + b[t - 1] + κ_RWS[1]* s[t]) #* s[1][t])
@@ -256,8 +262,10 @@ function define_model_all_variable(y, gas_model, solver, deterministic, initial_
     #criando variaveis da dinamica
     #s = UnobservedComponentsGAS.compute_score(model, parameters, y, 1.0, [true, false], T, UnobservedComponentsGAS.NormalDistribution())
     @variable(model, s[1:T])
-    @operator(model, scaled_score_int, 6, UnobservedComponentsGAS.scaled_score)
-    @constraint(model, [t = 1:T], s[t] == scaled_score_int(model[:params][t], model[:fixed_params][2],y[t], 1.0, 1, 1))
+    # @constraint(model, [t = 1:T], s[t] == y[t] - model[:params][t]) # d = 1
+    @constraint(model, [t = 1:T], s[t] * model[:fixed_params][2] == y[t] - model[:params][t]) # d = 0
+    # @operator(model, scaled_score_int, 6, UnobservedComponentsGAS.scaled_score)
+    # @constraint(model, [t = 1:T], s[t] == scaled_score_int(model[:params][t], model[:fixed_params][2],y[t], 1.0, 1, 1))
 
     @constraint(model, [t = 2:T], b[t]  == b[t - 1] + κ_b[1] * s[t])
     @constraint(model, [t = 2:T], RWS[t] == RWS[t - 1] + b[t - 1] + κ_RWS[1] * s[t])
@@ -312,7 +320,7 @@ function create_and_optimize(y, gas_model, modelo, deterministic, initial_values
     t_optim = @elapsed optimize!(model)
     output = UnobservedComponentsGAS.create_output_fit(model, zeros(T,2), y, missing, missing, gas_model, 0.0)
     rmse_param = sqrt(Metrics.mse(output.fit_in_sample, y))
-
+    println(output.model_status)
     return output, t_create, t_optim, rmse_param, value.(model[:s])
 end
 
@@ -327,23 +335,22 @@ end
 
 granularity = "Monthly"
 N = 100
-data_dict  = build_train_test_dict(read_dataframes(granularity)..., N);
+# data_dict  = build_train_test_dict(read_dataframes(granularity)..., N);
 
 data_dict  = build_train_test_dict(read_MEB()..., N);
 
-#T_values = [74, 124, 224, 524]
-#N        = 10
 timeout = 300
 deterministic = true
 deterministic ? seasonality = "deterministic 12" : seasonality = "stochastic 12"
 
-df_results = DataFrame([[],[],[], [], [], [], [], []], ["serie", "T", "model", "t create", "t optim", "rmse train", "rmse test", "mase test"])
-#for T in T_values
-println("Tamanho = $T")
+df_results = DataFrame([[],[],[], [], [], [], [], [], []],
+                     ["serie", "T", "model", "t create", "t optim", "rmse train", "rmse test", "mase test", "status"])
+
 for n in 1:N
     println("   Série = $n")
     y_train = data_dict[n]["train"]
     y_test  = data_dict[n]["test"]
+    T       = length(y_train)
 
     # plot(vcat(y_train, y_test))
     gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false], 1.0, "random walk slope", seasonality, missing)
@@ -351,21 +358,23 @@ for n in 1:N
 
     println("       Modelo = 1")
     gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false], 1.0, "random walk slope", seasonality, missing)
-    output1, t_create1, t_optim1, rmse_param1, score1 = create_and_optimize(y_train, gas_model, 1, deterministic, initial_values, seasonality)
+    output1, t_create1, t_optim1, rmse_param1, score1 = create_and_optimize(y_train, gas_model, 1, deterministic, initial_values, seasonality);
     forec1 = UnobservedComponentsGAS.predict(gas_model, output1, y_train, 18, 500)
     rmse1 = sqrt(Metrics.mse(forec1["mean"], y_test))
     mase1 = MASE(y_train, y_test, forec1["mean"])
 
     println("       Modelo = 2")
     gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false], 1.0, "random walk slope", seasonality, missing)
-    output2, t_create2, t_optim2, rmse_param2, score2 = create_and_optimize(y_train, gas_model, 2, deterministic, initial_values, seasonality)
+    output2, t_create2, t_optim2, rmse_param2, score2 = create_and_optimize(y_train, gas_model, 2, deterministic, initial_values, seasonality);
     forec2 = UnobservedComponentsGAS.predict(gas_model, output2, y_train, 18, 500)
+    rmse2 = sqrt(Metrics.mse(forec2["mean"], y_test))
     mase2 = MASE(y_train, y_test, forec2["mean"])
     
     println("       Modelo = 3")
     gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false], 1.0, "random walk slope", seasonality, missing)
-    output3, t_create3, t_optim3, rmse_param3, score3 = create_and_optimize(y_train, gas_model, 3, deterministic, initial_values, seasonality)
+    output3, t_create3, t_optim3, rmse_param3, score3 = create_and_optimize(y_train, gas_model, 3, deterministic, initial_values, seasonality);
     forec3 = UnobservedComponentsGAS.predict(gas_model, output3, y_train, 18, 500)
+    rmse3 = sqrt(Metrics.mse(forec3["mean"], y_test))
     mase3 = MASE(y_train, y_test, forec3["mean"])
     
     # plot(vcat(y_train, y_test), label = "observed", color = :black)
@@ -381,13 +390,12 @@ for n in 1:N
     # plot!(forec2["mean"], label = "forec2")
     # plot!(forec3["mean"], label = "forec3")
 
-    push!(df_results, [n, T, "model 1", t_create1, t_optim1, rmse_param1, rmse1, mase1])
-    push!(df_results, [n, T, "model 2", t_create2, t_optim2, rmse_param2, rmse2, mase2])
-    push!(df_results, [n, T, "model 3", t_create3, t_optim3, rmse_param3, rmse3, mase3])
+    push!(df_results, [n, T, "model 1", t_create1, t_optim1, rmse_param1, rmse1, mase1, output1.model_status])
+    push!(df_results, [n, T, "model 2", t_create2, t_optim2, rmse_param2, rmse2, mase2, output2.model_status])
+    push!(df_results, [n, T, "model 3", t_create3, t_optim3, rmse_param3, rmse3, mase3, output3.model_status])
 
-    CSV.write("results_variables_expressions_MEB.csv", df_results)
+    CSV.write("results_variables_expressions_MEB_score_manual_d0.csv", df_results)
 end   
-#end
 
 
 
