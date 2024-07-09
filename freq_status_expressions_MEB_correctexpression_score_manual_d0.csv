@@ -1,0 +1,6 @@
+model;status;count;freq
+model 1;LOCALLY_SOLVED;100;1,0
+model 2;LOCALLY_SOLVED;99;0,99
+model 2;NORM_LIMIT;1;0,01
+model 3;LOCALLY_SOLVED;99;0,99
+model 3;NORM_LIMIT;1;0,01

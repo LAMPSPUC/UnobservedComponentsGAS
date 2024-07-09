@@ -3,7 +3,7 @@ using DataFrames
 using StatsPlots
 
 
-data = CSV.read("results_variables_expressions_MEB_score_manual_d1.csv", DataFrame)
+data = CSV.read("results_variables_expressions_MEB_correctexpression_score_manual_d1.csv", DataFrame)
 
 
 function calculate_statistics(df::DataFrame)
@@ -35,12 +35,11 @@ function get_freq_status(df)
     return df_aux
 end
 
-
 results = calculate_statistics(data)
-CSV.write("statistics_results_expressions_score_manual_d1.csv", results; delim=';', decimal=',')
+CSV.write("statistics_expressions_MEB_correctexpression_score_manual_d1.csv", results; delim=';', decimal=',')
 
 df_freq_status = get_freq_status(data)
-CSV.write("freq_status_expressions_score_manual_d1.csv", df_freq_status; delim=';', decimal=',')
+CSV.write("freq_status_expressions_MEB_correctexpression_score_manual_d1.csv", df_freq_status; delim=';', decimal=',')
 
 println("Tempo total = ",(sum(data[:, "t create"]) + sum(data[:, "t optim"])) / 60, " seg")
 
