@@ -42,7 +42,7 @@ CSV.write("statistics_results_expressions_score_manual_d1.csv", results; delim='
 df_freq_status = get_freq_status(data)
 CSV.write("freq_status_expressions_score_manual_d1.csv", df_freq_status; delim=';', decimal=',')
 
-println("Tempo total = ",(sum(data[:, "t_create"]) + sum(data[:, "t_optim"])) / 60, " seg")
+println("Tempo total = ",(sum(data[:, "t create"]) + sum(data[:, "t optim"])) / 60, " seg")
 
 # Rename columns to be Julia friendly
 rename!(data, Dict(Symbol("t create") => :t_create))
@@ -67,4 +67,5 @@ box3 = @df data boxplot(:model, :log_rmse_train, legend=false, xlabel="Modelo", 
 box4 = @df data boxplot(:model, :log_rmse_test, legend=false, xlabel="Modelo", ylabel="RMSE", title="Boxplot RMSE de teste por modelo")
 box5 = @df data boxplot(:model, :log_mase_test, legend=false, xlabel="Modelo", ylabel="MASE", title="Boxplot MASE de teste por modelo")
 
-plot(box1, box2, box3, box4, box5, layout=(3,2), size=(1500,700), margin = 7Plots.mm)
+plot(box1, box2, box3, box4, box5, layout=(3,2), size=(1500,700), margin = 7Plots.mm, suptitle = "Score Manual d=1")
+savefig("boxplots_score_manual_d1.png")
