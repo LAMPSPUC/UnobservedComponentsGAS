@@ -69,6 +69,8 @@ function define_model_param_variable_dyn_expression(y, solver, deterministic, in
     model = JuMP.Model(solver)
     set_silent(model)
     set_optimizer_attribute(model, "max_cpu_time",300.0)
+    set_optimizer_attribute(model, "max_iter", 50000)
+    set_optimizer_attribute(model, "tol", 5e-3)
 
     #criando parametros da distribuição
     @variable(model, params[1:T])
@@ -117,7 +119,6 @@ function define_model_param_variable_dyn_expression(y, solver, deterministic, in
     S[1] = model[:S1]
 
     for t in 2:T
-
         RWS[t] = @expression(model, RWS[t-1] + b[t-1] + model[:κ_RWS][1]*model[:s][t])
         b[t]   = @expression(model, b[t-1] + model[:κ_b][1]*model[:s][t])
         if deterministic
@@ -134,9 +135,9 @@ function define_model_param_variable_dyn_expression(y, solver, deterministic, in
         drop_zeros!(S[t])
     end
 
-    # @expression(model, RWS, RWS);
-    # @expression(model, b, b);
-    # @expression(model, S, S);
+    @expression(model, RWS, RWS);
+    @expression(model, b, b);
+    @expression(model, S, S);
     @constraint(model, [t in 1:T], params[t] == RWS[t] + S[t]);
 
     set_start_value.(model[:params], round.(initial_values["param"]; digits = 5))
@@ -155,7 +156,7 @@ function define_model_param_expression_dyn_variable(y, solver, deterministic, in
     T = length(y)
     model = JuMP.Model(solver)
     set_silent(model)
-    set_optimizer_attribute(model, "max_iter", 30000)
+    set_optimizer_attribute(model, "max_iter", 50000)
     set_optimizer_attribute(model, "max_cpu_time", 300.)
     set_optimizer_attribute(model, "tol", 5e-3)
     #criando parametros da distribuição
@@ -178,10 +179,10 @@ function define_model_param_expression_dyn_variable(y, solver, deterministic, in
     #criando variaveis da dinamica
     #s = UnobservedComponentsGAS.compute_score(model, parameters, y, 1.0, [true, false], T, UnobservedComponentsGAS.NormalDistribution());
     @variable(model, s[1:T])
-    # @constraint(model, [t = 1:T], s[t] == y[t] - model[:params][t]) # d = 1
+    @constraint(model, [t = 1:T], s[t] == y[t] - model[:params][t]) # d = 1
     # @constraint(model, [t = 1:T], s[t] * model[:fixed_params][2] == y[t] - model[:params][t]) # d = 0
-    @operator(model, scaled_score_int, 6, UnobservedComponentsGAS.scaled_score)
-    @constraint(model, [t = 1:T], s[t] == scaled_score_int(model[:params][t], model[:fixed_params][2],y[t], 1.0, 1, 1))
+    # @operator(model, scaled_score_int, 6, UnobservedComponentsGAS.scaled_score)
+    # @constraint(model, [t = 1:T], s[t] == scaled_score_int(model[:params][t], model[:fixed_params][2],y[t], 1.0, 1, 1))
 
     @constraint(model, [t = 2:T], b[t] == b[t - 1] + κ_b[1] * s[t]) #* s[1][t])
     @constraint(model, [t = 2:T], RWS[t] == RWS[t - 1] + b[t - 1] + κ_RWS[1]* s[t]) #* s[1][t])
@@ -244,7 +245,7 @@ function define_model_all_variable(y, gas_model, solver, deterministic, initial_
     T = length(y)
     model = JuMP.Model(solver)
     set_silent(model)
-    set_optimizer_attribute(model, "max_iter", 30000)
+    set_optimizer_attribute(model, "max_iter", 50000)
     set_optimizer_attribute(model, "max_cpu_time", 300.)
     set_optimizer_attribute(model, "tol", 5e-3)
 
@@ -266,8 +267,8 @@ function define_model_all_variable(y, gas_model, solver, deterministic, initial_
     #criando variaveis da dinamica
     #s = UnobservedComponentsGAS.compute_score(model, parameters, y, 1.0, [true, false], T, UnobservedComponentsGAS.NormalDistribution())
     @variable(model, s[1:T])
-    # @constraint(model, [t = 1:T], s[t] == y[t] - model[:params][t]) # d = 1
-    @constraint(model, [t = 1:T], s[t] * model[:fixed_params][2] == y[t] - model[:params][t]) # d = 0
+    @constraint(model, [t = 1:T], s[t] == y[t] - model[:params][t]) # d = 1
+    # @constraint(model, [t = 1:T], s[t] * model[:fixed_params][2] == y[t] - model[:params][t]) # d = 0
     # @operator(model, scaled_score_int, 6, UnobservedComponentsGAS.scaled_score)
     # @constraint(model, [t = 1:T], s[t] == scaled_score_int(model[:params][t], model[:fixed_params][2],y[t], 1.0, 1, 1))
 
@@ -398,7 +399,7 @@ for n in 1:N
     push!(df_results, [n, T, "model 2", t_create2, t_optim2, rmse_param2, rmse2, mase2, output2.model_status])
     push!(df_results, [n, T, "model 3", t_create3, t_optim3, rmse_param3, rmse3, mase3, output3.model_status])
 
-    CSV.write("results_variables_expressions_MEB_correctexpression_d1.csv", df_results)
+    CSV.write("results_variables_expressions_MEB_correctexpression_score_manual_d1.csv", df_results)
 end   
 
 
