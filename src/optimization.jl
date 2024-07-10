@@ -70,7 +70,7 @@ Calculates the score function for the optimization model based on the GAS model 
 ## Returns
 - `s::Vector{Vector}`: A vector containing scores for each time-varying parameter of the specified model. Each element of this vector is itself a vector containing the score values for the respective time-varying parameter across all considered time periods.
 """
-function compute_score(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, d::Float64, time_varying_params::Vector{Bool}, T::Int64, dist::ScoreDrivenDistribution) where {Ml, Gl, Fl}
+function compute_score!(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, d::Float64, time_varying_params::Vector{Bool}, T::Int64, dist::ScoreDrivenDistribution) where {Ml, Gl, Fl}
 
     idx_time_varying_params = get_idxs_time_varying_params(time_varying_params)
     num_time_varying_params = length(idx_time_varying_params)
@@ -78,13 +78,15 @@ function compute_score(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, d::Floa
     num_param = get_num_params(dist)
     dist_code = get_dist_code(dist)
 
-    s = Vector(undef, num_param)
-
+    #s = Vector(undef, num_param)
+    @variable(model, s[1:T, idx_time_varying_params])
+    
     if num_param == 2
+        
         @operator(model, scaled_score_j, 6, scaled_score)
         #register(model, :scaled_score, 6, scaled_score; autodiff = true)
         for i in idx_time_varying_params
-            s[i] = @expression(model,[t = 2:T], scaled_score_j(parameters[t-1, 1], parameters[t-1, 2], y[t-1], d, dist_code, i))
+            @constraint(model,[t = 2:T], s[t, i] == scaled_score_j(parameters[t-1, 1], parameters[t-1, 2], y[t-1], d, dist_code, i))
         end
     elseif num_param == 1
         #IMPLEMENTAR SCALED SCORE FUNCTION PARA 1 PARAMETRO
@@ -95,8 +97,6 @@ function compute_score(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, d::Floa
             s[i] = @expression(model,[t = 2:T], scaled_score_j(parameters[t-1, 1], parameters[t-1, 2], parameters[t-1, 3], y[t-1], d, dist_code, i))
         end
     end
-  
-    return s
 end
 
 """

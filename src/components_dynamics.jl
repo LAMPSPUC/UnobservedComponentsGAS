@@ -221,7 +221,7 @@ Adds AutoRegressive (AR) components to the optimization model.
 ### Returns
 - Modifies the provided optimization model by adding AR components.
 """
-function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}) where {Ml, Fl}
+function add_AR!(model::Ml, T::Int64, ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}) where {Ml, Fl}
 
     idx_params = findall(i -> !ismissing(i), ar) # Time-varying parameters with autoregressive dynamic
     order      = get_AR_order(ar)
@@ -245,7 +245,7 @@ function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Int64, Vector{Int
         end
     end
 
-    @constraint(model, [t = (max_order + 1):T, j in idx_params], AR[t, j] == sum(ϕ[p, j] * AR[t - p, j] for p in unique_orders) + κ_AR[j] * s[j][t])
+    @constraint(model, [t = (max_order + 1):T, j in idx_params], AR[t, j] == sum(ϕ[p, j] * AR[t - p, j] for p in unique_orders) + κ_AR[j] * model[:s][t, j])
 end
 
 """
@@ -262,7 +262,7 @@ Incorporate the random walk with slope component into the dynamics of the specif
 ## Returns
 - Modifies the input model by adding random walk with slope components.
 """
-function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_slope::Dict{Int64, Bool}) where {Ml, Fl}
+function add_random_walk_slope!(model::Ml, T::Int64, random_walk_slope::Dict{Int64, Bool}) where {Ml, Fl}
     
     idx_params = findall(i -> i == true, random_walk_slope) #Time-varying parameters with the random walk with slope dynamic
 
@@ -271,8 +271,8 @@ function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_
     @variable(model, κ_RWS[idx_params])
     @variable(model, κ_b[idx_params])
 
-    @constraint(model, [t = 2:T, j in idx_params], b[t, j]   == b[t - 1, j] + κ_b[j] * s[j][t])
-    @constraint(model, [t = 2:T, j in idx_params], RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * s[j][t])
+    @constraint(model, [t = 2:T, j in idx_params], b[t, j]   == b[t - 1, j] + κ_b[j] * model[:s][t, j])
+    @constraint(model, [t = 2:T, j in idx_params], RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * model[:s][t, j])
     @constraint(model, [j in idx_params], -2 ≤ κ_RWS[j] ≤ 2)
     @constraint(model, [j in idx_params], -2 ≤ κ_b[j] ≤ 2)
 end
@@ -291,14 +291,14 @@ Incorporate the random walk component into the dynamics of the specified paramet
 ## Returns
 - Modifies the input model by adding random walk components.
 """
-function add_random_walk!(model::Ml, s::Vector{Fl}, T::Int64, random_walk::Dict{Int64, Bool}) where {Ml, Fl}
+function add_random_walk!(model::Ml, T::Int64, random_walk::Dict{Int64, Bool}) where {Ml, Fl}
 
     idx_params = findall(i -> i == true, random_walk) # Time-varying parameters with the random walk dynamic
 
     @variable(model, RW[1:T, idx_params])
     @variable(model, κ_RW[idx_params])
 
-    @constraint(model, [t = 2:T, j in idx_params], RW[t, j] == RW[t-1, j] + κ_RW[j] * s[j][t])
+    @constraint(model, [t = 2:T, j in idx_params], RW[t, j] == RW[t-1, j] + κ_RW[j] * model[:s][t, j])
     @constraint(model, [j in idx_params], -2 ≤ κ_RW[j] ≤ 2)
 end
 
@@ -316,7 +316,7 @@ Adds AutoRegressive (AR(1)) components to the optimization model.
 ### Returns
 - Modifies the provided optimization model by adding AR(1) components.
 """
-function add_ar1!(model::Ml, s::Vector{Fl}, T::Int64, ar1::Dict{Int64, Bool})  where {Fl, Ml}
+function add_ar1!(model::Ml, T::Int64, ar1::Dict{Int64, Bool})  where {Fl, Ml}
 
     idx_params = findall(i -> i == true, ar1)
 
@@ -328,7 +328,7 @@ function add_ar1!(model::Ml, s::Vector{Fl}, T::Int64, ar1::Dict{Int64, Bool})  w
     @constraint(model, [i in idx_params], -2 ≤ κ_AR1_LEVEL[i] ≤ 2)
     @constraint(model, [i in idx_params], -0.95 <= ϕ_AR1_LEVEL[i] <= 0.95)
 
-    @constraint(model, [t = 2:T, j in idx_params], AR1_LEVEL[t, j] == ω_AR1_LEVEL[j] + ϕ_AR1_LEVEL[j] * AR1_LEVEL[t-1, j] + κ_AR1_LEVEL[j] * s[j][t])
+    @constraint(model, [t = 2:T, j in idx_params], AR1_LEVEL[t, j] == ω_AR1_LEVEL[j] + ϕ_AR1_LEVEL[j] * AR1_LEVEL[t-1, j] + κ_AR1_LEVEL[j] * model[:s][t, j])
 
 end
 
@@ -346,13 +346,13 @@ Adds level components to the optimization model based on the provided level info
 ### Returns
 - Modifies the provided optimization model by adding level components.
 """
-function add_level!(model::Ml, s::Vector{Fl}, T::Int64, level::Vector{String}) where {Fl, Ml}
+function add_level!(model::Ml, T::Int64, level::Vector{String}) where {Fl, Ml}
     if "random walk" ∈ level 
         random_walk = Dict{Int64, Bool}()
         for i in 1:length(level)
             level[i] == "random walk" ? random_walk[i] = true : random_walk[i] = false
         end
-        add_random_walk!(model, s, T, random_walk)
+        add_random_walk!(model, T, random_walk)
     end
     
     if "random walk slope" ∈ level 
@@ -360,7 +360,7 @@ function add_level!(model::Ml, s::Vector{Fl}, T::Int64, level::Vector{String}) w
         for i in 1:length(level)
             level[i] == "random walk slope" ? random_walk_slope[i] = true : random_walk_slope[i] = false
         end
-        add_random_walk_slope!(model, s, T, random_walk_slope)
+        add_random_walk_slope!(model, T, random_walk_slope)
     end
     
     if "ar(1)" ∈ level 
@@ -368,7 +368,7 @@ function add_level!(model::Ml, s::Vector{Fl}, T::Int64, level::Vector{String}) w
         for i in 1:length(level)
             level[i] == "ar(1)" ? ar1[i] = true : ar1[i] = false
         end
-        add_ar1!(model, s, T, ar1)
+        add_ar1!(model, T, ar1)
     end
 end
 
@@ -418,7 +418,7 @@ Adds trigonometric seasonality components to the optimization model based on the
 ### Returns
 - Modifies the provided optimization model by adding trigonometric seasonality components.
 """
-function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seasonality::Vector{String}) where {Ml, Fl}
+function add_trigonometric_seasonality!(model::Ml,  T::Int64, seasonality::Vector{String}) where {Ml, Fl}
     
     seasonality_dict, stochastic, stochastic_params = get_seasonality_dict_and_stochastic(seasonality)
     
@@ -442,9 +442,9 @@ function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seas
         @variable(model, γ_star_sto[1:unique_num_harmonic, 1:T, idx_params_stochastic])
 
         @constraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params_stochastic], γ_sto[i, t, j] == γ_sto[i, t-1, j] * cos(2*π*i / seasonal_period[j]) + 
-                                                                                    γ_star_sto[i,t-1, j]*sin(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t])
+                                                                                    γ_star_sto[i,t-1, j]*sin(2*π*i / seasonal_period[j]) + κ_S[j] *model[:s][t, j])
         @constraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params_stochastic], γ_star_sto[i, t, j] == -γ_sto[i, t-1, j] * sin(2*π*i / seasonal_period[j]) + 
-                                                                                    γ_star_sto[i,t-1, j]*cos(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t])
+                                                                                    γ_star_sto[i,t-1, j]*cos(2*π*i / seasonal_period[j]) + κ_S[j] * model[:s][t, j])
 
         for j in idx_params_stochastic  
             for t in 1:T
@@ -458,48 +458,20 @@ function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seas
 
         @variable(model, γ_det[1:unique_num_harmonic, idx_params_deterministic])
         @variable(model, γ_star_det[1:unique_num_harmonic, idx_params_deterministic])
+        @variable(model, S[t=1:T, idx_params_deterministic])
 
+        
         for j in idx_params_deterministic  
             for t in 1:T
-                S_aux[t, j] = sum(γ_det[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
-                                            γ_star_det[i, j] * sin(2 * π * i* t/seasonal_period[j]) for i in 1:unique_num_harmonic)
+                @constraint(model, S[t, j] == sum(γ_det[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
+                                            γ_star_det[i, j] * sin(2 * π * i* t/seasonal_period[j]) for i in 1:unique_num_harmonic))
             end
         end
         #@expression(model, S[t = 1:T, j in idx_params], sum(γ[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
                 #                            γ_star[i, j] * sin(2 * π * i* t/seasonal_period[j]) for i in 1:unique_num_harmonic))
     end
 
-    @expression(model, S[t=1:T, j in idx_params], S_aux[t, j])
-
-    # for i in idx_params
-    #     if idx_params[i] ∈ stochastic_params
-
-
-    #     elseif idx_params[i] ∈ idx_params_deterministic
-    #     end
-    # end
-
-    # if stochastic
-    #     @variable(model, κ_S[idx_params])
-    #     @constraint(model, [i in idx_params], 1e-4 ≤ κ_S[i])    
-    #     JuMP.fix.(model[:κ_S][idx_params_deterministic], 1e-4)
-
-    #     @variable(model, γ[1:unique_num_harmonic, 1:T, idx_params])
-    #     @variable(model, γ_star[1:unique_num_harmonic, 1:T, idx_params])
-
-    #     @constraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params], γ[i, t, j] == γ[i, t-1, j] * cos(2*π*i / seasonal_period[j]) + 
-    #                                                                                 γ_star[i,t-1, j]*sin(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t])
-    #     @constraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params], γ_star[i, t, j] == -γ[i, t-1, j] * sin(2*π*i / seasonal_period[j]) + 
-    #                                                                                 γ_star[i,t-1, j]*cos(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t])
-
-    #     @expression(model, S[t = 1:T, j in idx_params], sum(γ[i, t, j]  for i in 1:unique_num_harmonic))
-    # else
-    #     @variable(model, γ[1:unique_num_harmonic, idx_params])
-    #     @variable(model, γ_star[1:unique_num_harmonic, idx_params])
-
-    #     @expression(model, S[t = 1:T, j in idx_params], sum(γ[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
-    #                                         γ_star[i, j] * sin(2 * π * i* t/seasonal_period[j]) for i in 1:unique_num_harmonic))
-    # end
+    #@expression(model, S[t=1:T, j in idx_params], S_aux[t, j])
 
 end
 
@@ -517,20 +489,20 @@ Incorporates various components into the specified model based on the configurat
 ## Returns
 - Modifies the input model by adding components such as random walk, random walk slope, autoregressive (AR), and trigonometric seasonality based on the configurations provided in the `GASModel`.
 """
-function include_components!(model::Ml, s::Vector{Fl}, gas_model::GASModel, T::Int64) where {Ml, Fl}
+function include_components!(model::Ml,  gas_model::GASModel, T::Int64) where {Ml, Fl}
 
     @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
     
     if has_level(level)
-        add_level!(model, s, T, level)
+        add_level!(model, T, level)
     end
     
     if has_AR(ar)
-        add_AR!(model, s, T, ar)
+        add_AR!(model, T, ar)
     end
 
     if has_seasonality(seasonality)
-        add_trigonometric_seasonality!(model, s, T, seasonality)
+        add_trigonometric_seasonality!(model, T, seasonality)
     end
 end
 

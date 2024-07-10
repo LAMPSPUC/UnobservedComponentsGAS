@@ -50,10 +50,10 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missin
     parameters = include_parameters(model, time_varying_params, T, dist, fixed_ν);
 
     # #@info("Computing score...")
-    s = compute_score(model, parameters, y, d, time_varying_params, T, dist);
+    compute_score!(model, parameters, y, d, time_varying_params, T, dist);
     
     # #@info("Including components...")
-    include_components!(model, s, gas_model, T);
+    include_components!(model, gas_model, T);
 
     # #@info("Computing initial values...")
     if ismissing(initial_values)

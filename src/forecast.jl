@@ -43,7 +43,7 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     dict_hyperparams_and_fitted_components["ar"]          = Dict{String, Any}()
 
     dict_hyperparams_and_fitted_components["params"]       = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
-    # dict_hyperparams_and_fitted_components["intercept"]    = zeros(num_params)
+    # dict_hyperparams_and_fitted_components["intercept"]  = zeros(num_params)
     dict_hyperparams_and_fitted_components["score"]        = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
   
     dict_hyperparams_and_fitted_components["rw"]["value"]  = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
