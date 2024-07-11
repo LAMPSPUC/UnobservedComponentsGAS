@@ -21,7 +21,12 @@ function include_parameters(model::Ml, time_varying_params::Vector{Bool}, T::Int
     idx_fixed_params        = setdiff(1:num_params, idx_time_varying_params)
     #num_time_varying_params = length(time_varying_params) 
 
-    @variable(model, params[1:T, idx_time_varying_params])
+    @variable(model, RWS[1:T, 1])
+    @variable(model, S[1:T, 1])
+    @expression(model, params[t in 1:T, idx_time_varying_params], RWS[t, 1] + S[t, 1])
+    # println(model[:params][1, 1])
+    # println(model[:params])
+    #@variable(model, params[1:T, idx_time_varying_params])
     @variable(model, fixed_params[idx_fixed_params])
 
     for i in 1:num_params
@@ -80,27 +85,24 @@ function compute_score!(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, d::Flo
 
     #s = Vector(undef, num_param)
     @variable(model, s[1:T, idx_time_varying_params])
-    
+
     if num_param == 2
-        # 
-        #  # d = 0
         @operator(model, scaled_score_j, 6, scaled_score)
         if d == 0.0
             for i in idx_time_varying_params
-                @constraint(model, [t = 2:T], s[t, i] * parameters[t-1, 2] == y[t-1] - parameters[t-1, 1])
-                #@constraint(model,[t = 2:T], s[t, i] == scaled_score_j(parameters[t-1, 1], parameters[t-1, 2], y[t-1], d, dist_code, i))
-
+                @constraint(model, [t = 2:T], s[t, i] * model[:fixed_params][2] == y[t-1] - model[:params][t-1, 1])
+                #@constraint(model,[t = 2:T], s[t, i] == scaled_score_j(model[:params][t-1, 1], model[:fixed_params][2], y[t-1], d, dist_code, i))
             end
         elseif d == 0.5
             for i in idx_time_varying_params
-                #@constraint(model,[t = 2:T], s[t, i] == scaled_score_j(parameters[t-1, 1], parameters[t-1, 2], y[t-1], d, dist_code, i))
-                @constraint(model, [t = 2:T], s[t, i] * sqrt(parameters[t-1, 2]) == y[t-1] - parameters[t-1, 1]) # d = 0.5
+                # @constraint(model,[t = 2:T], s[t, i] == scaled_score_j(model[:params][t-1, 1], model[:fixed_params][2], y[t-1], d, dist_code, i))
+                @constraint(model, [t = 2:T], s[t, i] * sqrt(model[:fixed_params][2]) == y[t-1] - model[:params][t-1, 1]) # d = 0.5
 
             end
         else # d==1.0
             for i in idx_time_varying_params
-                #@constraint(model,[t = 2:T], s[t, i] == scaled_score_j(parameters[t-1, 1], parameters[t-1, 2], y[t-1], d, dist_code, i))
-                @constraint(model, [t = 2:T], s[t, i] == y[t-1] - parameters[t-1, 1]) # d = 1
+                # @constraint(model,[t = 2:T], s[t, i] == scaled_score_j(model[:params][t-1, 1], model[:fixed_params][2], y[t-1], d, dist_code, i))
+                @constraint(model, [t = 2:T], s[t, i] == y[t-1] - model[:params][t-1, 1]) # d = 1
             end
         end
     elseif num_param == 1
@@ -216,7 +218,7 @@ function include_objective_function!(model::Ml, parameters::Matrix{Gl}, y::Vecto
         elseif num_params == 2
             @operator(model, log_pdf, 3, DICT_LOGPDF[dist_name])
             #register(model, :log_pdf, 3, DICT_LOGPDF[dist_name]; autodiff = true)
-            @constraint(model, [t = 2:T], δ + u[t] ≥  - (log_pdf(parameters[t, 1], parameters[t, 2], y[t])))
+            @constraint(model, [t = 2:T], δ + u[t] ≥  - (log_pdf(model[:params][t, 1],model[:fixed_params][2], y[t])))
         end
         @objective(model, Min, (1 - α) * (δ*k + sum(u[t] for t in 2:T)) + α * sum(κ_variables[i]^2 for i in eachindex(κ_variables)))
 
@@ -229,7 +231,7 @@ function include_objective_function!(model::Ml, parameters::Matrix{Gl}, y::Vecto
         elseif num_params == 2
             @operator(model, log_pdf, 3, DICT_LOGPDF[dist_name])
             #register(model, :log_pdf, 3, DICT_LOGPDF[dist_name]; autodiff = true)
-            @objective(model, Min, (1 - α) * (-sum(log_pdf(parameters[t, 1], parameters[t, 2], y[t]) for t in 2:T)) + α * sum(κ_variables[i]^2 for i in eachindex(κ_variables)))
+            @objective(model, Min, (1 - α) * (-sum(log_pdf(model[:params][t, 1], model[:fixed_params][2], y[t]) for t in 2:T)) + α * sum(κ_variables[i]^2 for i in eachindex(κ_variables)))
         end    
     end
 end

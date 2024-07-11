@@ -598,7 +598,7 @@ function initialize_components!(model::Ml, initial_values::Dict{String, Any}, ga
 
     @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
 
-    set_start_value.(model[:params], round.(initial_values["param"]; digits = 5))
+    #set_start_value.(model[:params], round.(initial_values["param"]; digits = 5))
     #set_start_value.(model[:c], round.(initial_values["intercept"]["values"]; digits = 5))
     
     if haskey(initial_values, "fixed_param")

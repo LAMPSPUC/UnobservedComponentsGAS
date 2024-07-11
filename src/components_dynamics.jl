@@ -266,13 +266,13 @@ function add_random_walk_slope!(model::Ml, T::Int64, random_walk_slope::Dict{Int
     
     idx_params = findall(i -> i == true, random_walk_slope) #Time-varying parameters with the random walk with slope dynamic
 
-    @variable(model, RWS[1:T, idx_params])
+    #@variable(model, RWS[1:T, idx_params])
     @variable(model, b[1:T, idx_params])
     @variable(model, κ_RWS[idx_params])
     @variable(model, κ_b[idx_params])
 
-    @constraint(model, [t = 2:T, j in idx_params], b[t, j]   == b[t - 1, j] + κ_b[j] * model[:s][t, j])
-    @constraint(model, [t = 2:T, j in idx_params], RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * model[:s][t, j])
+    @constraint(model, [t = 2:T, j in idx_params], b[t, j] == b[t - 1, j] + κ_b[j] * model[:s][t, j])
+    @constraint(model, [t = 2:T, j in idx_params], model[:RWS][t, j] == model[:RWS][t - 1, j] + b[t - 1, j] + κ_RWS[j] * model[:s][t, j])
     @constraint(model, [j in idx_params], -2 ≤ κ_RWS[j] ≤ 2)
     @constraint(model, [j in idx_params], -2 ≤ κ_b[j] ≤ 2)
 end
@@ -458,12 +458,11 @@ function add_trigonometric_seasonality!(model::Ml,  T::Int64, seasonality::Vecto
 
         @variable(model, γ_det[1:unique_num_harmonic, idx_params_deterministic])
         @variable(model, γ_star_det[1:unique_num_harmonic, idx_params_deterministic])
-        @variable(model, S[t=1:T, idx_params_deterministic])
+        # @variable(model, S[t=1:T, idx_params_deterministic])
 
-        
         for j in idx_params_deterministic  
             for t in 1:T
-                @constraint(model, S[t, j] == sum(γ_det[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
+                @constraint(model, model[:S][t, j] == sum(γ_det[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
                                             γ_star_det[i, j] * sin(2 * π * i* t/seasonal_period[j]) for i in 1:unique_num_harmonic))
             end
         end

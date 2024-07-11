@@ -30,8 +30,8 @@ function get_freq_status(df)
     return df_aux
 end
 
-folder = "results_model3_sm/"
-model = "model3_sm"
+folder = "results_model2_sm/"
+model = "model2_sm"
 d = "d1"
 data = CSV.read(folder*"results_$(model)_$(d).csv", DataFrame)
 

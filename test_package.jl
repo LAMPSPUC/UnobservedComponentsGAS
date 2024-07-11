@@ -72,8 +72,8 @@ deterministic = true
 deterministic ? seasonality = "deterministic 12" : seasonality = "stochastic 12"
 d = 1.0
 d2 = "d1"
-folder = "results_model3_sm/"
-model = "model3_sm"
+folder = "results_model2_sm/"
+model = "model2_sm"
 
 df_results = DataFrame([[],[],[], [], [], [], [], [], []],
                      ["serie", "T", "model", "t create", "t optim", "rmse train", "rmse test", "mase test", "status"])
@@ -85,13 +85,23 @@ for n in 1:N
     T       = length(y_train)
     plot(vcat(y_train, y_test))
 
-    gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false], d, "random walk slope", seasonality, 1)
+    gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false], d, "random walk slope", seasonality, missing)
     t_optimp = @elapsed  fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; number_max_iterations = 50000, max_optimization_time = 300.0);
     # println(fitted_model.model_status)
     forecp = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, 18, 500);
     masep = MASE(y_train, y_test, forecp["mean"])
     rmse_paramp = sqrt(Metrics.mse(fitted_model.fit_in_sample, y_train))
     rmsep = sqrt(Metrics.mse(forecp["mean"], y_test))
+
+    # plot(fitted_model.components["param_1"]["seasonality"]["value"])
+    # plot(fitted_model.components["param_1"]["level"]["value"])
+    # plot(fitted_model.components["param_1"]["slope"]["value"])
+    
+    # plot(y_train)
+    # plot!(fitted_model.fit_in_sample)
+
+    # plot(y_test)
+    # plot!(forecp["mean"])
 
     push!(df_results, [n, T, model, -1, t_optimp, rmse_paramp, rmsep, masep, fitted_model.model_status])
 
