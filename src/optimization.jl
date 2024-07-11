@@ -82,11 +82,26 @@ function compute_score!(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, d::Flo
     @variable(model, s[1:T, idx_time_varying_params])
     
     if num_param == 2
-        
+        # 
+        #  # d = 0
         @operator(model, scaled_score_j, 6, scaled_score)
-        #register(model, :scaled_score, 6, scaled_score; autodiff = true)
-        for i in idx_time_varying_params
-            @constraint(model,[t = 2:T], s[t, i] == scaled_score_j(parameters[t-1, 1], parameters[t-1, 2], y[t-1], d, dist_code, i))
+        if d == 0.0
+            for i in idx_time_varying_params
+                @constraint(model, [t = 2:T], s[t, i] * parameters[t-1, 2] == y[t-1] - parameters[t-1, 1])
+                #@constraint(model,[t = 2:T], s[t, i] == scaled_score_j(parameters[t-1, 1], parameters[t-1, 2], y[t-1], d, dist_code, i))
+
+            end
+        elseif d == 0.5
+            for i in idx_time_varying_params
+                #@constraint(model,[t = 2:T], s[t, i] == scaled_score_j(parameters[t-1, 1], parameters[t-1, 2], y[t-1], d, dist_code, i))
+                @constraint(model, [t = 2:T], s[t, i] * sqrt(parameters[t-1, 2]) == y[t-1] - parameters[t-1, 1]) # d = 0.5
+
+            end
+        else # d==1.0
+            for i in idx_time_varying_params
+                #@constraint(model,[t = 2:T], s[t, i] == scaled_score_j(parameters[t-1, 1], parameters[t-1, 2], y[t-1], d, dist_code, i))
+                @constraint(model, [t = 2:T], s[t, i] == y[t-1] - parameters[t-1, 1]) # d = 1
+            end
         end
     elseif num_param == 1
         #IMPLEMENTAR SCALED SCORE FUNCTION PARA 1 PARAMETRO

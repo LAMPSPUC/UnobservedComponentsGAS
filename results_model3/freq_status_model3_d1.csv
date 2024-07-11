@@ -1,0 +1,4 @@
+model;status;count;freq
+package;LOCALLY_SOLVED;97;0,97
+package;TIME_LIMIT;2;0,02
+package;NORM_LIMIT;1;0,01

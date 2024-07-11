@@ -1,0 +1,4 @@
+model;status;count;freq
+model3_sm;LOCALLY_SOLVED;98;0,98
+model3_sm;TIME_LIMIT;1;0,01
+model3_sm;NORM_LIMIT;1;0,01

@@ -70,6 +70,10 @@ data_dict  = build_train_test_dict(read_MEB()..., N);
 timeout = 300
 deterministic = true
 deterministic ? seasonality = "deterministic 12" : seasonality = "stochastic 12"
+d = 1.0
+d2 = "d1"
+folder = "results_model3_sm/"
+model = "model3_sm"
 
 df_results = DataFrame([[],[],[], [], [], [], [], [], []],
                      ["serie", "T", "model", "t create", "t optim", "rmse train", "rmse test", "mase test", "status"])
@@ -79,17 +83,19 @@ for n in 1:N
     y_train = data_dict[n]["train"]
     y_test  = data_dict[n]["test"]
     T       = length(y_train)
+    plot(vcat(y_train, y_test))
 
-    gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false], 0.5, "random walk slope", seasonality, missing)
-    t_optimp = @elapsed  fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; number_max_iterations= 50000, max_optimization_time = 300.0);
+    gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false], d, "random walk slope", seasonality, 1)
+    t_optimp = @elapsed  fitted_model = UnobservedComponentsGAS.fit(gas_model, y_train; number_max_iterations = 50000, max_optimization_time = 300.0);
+    # println(fitted_model.model_status)
     forecp = UnobservedComponentsGAS.predict(gas_model, fitted_model, y_train, 18, 500);
     masep = MASE(y_train, y_test, forecp["mean"])
     rmse_paramp = sqrt(Metrics.mse(fitted_model.fit_in_sample, y_train))
     rmsep = sqrt(Metrics.mse(forecp["mean"], y_test))
-    
-    push!(df_results, [n, T, "package", -1, t_optimp, rmse_paramp, rmsep, masep, fitted_model.model_status])
 
-    CSV.write("results_model3_d05.csv", df_results)
+    push!(df_results, [n, T, model, -1, t_optimp, rmse_paramp, rmsep, masep, fitted_model.model_status])
+
+    CSV.write(folder*"results_$(model)_$(d2).csv", df_results)
 end   
 
 
