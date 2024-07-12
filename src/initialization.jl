@@ -598,7 +598,7 @@ function initialize_components!(model::Ml, initial_values::Dict{String, Any}, ga
 
     @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
 
-    #set_start_value.(model[:params], round.(initial_values["param"]; digits = 5))
+    set_start_value.(model[:params], round.(initial_values["param"]; digits = 5))
     #set_start_value.(model[:c], round.(initial_values["intercept"]["values"]; digits = 5))
     
     if haskey(initial_values, "fixed_param")
@@ -610,9 +610,9 @@ function initialize_components!(model::Ml, initial_values::Dict{String, Any}, ga
         # size(initial_values["rws"]["values"], 2) == 1  ? cols = 1 : cols = 1:size(initial_values["rws"]["values"], 2)
         # cols = collect(1:length(level))[level .== "random walk slope"]
         cols = 1
-        set_start_value.(model[:RWS][:, cols], round.(initial_values["rws"]["values"]; digits = 5))
+        #set_start_value.(model[:RWS][:, cols], round.(initial_values["rws"]["values"]; digits = 5))
         set_start_value.(model[:κ_RWS][cols], round.(initial_values["rws"]["κ"]; digits = 5))
-        set_start_value.(model[:b][:, cols],  round.(initial_values["slope"]["values"]; digits = 5))
+        #set_start_value.(model[:b][:, cols],  round.(initial_values["slope"]["values"]; digits = 5))
         set_start_value.(model[:κ_b][cols], round.(initial_values["slope"]["κ"]; digits = 5))
     
     end
@@ -650,7 +650,7 @@ function initialize_components!(model::Ml, initial_values::Dict{String, Any}, ga
             set_start_value.(model[:γ_det][:, cols], round.(initial_values["seasonality"]["γ"]; digits = 5))
             set_start_value.(model[:γ_star_det][:, cols], round.(initial_values["seasonality"]["γ_star"]; digits = 5)) 
         end
-        set_start_value.(model[:S][:, cols], round.(initial_values["seasonality"]["values"]; digits = 5))
+        #set_start_value.(model[:S][:, cols], round.(initial_values["seasonality"]["values"]; digits = 5))
         # if haskey(initial_values["seasonality"], "γ")
         #     set_start_value.(model[:γ][:, :, cols], round.(initial_values["seasonality"]["γ"]; digits = 5))
         #     set_start_value.(model[:γ_star][:, :, cols], round.(initial_values["seasonality"]["γ_star"]; digits = 5))        

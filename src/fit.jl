@@ -62,7 +62,7 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missin
     end
 
     # #@info("Including dynamics..")
-    #include_dynamics!(model,parameters, gas_model,  missing, T);
+    include_dynamics!(model,parameters, gas_model,  missing, T);
 
     # if get_num_params(gas_model.dist) == 3
     #     # @register(model, :log_pdf, 4, DICT_LOGPDF[dist_name]; autodiff = true)

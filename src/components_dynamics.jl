@@ -266,13 +266,30 @@ function add_random_walk_slope!(model::Ml, T::Int64, random_walk_slope::Dict{Int
     
     idx_params = findall(i -> i == true, random_walk_slope) #Time-varying parameters with the random walk with slope dynamic
 
-    #@variable(model, RWS[1:T, idx_params])
-    @variable(model, b[1:T, idx_params])
+    @variable(model, RWS1[idx_params])
+    @variable(model, b1[idx_params])
     @variable(model, κ_RWS[idx_params])
     @variable(model, κ_b[idx_params])
 
-    @constraint(model, [t = 2:T, j in idx_params], b[t, j] == b[t - 1, j] + κ_b[j] * model[:s][t, j])
-    @constraint(model, [t = 2:T, j in idx_params], model[:RWS][t, j] == model[:RWS][t - 1, j] + b[t - 1, j] + κ_RWS[j] * model[:s][t, j])
+    RWS    = Matrix{}(undef, T,  1)
+    RWS[1, 1] = model[:RWS1][1]
+
+    b   = Matrix(undef, T, 1)
+    b[1, 1] =  model[:b1][1]
+
+    for t in 2:T
+        RWS[t, 1] = @expression(model, RWS[t-1, 1] + b[t-1, 1] + model[:κ_RWS][1]*model[:s][t, 1])
+        b[t, 1]   = @expression(model, b[t-1, 1] + model[:κ_b][1]*model[:s][t, 1])
+        # println(typeof(RWS[t,1]))
+        JuMP.drop_zeros!(RWS[t])
+        JuMP.drop_zeros!(b[t])
+    end
+
+    @expression(model, RWS, RWS);
+    @expression(model, b, b);
+
+    #@constraint(model, [t = 2:T, j in idx_params], b[t, j] == b[t - 1, j] + κ_b[j] * model[:s][t, j])
+    #@constraint(model, [t = 2:T, j in idx_params],RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * model[:s][t, j])
     @constraint(model, [j in idx_params], -2 ≤ κ_RWS[j] ≤ 2)
     @constraint(model, [j in idx_params], -2 ≤ κ_b[j] ≤ 2)
 end
@@ -429,14 +446,16 @@ function add_trigonometric_seasonality!(model::Ml,  T::Int64, seasonality::Vecto
 
     unique_num_harmonic = unique(num_harmonic)[minimum(idx_params)]
 
-    S_aux = Matrix(undef, T, length(seasonality))
+    # S_aux = Matrix(undef, T, length(seasonality))
+    @variable(model, S1)
+    S = Matrix(undef, T, 1)
+    S[1, 1] = model[:S1]
 
     if !isempty(idx_params_stochastic)
 
 
         @variable(model, κ_S[idx_params_stochastic])
         @constraint(model, [i in idx_params_stochastic], -2 ≤ κ_S[i] ≤ 2)    
-        #JuMP.fix.(model[:κ_S][idx_params_deterministic], 1e-4)
 
         @variable(model, γ_sto[1:unique_num_harmonic, 1:T, idx_params_stochastic])
         @variable(model, γ_star_sto[1:unique_num_harmonic, 1:T, idx_params_stochastic])
@@ -458,20 +477,21 @@ function add_trigonometric_seasonality!(model::Ml,  T::Int64, seasonality::Vecto
 
         @variable(model, γ_det[1:unique_num_harmonic, idx_params_deterministic])
         @variable(model, γ_star_det[1:unique_num_harmonic, idx_params_deterministic])
-        # @variable(model, S[t=1:T, idx_params_deterministic])
+        #@variable(model, S[t=1:T, idx_params_deterministic])
 
         for j in idx_params_deterministic  
-            for t in 1:T
-                @constraint(model, model[:S][t, j] == sum(γ_det[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
-                                            γ_star_det[i, j] * sin(2 * π * i* t/seasonal_period[j]) for i in 1:unique_num_harmonic))
+            for t in 2:T
+                S[t, 1] = @expression(model, sum(γ_det[i, 1]*cos(2 * π * i * t/12) + γ_star_det[i, 1] * sin(2 * π * i* t/12) for i in 1:unique_num_harmonic))
+                drop_zeros!(S[t, 1])
             end
+            # for t in 1:T
+            #     @constraint(model, S[t, j] == sum(γ_det[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
+            #                                 γ_star_det[i, j] * sin(2 * π * i* t/seasonal_period[j]) for i in 1:unique_num_harmonic))
+            # end
         end
-        #@expression(model, S[t = 1:T, j in idx_params], sum(γ[i, j]*cos(2 * π * i * t/seasonal_period[j]) + 
-                #                            γ_star[i, j] * sin(2 * π * i* t/seasonal_period[j]) for i in 1:unique_num_harmonic))
     end
-
-    #@expression(model, S[t=1:T, j in idx_params], S_aux[t, j])
-
+    @expression(model, S, S)
+    
 end
 
 """

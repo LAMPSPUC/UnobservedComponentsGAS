@@ -21,12 +21,12 @@ function include_parameters(model::Ml, time_varying_params::Vector{Bool}, T::Int
     idx_fixed_params        = setdiff(1:num_params, idx_time_varying_params)
     #num_time_varying_params = length(time_varying_params) 
 
-    @variable(model, RWS[1:T, 1])
-    @variable(model, S[1:T, 1])
-    @expression(model, params[t in 1:T, idx_time_varying_params], RWS[t, 1] + S[t, 1])
+    #@variable(model, RWS[1:T, 1])
+    #@variable(model, S[1:T, 1])
+    #@expression(model, params[t in 1:T, idx_time_varying_params], RWS[t, 1] + S[t, 1])
     # println(model[:params][1, 1])
     # println(model[:params])
-    #@variable(model, params[1:T, idx_time_varying_params])
+    @variable(model, params[1:T, idx_time_varying_params])
     @variable(model, fixed_params[idx_fixed_params])
 
     for i in 1:num_params
@@ -95,13 +95,13 @@ function compute_score!(model::Ml, parameters::Matrix{Gl}, y::Vector{Fl}, d::Flo
             end
         elseif d == 0.5
             for i in idx_time_varying_params
-                # @constraint(model,[t = 2:T], s[t, i] == scaled_score_j(model[:params][t-1, 1], model[:fixed_params][2], y[t-1], d, dist_code, i))
+                #@constraint(model,[t = 2:T], s[t, i] == scaled_score_j(model[:params][t-1, 1], model[:fixed_params][2], y[t-1], d, dist_code, i))
                 @constraint(model, [t = 2:T], s[t, i] * sqrt(model[:fixed_params][2]) == y[t-1] - model[:params][t-1, 1]) # d = 0.5
 
             end
         else # d==1.0
             for i in idx_time_varying_params
-                # @constraint(model,[t = 2:T], s[t, i] == scaled_score_j(model[:params][t-1, 1], model[:fixed_params][2], y[t-1], d, dist_code, i))
+                #@constraint(model,[t = 2:T], s[t, i] == scaled_score_j(model[:params][t-1, 1], model[:fixed_params][2], y[t-1], d, dist_code, i))
                 @constraint(model, [t = 2:T], s[t, i] == y[t-1] - model[:params][t-1, 1]) # d = 1
             end
         end
