@@ -1,6 +1,6 @@
 # Import all necessary packages
 using UnobservedComponentsGAS
-using Test, Random, Statistics, JuMP, Ipopt
+using Test, Random, Statistics, JuMP, Ipopt, Plots
 using JSON3, CSV, DataFrames, StateSpaceModels
 
 
@@ -12,5 +12,6 @@ include("test_components_dynamics.jl")
 include("test_optimization.jl")
 include("test_distributions.jl")
 include("test_initialization.jl")
+include("test_residuals_diagnostics.jl")
 
 
