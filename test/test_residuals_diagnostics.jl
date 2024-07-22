@@ -92,4 +92,18 @@
               haskey(diagnosis_pvalues_std, "ARCH")
     end
 
+    @testset "In-Sample Statistics Tests" begin
+        stats = UnobservedComponentsGAS.get_in_sample_statistics(fitted_model, y)
+    
+        @test stats["MSE"] > 0
+        @test stats["RMSE"] > 0
+        @test stats["RMSE"] == sqrt(stats["MSE"])
+        @test stats["MAE"] > 0
+        @test stats["MAPE"] > 0
+        @test stats["MAPE"] < 100
+        @test stats["AIC"] > 0
+        @test stats["BIC"] > 0
+        @test stats["AICc"] > 0
+    end
+
 end

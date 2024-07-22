@@ -50,14 +50,22 @@
     gas_model_lognormal_X         = deepcopy(gas_model_lognormal)
     gas_model_lognormal_X_2params = deepcopy(gas_model_lognormal_2params)
    
+    model_lognormal, parameters_lognormal, initial_values_lognormal                         = UnobservedComponentsGAS.create_model(gas_model_lognormal, y, missing)
+    model_lognormal_2params, parameters_lognormal_2params, initial_values_lognormal_2params = UnobservedComponentsGAS.create_model(gas_model_lognormal_2params, y, missing)
+    
+    model_lognormal_X, parameters_lognormal_X, initial_values_lognormal_X                         = UnobservedComponentsGAS.create_model(gas_model_lognormal_X, y, X, missing);
+    model_lognormal_X_2params, parameters_lognormal_X_2params, initial_values_lognormal_X_2params = UnobservedComponentsGAS.create_model(gas_model_lognormal_X_2params, y, X, missing);
+    
+    fitted_model_lognormal         = UnobservedComponentsGAS.fit(gas_model_lognormal, y; tol = 5e-2)
+    fitted_model_lognormal_2params = UnobservedComponentsGAS.fit(gas_model_lognormal_2params, y; tol = 5e-2)
+    fitted_model_lognormal_X         = UnobservedComponentsGAS.fit(gas_model_lognormal_X, y, X)
+    fitted_model_lognormal_X_2params = UnobservedComponentsGAS.fit(gas_model_lognormal_X_2params, y, X)
+
+    forecast_lognormal         = UnobservedComponentsGAS.predict(gas_model_lognormal, fitted_model_lognormal, y, steps_ahead, num_scenarious)
+    #forecast_lognormal_X       = UnobservedComponentsGAS.predict(gas_model_lognormal_X, fitted_model_lognormal_X, y, X_lognormal_forec, steps_ahead, num_scenarious)
+    forecast_lognormal_2params = UnobservedComponentsGAS.predict(gas_model_lognormal_2params, fitted_model_lognormal_2params, y, steps_ahead, num_scenarious)
+
     @testset " --- Testing create_model functions" begin
-        # Create model with no explanatory series
-        model_lognormal, parameters_lognormal, initial_values_lognormal                         = UnobservedComponentsGAS.create_model(gas_model_lognormal, y, missing)
-        model_lognormal_2params, parameters_lognormal_2params, initial_values_lognormal_2params = UnobservedComponentsGAS.create_model(gas_model_lognormal_2params, y, missing)
-        
-        model_lognormal_X, parameters_lognormal_X, initial_values_lognormal_X                         = UnobservedComponentsGAS.create_model(gas_model_lognormal_X, y, X, missing);
-        model_lognormal_X_2params, parameters_lognormal_X_2params, initial_values_lognormal_X_2params = UnobservedComponentsGAS.create_model(gas_model_lognormal_X_2params, y, X, missing);
-        
         @test(size(parameters_lognormal)         == (T,2))
         @test(size(parameters_lognormal_2params) == (T,2))
         @test(typeof(model_lognormal)            == JuMP.Model)
@@ -73,12 +81,7 @@
         @test(test_initial_values_components(initial_values_lognormal_X_2params, rw, rws, ar, seasonality))
     end
     
-    @testset " --- Testing fit functions" begin
-        fitted_model_lognormal         = UnobservedComponentsGAS.fit(gas_model_lognormal, y; tol = 5e-2)
-        fitted_model_lognormal_2params = UnobservedComponentsGAS.fit(gas_model_lognormal_2params, y; tol = 5e-2)
-        fitted_model_lognormal_X         = UnobservedComponentsGAS.fit(gas_model_lognormal_X, y, X)
-        fitted_model_lognormal_X_2params = UnobservedComponentsGAS.fit(gas_model_lognormal_X_2params, y, X)
-        
+    @testset " --- Testing fit functions" begin        
         # "Test if termination_status is correct"
         possible_status = ["LOCALLY_SOLVED", "TIME_LIMIT"]
         @test(fitted_model_lognormal.model_status in possible_status)
@@ -108,11 +111,6 @@
     end
 
     @testset " --- Test forecast function ---" begin
-        forecast_lognormal         = UnobservedComponentsGAS.predict(gas_model_lognormal, fitted_model_lognormal, y, steps_ahead, num_scenarious)
-        #forecast_lognormal_X       = UnobservedComponentsGAS.predict(gas_model_lognormal_X, fitted_model_lognormal_X, y, X_lognormal_forec, steps_ahead, num_scenarious)
-        forecast_lognormal_2params = UnobservedComponentsGAS.predict(gas_model_lognormal_2params, fitted_model_lognormal_2params, y, steps_ahead, num_scenarious)
-
-
         @test(isapprox(forecast_lognormal["mean"], vec(mean(forecast_lognormal["scenarios"], dims = 2)); rtol = 1e-3)) 
         @test(size(forecast_lognormal["scenarios"]) == (steps_ahead, num_scenarious))
 

@@ -515,3 +515,20 @@ function get_seasonality_dict_and_stochastic(seasonality::Vector{String})
     
     return seasonality_dict, any(stochastic), stochastic
 end
+
+function get_in_sample_statistics(output::Output, y::Vector{Fl}) where Fl
+
+    y_pred = output.fit_in_sample
+    aic    = output.information_criteria["aic"]
+    bic    = output.information_criteria["bic"]
+    aicc   = output.information_criteria["aicc"]
+
+    mse  = mean((y .- y_pred).^2)
+    rmse = sqrt(mse)
+    mae  = mean(abs.(y .- y_pred))
+    mape = mean(abs.((y .- y_pred) ./ y)) * 100
+
+    return Dict("MSE" => mse, "RMSE" => rmse, 
+                "MAE" => mae, "MAPE" => mape,
+                "BIC"  => bic, "AIC"  => aic, "AICc" => aicc)
+end

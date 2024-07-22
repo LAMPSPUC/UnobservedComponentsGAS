@@ -50,15 +50,23 @@
    
     gas_model_t_X            = deepcopy(gas_model_t)
     gas_model_t_X_2params    = deepcopy(gas_model_t_2params)
+
+    model_t, parameters_t, initial_values_t                         = UnobservedComponentsGAS.create_model(gas_model_t, y, ν)
+    model_t_2params, parameters_t_2params, initial_values_t_2params = UnobservedComponentsGAS.create_model(gas_model_t_2params, y,  ν)
+    
+    model_t_X, parameters_t_X, initial_values_t_X                         = UnobservedComponentsGAS.create_model(gas_model_t_X, y, X,  ν);
+    model_t_X_2params, parameters_t_X_2params, initial_values_t_X_2params = UnobservedComponentsGAS.create_model(gas_model_t_X_2params, y, X,  ν);
+
+    fitted_model_t         = UnobservedComponentsGAS.fit(gas_model_t, y; tol = 5e-2)
+    fitted_model_t_2params = UnobservedComponentsGAS.fit(gas_model_t_2params, y; tol = 5e-2)
+    fitted_model_t_X         = UnobservedComponentsGAS.fit(gas_model_t_X, y, X; tol = 5e-2)
+    fitted_model_t_X_2params = UnobservedComponentsGAS.fit(gas_model_t_X_2params, y, X; tol = 5e-2)
+    
+    forecast_t         = UnobservedComponentsGAS.predict(gas_model_t, fitted_model_t, y, steps_ahead, num_scenarious)
+    forecast_t_X       = UnobservedComponentsGAS.predict(gas_model_t_X, fitted_model_t_X, y, X_t_forec, steps_ahead, num_scenarious)
+    forecast_t_2params = UnobservedComponentsGAS.predict(gas_model_t_2params, fitted_model_t_2params, y, steps_ahead, num_scenarious)
    
-    @testset " --- Testing create_model functions" begin
-        # Create model with no explanatory series
-        model_t, parameters_t, initial_values_t                         = UnobservedComponentsGAS.create_model(gas_model_t, y, ν)
-        model_t_2params, parameters_t_2params, initial_values_t_2params = UnobservedComponentsGAS.create_model(gas_model_t_2params, y,  ν)
-        
-        model_t_X, parameters_t_X, initial_values_t_X                         = UnobservedComponentsGAS.create_model(gas_model_t_X, y, X,  ν);
-        model_t_X_2params, parameters_t_X_2params, initial_values_t_X_2params = UnobservedComponentsGAS.create_model(gas_model_t_X_2params, y, X,  ν);
-        
+    @testset " --- Testing create_model functions" begin        
         @test(size(parameters_t)         == (T,3))
         @test(size(parameters_t_2params) == (T,3))
         @test(typeof(model_t)            == JuMP.Model)
@@ -74,12 +82,7 @@
         @test(test_initial_values_components(initial_values_t_X_2params, rw, rws, ar, seasonality))
     end
     
-    @testset " --- Testing fit functions" begin
-        fitted_model_t         = UnobservedComponentsGAS.fit(gas_model_t, y; tol = 5e-2)
-        fitted_model_t_2params = UnobservedComponentsGAS.fit(gas_model_t_2params, y; tol = 5e-2)
-        fitted_model_t_X         = UnobservedComponentsGAS.fit(gas_model_t_X, y, X; tol = 5e-2)
-        fitted_model_t_X_2params = UnobservedComponentsGAS.fit(gas_model_t_X_2params, y, X; tol = 5e-2)
-        
+    @testset " --- Testing fit functions" begin    
         # "Test if termination_status is correct"
         possible_status = ["LOCALLY_SOLVED", "TIME_LIMIT"]
         @test(fitted_model_t.model_status in possible_status)
@@ -109,11 +112,6 @@
     end
 
     @testset " --- Test forecast function ---" begin
-        forecast_t         = UnobservedComponentsGAS.predict(gas_model_t, fitted_model_t, y, steps_ahead, num_scenarious)
-        forecast_t_X       = UnobservedComponentsGAS.predict(gas_model_t_X, fitted_model_t_X, y, X_t_forec, steps_ahead, num_scenarious)
-        forecast_t_2params = UnobservedComponentsGAS.predict(gas_model_t_2params, fitted_model_t_2params, y, steps_ahead, num_scenarious)
-
-
         @test(isapprox(forecast_t["mean"], vec(mean(forecast_t["scenarios"], dims = 2)); rtol = 1e-3)) 
         @test(size(forecast_t["scenarios"]) == (steps_ahead, num_scenarious))
 
@@ -154,7 +152,8 @@
     end
 
     @testset " --- Test quality of fit - tDist with 2 params" begin
-    
+        y         = time_series[1:end-steps_ahead,1]
+        y_test    = time_series[end-steps_ahead+1:end, 1]
         gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.tLocationScaleDistribution(), [true, true, false],
                                                         0.0, ["random walk slope", "random walk", ""], ["deterministic 12", "deterministic 12", ""], [missing, missing, missing])
         fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
@@ -166,6 +165,8 @@
 
 
     @testset " --- Test quality of fit - tDist with robust" begin
+        y         = time_series[1:end-steps_ahead,1]
+        y_test    = time_series[end-steps_ahead+1:end, 1]
         gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.tLocationScaleDistribution(), [true, false, false],
                                                         1.0, "random walk slope", "deterministic 12", 1)
         fitted_model = UnobservedComponentsGAS.fit(gas_model, y; α = 0.0, robust = true)

@@ -8,10 +8,6 @@
     stochastic = false
 
     @testset "structures" begin
-        params      = 
-        level       = 
-        seasonality = 
-        ar          = 
         gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.NormalDistribution(), [true, false],
                                                      0.5, ["random walk", "ar(1)"], 
                                                     ["deterministic 12", "deterministic 12"],
@@ -21,7 +17,7 @@
         @test(ismissing(gas_model.ar[2]))
         @test(!isempty(gas_model.seasonality[1]))
         @test(!isempty(gas_model.level[1]))
-        @test(ismissing(gas_model.ar[1]))
+        @test(!ismissing(gas_model.ar[1]))
     end
 
 
@@ -356,7 +352,6 @@
         @test(all(initial_values["seasonality"]["γ"] .== initial_values_state_space["γ"]))
         @test(all(initial_values["seasonality"]["γ_star"] .== initial_values_state_space["γ_star"]))
         @test(all(initial_values["seasonality"]["values"] .== zeros(T)))
-        @test(all(initial_values["ar1"]["values"] .== zeros(T)))
         @test(all(initial_values["slope"]["values"] .== zeros(T)))
         @test(all(initial_values["rw"]["values"] .==  zeros(T)))
         @test(all(initial_values["explanatories"] .== initial_values_state_space["explanatory"]))
