@@ -15,20 +15,6 @@
     gas_model = UnobservedComponentsGAS.GASModel(dist, params, d, level, seasonality, ar)
     fitted_model = UnobservedComponentsGAS.fit(gas_model, y);
 
-    # struct Output
-    #     residuals::Dict{String, Any}
-    #     fitted_params::Vector{Float64}
-    # end
-    
-    # # Create a dummy fitted_model object with sample residuals
-    # resid = Dict(
-    #     "q_residuals" => randn(100),
-    #     "std_residuals" => randn(100),
-    #     "cs_residuals" => randn(100, 3)
-    # )
-    # fitted_params = [0.5, 1.0, -0.5]
-    # fitted_model = Output(resid, fitted_params)
-
     @testset "get_residuals" begin
         @test length(UnobservedComponentsGAS.get_residuals(fitted_model; type="q")) == 99
         @test length(UnobservedComponentsGAS.get_residuals(fitted_model; type="std")) == 99
