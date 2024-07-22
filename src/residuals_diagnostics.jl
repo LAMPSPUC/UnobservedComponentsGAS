@@ -4,7 +4,8 @@
 #   - type::String="q": The type of residuals to retrieve ("q" for quantile, "std" for standardized, "cs" for conditional score)
 # Returns:
 #   - The specified residuals as a vector or matrix
-function get_residuals(fitted_model::Output; type::String="q")
+function get_residuals(output::Output; type::String="q")
+    fitted_model = deepcopy(output)
     if type == "q"
         return fitted_model.residuals["q_residuals"][2:end]
     elseif type == "std"
@@ -16,21 +17,20 @@ end
 
 # Function to plot residuals from a fitted model
 # Parameters:
-#   - output::Output: The model output object containing residuals
+#   - fitted_model::Output: The model output object containing residuals
 #   - type::String="q": The type of residuals to plot ("q" for quantile, "std" for standardized, "cs" for conditional score)
 # Returns:
 #   - A plot of the specified residuals
-function plot_residuals(output::Output; type::String="q")
-    fitted_model = deepcopy(output)
-    if type == "std"
-        name = "Standardized"
-        resid = fitted_model.residuals["std_residuals"][2:end]
-    elseif type == "q"
+function plot_residuals(fitted_model::Output; type::String="q")
+
+    resid = get_residuals(fitted_model; type=type)
+
+    if type == "q"
         name = "Quantile"
-        resid = fitted_model.residuals["q_residuals"][2:end]
+    elseif type == "std"
+        name = "Standardized"
     else
         name = "Conditional Score"
-        resid = fitted_model.residuals["cs_residuals"][2:end, :]
     end
 
     if type == "cs"
@@ -54,14 +54,14 @@ end
 
 # Function to calculate the autocorrelation function (ACF) of residuals
 # Parameters:
-#   - output::Output: The model output object containing residuals
+#   - fitted_model::Output: The model output object containing residuals
 #   - lags::Int=25: The number of lags to include in the ACF calculation
 #   - type::String="q": The type of residuals to use ("q" for quantile, "std" for standardized)
 #   - squared::Bool=false: Whether to square the residuals before calculating ACF
 # Returns:
 #   - A vector of ACF values
-function get_acf(output::Output; lags::Int=25, type::String="q", squared::Bool=false)
-    fitted_model = deepcopy(output)
+function get_acf_residuals(fitted_model::Output; lags::Int=25, type::String="q", squared::Bool=false)
+    
     resid = get_residuals(fitted_model; type=type)
 
     squared == true ? resid = resid.^2 : nothing
@@ -78,7 +78,7 @@ end
 # Returns:
 #   - A plot of the ACF of the specified residuals
 function plot_acf_residuals(output::Output; lags::Int=25, type::String="q", squared::Bool=false)
-    acf_values = get_acf(output; lags = lags, type = type, squared = squared)
+    acf_values = get_acf_residuals(output; lags = lags, type = type, squared = squared)
     resid      = get_residuals(output; type=type)
 
     if type == "q"
@@ -169,7 +169,7 @@ end
 #   - type::String="q": The type of residuals to test ("q" for quantile, "std" for standardized)
 # Returns:
 #   - A dictionary with the F-statistic and p-value of the H test
-function test_H(output::Output; type::String="q")
+function Htest(output::Output; type::String="q")
     resid = get_residuals(output; type=type)
 
     T = length(resid)
@@ -215,7 +215,7 @@ function get_residuals_diagnosis_pvalues(output::Output; lags::Int=25, type::Str
     jb   = jarquebera(output; type = type)
     lb   = ljungbox(output; type = type, squared = false, lags = lags)
     lb2  = ljungbox(output; type = type, squared = true, lags = lags)
-    H    = test_H(output; type = type)
+    H    = Htest(output; type = type)
     arch = archtest(output; type = type, lags = lags)
     
     return Dict("JarqueBera" => jb["pvalue"], "HVariance" => H["pvalue"],

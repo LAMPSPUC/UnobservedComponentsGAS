@@ -42,8 +42,8 @@
     end
 
     @testset "get_acf" begin
-        acf_q = UnobservedComponentsGAS.get_acf(fitted_model; lags=25, type="q")
-        acf_std = UnobservedComponentsGAS.get_acf(fitted_model; lags=25, type="std")
+        acf_q = UnobservedComponentsGAS.get_acf_residuals(fitted_model; lags=25, type="q")
+        acf_std = UnobservedComponentsGAS.get_acf_residuals(fitted_model; lags=25, type="std")
         @test length(acf_q) == 26
         @test length(acf_std) == 26
     end
@@ -77,9 +77,9 @@
         @test haskey(lb_std, "stat") && haskey(lb_std, "pvalue")
     end
 
-    @testset "test_H" begin
-        H_q = UnobservedComponentsGAS.test_H(fitted_model; type="q")
-        H_std = UnobservedComponentsGAS.test_H(fitted_model; type="std")
+    @testset "Htest" begin
+        H_q = UnobservedComponentsGAS.Htest(fitted_model; type="q")
+        H_std = UnobservedComponentsGAS.Htest(fitted_model; type="std")
         @test haskey(H_q, "stat") && haskey(H_q, "pvalue")
         @test haskey(H_std, "stat") && haskey(H_std, "pvalue")
     end
