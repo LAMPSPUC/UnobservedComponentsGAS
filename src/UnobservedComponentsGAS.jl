@@ -9,6 +9,12 @@ module UnobservedComponentsGAS
     using Random 
     using SpecialFunctions
     using StateSpaceModels
+    # For residuals diagnostics
+    using Plots
+    using HypothesisTests
+    using StatsPlots
+    using StatsBase
+    using ARCHModels
      
     # include("../NonParametricStructuralModels/src/NonParametricStructuralModels.jl")
 
@@ -23,6 +29,7 @@ module UnobservedComponentsGAS
     include("components_dynamics.jl")
     include("optimization.jl")
     include("forecast.jl")
+    include("residuals_diagnostics.jl")
 
     const DICT_CODE = Dict(1 => "Normal",
                            2 => "tLocationScale" )
