@@ -64,6 +64,10 @@
     forecast_normal         = UnobservedComponentsGAS.predict(gas_model_normal, fitted_model_normal, y, steps_ahead, num_scenarious)
     forecast_normal_X       = UnobservedComponentsGAS.predict(gas_model_normal_X, fitted_model_normal_X, y, X_normal_forec, steps_ahead, num_scenarious)
     forecast_normal_2params = UnobservedComponentsGAS.predict(gas_model_normal_2params, fitted_model_normal_2params, y, steps_ahead, num_scenarious)
+
+    scenarios_normal         = UnobservedComponentsGAS.simulate(gas_model_normal, fitted_model_normal, y, steps_ahead, num_scenarious)
+    scenarios_normal_X       = UnobservedComponentsGAS.simulate(gas_model_normal_X, fitted_model_normal_X, y, X_normal_forec, steps_ahead, num_scenarious)
+    scenarios_normal_2params = UnobservedComponentsGAS.simulate(gas_model_normal_2params, fitted_model_normal_2params, y, steps_ahead, num_scenarious)
     
     @testset "create_model" begin
     # Create model with no explanatory series
@@ -116,29 +120,29 @@
     #@info(" --- Test forecast function ---")
     @testset "forecast" begin
         
-        @test(isapprox(forecast_normal["mean"], vec(mean(forecast_normal["scenarios"], dims = 2)); rtol = 1e-3)) 
-        @test(size(forecast_normal["scenarios"]) == (steps_ahead, num_scenarious))
+        @test(isapprox(forecast_normal["mean"], vec(mean(scenarios_normal, dims = 2)); rtol = 1e-3)) 
+        @test(size(scenarios_normal) == (steps_ahead, num_scenarious))
 
-        @test(isapprox(forecast_normal["intervals"]["80"]["lower"], [quantile(forecast_normal["scenarios"][t,:], 0.2/2) for t in 1:steps_ahead]))
-        @test(isapprox(forecast_normal["intervals"]["80"]["upper"], [quantile(forecast_normal["scenarios"][t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
-        @test(isapprox(forecast_normal["intervals"]["95"]["lower"], [quantile(forecast_normal["scenarios"][t,:], 0.05/2) for t in 1:steps_ahead]))
-        @test(isapprox(forecast_normal["intervals"]["95"]["upper"], [quantile(forecast_normal["scenarios"][t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
+        @test(isapprox(forecast_normal["intervals"]["80"]["lower"], [quantile(scenarios_normal[t,:], 0.2/2) for t in 1:steps_ahead]))
+        @test(isapprox(forecast_normal["intervals"]["80"]["upper"], [quantile(scenarios_normal[t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
+        @test(isapprox(forecast_normal["intervals"]["95"]["lower"], [quantile(scenarios_normal[t,:], 0.05/2) for t in 1:steps_ahead]))
+        @test(isapprox(forecast_normal["intervals"]["95"]["upper"], [quantile(scenarios_normal[t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
 
-        @test(isapprox(forecast_normal_2params["mean"], vec(mean(forecast_normal_2params["scenarios"], dims = 2)); rtol = 1e-3)) 
-        @test(size(forecast_normal_2params["scenarios"]) == (steps_ahead, num_scenarious))
+        @test(isapprox(forecast_normal_2params["mean"], vec(mean(scenarios_normal_2params, dims = 2)); rtol = 1e-3)) 
+        @test(size(scenarios_normal_2params) == (steps_ahead, num_scenarious))
 
-        @test(isapprox(forecast_normal_2params["intervals"]["80"]["lower"], [quantile(forecast_normal_2params["scenarios"][t,:], 0.2/2) for t in 1:steps_ahead]))
-        @test(isapprox(forecast_normal_2params["intervals"]["80"]["upper"], [quantile(forecast_normal_2params["scenarios"][t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
-        @test(isapprox(forecast_normal_2params["intervals"]["95"]["lower"], [quantile(forecast_normal_2params["scenarios"][t,:], 0.05/2) for t in 1:steps_ahead]))
-        @test(isapprox(forecast_normal_2params["intervals"]["95"]["upper"], [quantile(forecast_normal_2params["scenarios"][t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
+        @test(isapprox(forecast_normal_2params["intervals"]["80"]["lower"], [quantile(scenarios_normal_2params[t,:], 0.2/2) for t in 1:steps_ahead]))
+        @test(isapprox(forecast_normal_2params["intervals"]["80"]["upper"], [quantile(scenarios_normal_2params[t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
+        @test(isapprox(forecast_normal_2params["intervals"]["95"]["lower"], [quantile(scenarios_normal_2params[t,:], 0.05/2) for t in 1:steps_ahead]))
+        @test(isapprox(forecast_normal_2params["intervals"]["95"]["upper"], [quantile(scenarios_normal_2params[t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
 
-        @test(isapprox(forecast_normal_X["mean"], vec(mean(forecast_normal_X["scenarios"], dims = 2)); rtol = 1e-3)) 
-        @test(size(forecast_normal_X["scenarios"]) == (steps_ahead, num_scenarious))
+        @test(isapprox(forecast_normal_X["mean"], vec(mean(scenarios_normal_X, dims = 2)); rtol = 1e-3)) 
+        @test(size(scenarios_normal_X) == (steps_ahead, num_scenarious))
 
-        @test(isapprox(forecast_normal_X["intervals"]["80"]["lower"], [quantile(forecast_normal_X["scenarios"][t,:], 0.2/2) for t in 1:steps_ahead]))
-        @test(isapprox(forecast_normal_X["intervals"]["80"]["upper"], [quantile(forecast_normal_X["scenarios"][t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
-        @test(isapprox(forecast_normal_X["intervals"]["95"]["lower"], [quantile(forecast_normal_X["scenarios"][t,:], 0.05/2) for t in 1:steps_ahead]))
-        @test(isapprox(forecast_normal_X["intervals"]["95"]["upper"], [quantile(forecast_normal_X["scenarios"][t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
+        @test(isapprox(forecast_normal_X["intervals"]["80"]["lower"], [quantile(scenarios_normal_X[t,:], 0.2/2) for t in 1:steps_ahead]))
+        @test(isapprox(forecast_normal_X["intervals"]["80"]["upper"], [quantile(scenarios_normal_X[t,:], 1 - 0.2/2) for t in 1:steps_ahead]))
+        @test(isapprox(forecast_normal_X["intervals"]["95"]["lower"], [quantile(scenarios_normal_X[t,:], 0.05/2) for t in 1:steps_ahead]))
+        @test(isapprox(forecast_normal_X["intervals"]["95"]["upper"], [quantile(scenarios_normal_X[t,:], 1 - 0.05/2) for t in 1:steps_ahead]))
     end
 
     #@info(" --- Test quality of fit and forecast - Normal")
