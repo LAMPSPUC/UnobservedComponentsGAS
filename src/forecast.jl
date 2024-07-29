@@ -519,6 +519,75 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
 end
 
 """
+# simulate(gas_model::GASModel, output::Output, y::Vector{Float64}, steps_ahead::Int64, num_scenarios::Int64
+
+Simulates future values of a time series using the specified GAS model.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `output::Output`: The output structure containing the fitted values, residuals, and information criteria.
+- `y::Vector{Float64}`: The vector of observed values for the time series data.
+- `steps_ahead::Int64`: An integer indicating the number of steps ahead to predict.
+- `num_scenarios::Int64`: An integer indicating the number of scenarios to simulate.
+
+## Returns
+- simulated_scenarios: A matrix containing the simulated scenarios, where each column represents a scenario.
+"""
+function simulate(gas_model::GASModel, output::Output, y::Vector{Float64}, steps_ahead::Int64, num_scenarios::Int64)
+    
+    new_output = deepcopy(output)
+    if typeof(gas_model.dist) == LogNormalDistribution
+        new_output.fitted_params = convert_to_log_scale(new_output.fitted_params)
+        y = log.(y)
+    end
+
+    dict_hyperparams_and_fitted_components = get_dict_hyperparams_and_fitted_components_with_forecast(gas_model, new_output, steps_ahead, num_scenarios)
+    simulated_scenarios                    = simulate(gas_model, new_output, dict_hyperparams_and_fitted_components, y, steps_ahead, num_scenarios)
+    
+    if typeof(gas_model.dist) == LogNormalDistribution
+        simulated_scenarios = convert_forecast_scenarios_to_exp_scale(simulated_scenarios)
+    end
+
+   return simulated_scenarios[end-steps_ahead+1:end, :]
+end
+
+"""
+# simulate(gas_model::GASModel, output::Output, y::Vector{Float64}, X_forecast::Matrix{Fl}, steps_ahead::Int64, num_scenarios::Int64
+
+Simulates future values of a time series using the specified GAS model and explanatory variables for forecasting.
+
+## Arguments
+- `gas_model::GASModel`: The GAS model containing parameters and specifications.
+- `output::Output`: The output structure containing the fitted values, residuals, and information criteria.
+- `y::Vector{Float64}`: The vector of observed values for the time series data.
+- `X_forecast::Matrix{Fl}`: The matrix of explanatory variables for forecasting.
+- `steps_ahead::Int64`: An integer indicating the number of steps ahead to predict.
+- `num_scenarios::Int64`: An integer indicating the number of scenarios to simulate.
+
+## Returns
+- `scenarios`: A matrix containing the simulated scenarios, where each column represents a scenario.
+"""
+function simulate(gas_model::GASModel, output::Output, y::Vector{Float64}, X_forecast::Matrix{Fl}, steps_ahead::Int64, num_scenarios::Int64) where {Ml, Fl}
+    
+    new_output = deepcopy(output)
+
+    if typeof(gas_model.dist) == LogNormalDistribution
+        new_output.fitted_params = convert_to_log_scale(new_output.fitted_params)
+        y = log.(y)
+        #X_forecast = log.(X_forecast) #Devo fazer isso?
+    end
+
+    dict_hyperparams_and_fitted_components = get_dict_hyperparams_and_fitted_components_with_forecast(gas_model, new_output, X_forecast, steps_ahead, num_scenarios)
+    simulated_scenarios                    = simulate(gas_model, new_output, dict_hyperparams_and_fitted_components, y, X_forecast, steps_ahead, num_scenarios)
+    
+    if typeof(gas_model.dist) == LogNormalDistribution
+        simulated_scenarios = convert_forecast_scenarios_to_exp_scale(simulated_scenarios)
+    end
+    
+    return simulated_scenarios[end-steps_ahead+1:end, :]
+end
+
+"""
 # get_mean_and_intervals_prediction(pred_y::Matrix{Fl}, steps_ahead::Int64, probabilistic_intervals::Vector{Float64}) where Fl
 
 Calculates the mean and intervals of predictions from simulated scenarios.
@@ -562,7 +631,7 @@ function get_mean_and_intervals_prediction(pred_y::Matrix{Fl}, steps_ahead::Int6
     end
 
     dict_forec["mean"] = forec
-    dict_forec["scenarios"] = pred_y[end - steps_ahead + 1:end, :]
+    # dict_forec["scenarios"] = pred_y[end - steps_ahead + 1:end, :]
 
     return dict_forec
 end
@@ -590,20 +659,9 @@ Predicts future values of a time series using the specified GAS model.
 """
 function predict(gas_model::GASModel, output::Output, y::Vector{Float64}, steps_ahead::Int64, num_scenarios::Int64; probabilistic_intervals::Vector{Float64} = [0.8, 0.95])
     
-    new_output = deepcopy(output)
-    if typeof(gas_model.dist) == LogNormalDistribution
-        new_output.fitted_params = convert_to_log_scale(new_output.fitted_params)
-        y = log.(y)
-    end
-
-    dict_hyperparams_and_fitted_components = get_dict_hyperparams_and_fitted_components_with_forecast(gas_model, new_output, steps_ahead, num_scenarios)
-    pred_y                                 = simulate(gas_model, new_output, dict_hyperparams_and_fitted_components, y, steps_ahead, num_scenarios)
+    simulated_scenarios = simulate(gas_model, output, y, steps_ahead, num_scenarios)
     
-    if typeof(gas_model.dist) == LogNormalDistribution
-        pred_y = convert_forecast_scenarios_to_exp_scale(pred_y)
-    end
-    
-    dict_forec = get_mean_and_intervals_prediction(pred_y, steps_ahead, probabilistic_intervals)
+    dict_forec = get_mean_and_intervals_prediction(simulated_scenarios, steps_ahead, probabilistic_intervals)
 
     return dict_forec
 end
@@ -632,22 +690,9 @@ Predicts future values of a time series using the specified GAS model and explan
 """
 function predict(gas_model::GASModel, output::Output, y::Vector{Float64}, X_forecast::Matrix{Fl}, steps_ahead::Int64, num_scenarios::Int64; probabilistic_intervals::Vector{Float64} = [0.8, 0.95]) where {Ml, Fl}
     
-    new_output = deepcopy(output)
-
-    if typeof(gas_model.dist) == LogNormalDistribution
-        new_output.fitted_params = convert_to_log_scale(new_output.fitted_params)
-        y = log.(y)
-        #X_forecast = log.(X_forecast) #Devo fazer isso?
-    end
-
-    dict_hyperparams_and_fitted_components = get_dict_hyperparams_and_fitted_components_with_forecast(gas_model, new_output, X_forecast, steps_ahead, num_scenarios)
-    pred_y                                 = simulate(gas_model, new_output, dict_hyperparams_and_fitted_components, y, X_forecast, steps_ahead, num_scenarios)
+    simulated_scenarios = simulate(gas_model, output, y, X_forecast, steps_ahead, num_scenarios)
     
-    if typeof(gas_model.dist) == LogNormalDistribution
-        pred_y = convert_forecast_scenarios_to_exp_scale(pred_y)
-    end
-    
-    dict_forec = get_mean_and_intervals_prediction(pred_y, steps_ahead, probabilistic_intervals)
+    dict_forec = get_mean_and_intervals_prediction(simulated_scenarios, steps_ahead, probabilistic_intervals)
 
     return dict_forec
 end
