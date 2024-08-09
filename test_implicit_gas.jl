@@ -40,8 +40,10 @@ function simulate_local_linear_trend(T, N, σ²_μ, σ²_β, σ²_ε)
 end
 
 function simulate_local_level(T, N, σ²_μ, σ²_ε)
+
     # Inicialização das séries
-    y = zeros(T, N)
+    T = T + 5
+    y = zeros(T, N) .+ rand(Uniform(0,100))
     
     # Inicialização dos estados
     μ = zeros(T, N)
@@ -63,7 +65,7 @@ function simulate_local_level(T, N, σ²_μ, σ²_ε)
         end
     end
     
-    return y
+    return y[6:end,:]
 end
 
 function implicit_local_level_gas(y::Vector{Float64}, λ::Float64)
@@ -71,9 +73,9 @@ function implicit_local_level_gas(y::Vector{Float64}, λ::Float64)
 
     model = Model(Ipopt.Optimizer)
     set_silent(model)
-    set_optimizer_attribute(model, "max_iter", 30000)
+    set_optimizer_attribute(model, "max_iter", 60000)
     set_optimizer_attribute(model, "max_cpu_time", 100.0)
-    set_optimizer_attribute(model, "tol",  0.005) 
+    set_optimizer_attribute(model, "tol",  0.0005) 
 
     @variable(model, m_update[1:T])
     @variable(model, σ  ≥ 0.0004)
@@ -84,11 +86,10 @@ function implicit_local_level_gas(y::Vector{Float64}, λ::Float64)
     #passo de previsão
     m_pred = Vector(undef, T)
     for t in 2:T
-        m_pred[t] = m_update[t-1]  +κ * s[t-1]
+        m_pred[t] = m_update[t-1]  + κ * s[t-1]
     end
 
     @expression(model, μ, m_update)
-
     @constraint(model,[t = 2:T], s[t] == m_update[t] - m_pred[t])
    
     f(y,μ, σ) = logpdf(Normal(μ,σ),y)
@@ -158,9 +159,9 @@ end
 
 # Parâmetros
 T = 100 
-N = 10  
-σ²_μ = 0.1   
-σ²_ε = 1.0  
+N = 10
+σ²_μ = 10.0   
+σ²_ε = 10.0  
 
 # Simulação
 series = simulate_local_level(T, N, σ²_μ, σ²_ε)
@@ -168,27 +169,76 @@ series = simulate_local_level(T, N, σ²_μ, σ²_ε)
 y = series[:, 1]
 plot(y)
 
-λ = 0.5
-μ_up, μ_pred, σ, s, κ = implicit_local_level_gas(y, λ);
+dict_results = Dict()
+for λ in 0:0.1:1
+    dict_results[λ] = Dict()
+    μ_up, μ_pred, σ, s, κ = implicit_local_level_gas(y, λ);
+    score_est = (y .- μ_up) ./ σ^2 #score da normal calculado com a média atualizada
+    score_alt = 2* λ .* (μ_up[2:end] .- μ_pred) 
 
+    dist = UnobservedComponentsGAS.NormalDistribution()
+    model = UnobservedComponentsGAS.GASModel(dist, [true, false], 0.0, "random walk slope", "", missing)
+    fitted_model = UnobservedComponentsGAS.fit(model, y)
+
+    score_pack = (y .- fitted_model.fitted_params["param_1"]) ./ fitted_model.fitted_params["param_2"][1]
+
+    dict_results[λ]["μ_pred"] = μ_up
+    dict_results[λ]["μ_up"] = μ_pred
+    dict_results[λ]["σ2"] = σ^2
+    dict_results[λ]["s"] = s
+    dict_results[λ]["κ"] = κ
+    dict_results[λ]["score_est"] = score_est[2:end]
+    dict_results[λ]["score_alt"] = score_alt[2:end]
+    dict_results[λ]["score_pack"] = score_pack[2:end]
+    dict_results[λ]["σ2_pack"] = fitted_model.fitted_params["param_2"][1]
+    dict_results[λ]["μ_pack"] = fitted_model.fitted_params["param_1"]
+
+    plot(y[2:end], label = "série", color = "black")
+    plot!(dict_results[λ]["μ_pred"], label = "média preditiva", color = "red")
+    plot!(dict_results[λ]["μ_up"][2:end], label = "média atualizada", color = "blue") #atualizado mais suave do que o predito, o que faz sentido
+    plot!(dict_results[λ]["μ_pack"], label = "média pacote", color = "green")
+    title!("λ = $λ")
+    savefig("results_implicit_gas/medias_ll_lambda_$(λ).png")
+
+    plot(dict_results[λ]["score_est"][2:end], label = "score_est")
+    plot!(dict_results[λ]["score_alt"], label = "score_alt")
+    # plot!(dict_results[λ]["s"], label = "score_opt")
+    # plot!(dict_results[λ]["score_pack"], label = "score_pack")
+    title!("Scores λ = $λ")
+    savefig("results_implicit_gas/scores_ll_lambda_$(λ).png")
+end
+
+# O nosso pacote explode muito a variância
+for λ in 0:0.1:1
+    println("κ = ", dict_results[λ]["κ"])
+    println("σ2 = ", dict_results[λ]["σ2"])
+    println("σ2 pack = ", dict_results[λ]["σ2_pack"])
+end
+
+
+# A média do pacote é parecida com a média preditiva 
+λ = 0.9
+hcat(dict_results[λ]["μ_pred"][2:end],dict_results[λ]["μ_up"],dict_results[λ]["μ_pack"][2:end])
+
+# Media atualizada está batendo com a média atualizada via conta.
+# Meio óbvio por causa da restrição do modelo
+plot(hcat(μ_up[2:end], μ_pred .+ (1/2*λ).*((y .- μ_up) ./ σ^2)[2:end])) # 
+
+λ = 0.9
 plot(y[2:end], label = "série", color = "black")
-plot!(μ_pred, label = "média preditiva", color = "red")
-plot!(μ_up[2:end], label = "média atualizada", color = "blue") #atualizado mais suave do que o predito, o que faz sentido
+plot!(dict_results[λ]["μ_pred"], label = "média preditiva", color = "red")
+plot!(dict_results[λ]["μ_up"][2:end], label = "média atualizada", color = "blue") #atualizado mais suave do que o predito, o que faz sentido
 
 #Testando a relação do score encontrada com condição de primeira ordem 
+#Não bate, mas tá seguindo o mesmo comportamento
+plot(dict_results[0.6]["score_est"][2:end])
+plot!(dict_results[0.6]["score_alt"])
 
-score_est = (y .- μ_up) ./ σ^2 #score da normal calculado com a média atualizada
-score_alt = 2* λ .* (μ_up[2:end] .- μ_pred) 
-
-plot(score_est[2:end])
-plot!(score_alt)
-
-#Não bate 
 
 #Comparação com o pacote...
 dist = UnobservedComponentsGAS.NormalDistribution()
 
-model = UnobservedComponentsGAS.GASModel(dist, [true, false], 0.0, "random walk slope", "", missing)
+model = UnobservedComponentsGAS.GASModel(dist, [true, false], 0.0, "random walk", "", missing)
 
 rmse_model = zeros(N)
 rmse_implicit_model = zeros(N)
@@ -203,7 +253,7 @@ for i in 1:N
     plot(y)
 
     time_model[i]          = @elapsed fitted_model = UnobservedComponentsGAS.fit(model, y)
-    time_implicit_model[i] = @elapsed μ_up, μ_pred, σ, s, ϕ, ω = implicit_gas(y, 0.5)
+    time_implicit_model[i] = @elapsed μ_up, μ_pred, σ, s, ϕ, ω = implicit_local_level_gas(y, 0.5)
 
     println("ϕ = $ϕ")
     println("ω = $ω")
@@ -217,9 +267,9 @@ for i in 1:N
     savefig("results_figures/eta = $η/serie$(i).png")
 end
 
-    results = hcat(collect(1:N), time_model, time_implicit_model, rmse_model, rmse_implicit_model)
+results = hcat(collect(1:N), time_model, time_implicit_model, rmse_model, rmse_implicit_model)
 
-    #CSV.write("results_figures/eta = $η/results.csv", DataFrame(results, ["serie", "time ESD", "time ISD", "rmse ESD", "rmse ISD"]))
+#CSV.write("results_figures/eta = $η/results.csv", DataFrame(results, ["serie", "time ESD", "time ISD", "rmse ESD", "rmse ISD"]))
 
 hcat(time_model, time_implicit_model)
 hcat(rmse_model, rmse_implicit_model)
