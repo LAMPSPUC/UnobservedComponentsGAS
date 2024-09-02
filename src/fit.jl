@@ -241,7 +241,8 @@ function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl};
   
         fitted_model = fit_tlocationscale_local_search(gas_model, y, X;  
                                                        tol = 0.01, α = α, robust = robust, robust_prop = robust_prop, number_max_iterations = number_max_iterations,
-                                                       max_optimization_time = max_optimization_time, initial_values = initial_values)
+                                                       max_optimization_time = max_optimization_time, initial_values = initial_values,
+                                                       κ_min = κ_min, κ_max = κ_max)
     else
         model, parameters, initial_values = create_model(gas_model, y, X, missing;  number_max_iterations = number_max_iterations,
                                          max_optimization_time = max_optimization_time,  tol = tol,

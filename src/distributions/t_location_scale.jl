@@ -578,6 +578,7 @@ Fits a t-location-scale distribution with exogenous variables using local search
 function fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl};
                                          tol::Float64 = 0.01, α::Float64 = 0.5, robust::Bool = false, robust_prop::Float64 = 0.7, 
                                          number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
+                                         κ_min::Int64 = 0, κ_max::Int64 = 2, 
                                           initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl}
 
     T    = length(y)
