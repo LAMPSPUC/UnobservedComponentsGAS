@@ -233,7 +233,7 @@ function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Int64, Vector{Int
     @variable(model, ϕ[1:max_order, idx_params])
     @variable(model, κ_AR[idx_params])
 
-    @constraint(model, [i in idx_params], -2 ≤ κ_AR[i] ≤ 2)
+    @constraint(model, [i in idx_params], 0 ≤ κ_AR[i] ≤ 2)
 
     # Revisar essas restrições com o Alves !!
     for i in unique_orders
@@ -273,8 +273,8 @@ function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_
 
     @constraint(model, [t = 2:T, j in idx_params], b[t, j]   == b[t - 1, j] + κ_b[j] * s[j][t])
     @constraint(model, [t = 2:T, j in idx_params], RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * s[j][t])
-    @constraint(model, [j in idx_params], -2 ≤ κ_RWS[j] ≤ 2)
-    @constraint(model, [j in idx_params], -2 ≤ κ_b[j] ≤ 2)
+    @constraint(model, [j in idx_params], 0 ≤ κ_RWS[j] ≤ 0)
+    @constraint(model, [j in idx_params], 0 ≤ κ_b[j] ≤ 0)
 end
 
 """
@@ -299,7 +299,7 @@ function add_random_walk!(model::Ml, s::Vector{Fl}, T::Int64, random_walk::Dict{
     @variable(model, κ_RW[idx_params])
 
     @constraint(model, [t = 2:T, j in idx_params], RW[t, j] == RW[t-1, j] + κ_RW[j] * s[j][t])
-    @constraint(model, [j in idx_params], -2 ≤ κ_RW[j] ≤ 2)
+    @constraint(model, [j in idx_params], 0 ≤ κ_RW[j] ≤ 2)
 end
 
 """
@@ -325,7 +325,7 @@ function add_ar1!(model::Ml, s::Vector{Fl}, T::Int64, ar1::Dict{Int64, Bool})  w
     @variable(model, κ_AR1_LEVEL[idx_params])
     @variable(model, ω_AR1_LEVEL[idx_params])
 
-    @constraint(model, [i in idx_params], -2 ≤ κ_AR1_LEVEL[i] ≤ 2)
+    @constraint(model, [i in idx_params], 0 ≤ κ_AR1_LEVEL[i] ≤ 2)
     @constraint(model, [i in idx_params], -0.95 <= ϕ_AR1_LEVEL[i] <= 0.95)
 
     @constraint(model, [t = 2:T, j in idx_params], AR1_LEVEL[t, j] == ω_AR1_LEVEL[j] + ϕ_AR1_LEVEL[j] * AR1_LEVEL[t-1, j] + κ_AR1_LEVEL[j] * s[j][t])
@@ -435,7 +435,7 @@ function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seas
 
 
         @variable(model, κ_S[idx_params_stochastic])
-        @constraint(model, [i in idx_params_stochastic], -2 ≤ κ_S[i] ≤ 2)    
+        @constraint(model, [i in idx_params_stochastic], 0 ≤ κ_S[i] ≤ 2)    
         #JuMP.fix.(model[:κ_S][idx_params_deterministic], 1e-4)
 
         @variable(model, γ_sto[1:unique_num_harmonic, 1:T, idx_params_stochastic])
