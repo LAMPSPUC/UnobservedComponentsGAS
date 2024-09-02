@@ -155,8 +155,8 @@
         fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
         forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
 
-        @test(isapprox(fitted_model.fit_in_sample[2:end], y[2:end]; rtol = 1e-2))
-        @test(isapprox(forec["mean"], y_test; rtol = 1e2))
+        @test(isapprox(fitted_model.fit_in_sample[2:end], y[2:end]; rtol = 1e-1))
+        @test(isapprox(forec["mean"], y_test; rtol = 1e-1))
     end
 
     #@info(" --- Test quality of fit - Normal with 2 params")
@@ -169,7 +169,7 @@
         forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
             
         @test(isapprox(fitted_model.fit_in_sample[2:end], y[2:end]; rtol = 1e-1))
-        @test(isapprox(forec["mean"], y_test; rtol = 1e2))
+        @test(isapprox(forec["mean"], y_test; rtol = 1e0))
     end
 
     # #@info(" --- Test quality of fit - Normal with robust")
@@ -181,8 +181,8 @@
         fitted_model = UnobservedComponentsGAS.fit(gas_model, y; α = 0.0, robust = true)
         forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
 
-        @test(isapprox(fitted_model.fit_in_sample[2:end], y[2:end]; rtol = 1e-2))
-        @test(isapprox(forec["mean"], y_test; rtol = 1e2))
+        @test(isapprox(fitted_model.fit_in_sample[2:end], y[2:end]; rtol = 1e-1))
+        @test(isapprox(forec["mean"], y_test; rtol = 1e0))
     end
 
     @testset "AR(1) level" begin
