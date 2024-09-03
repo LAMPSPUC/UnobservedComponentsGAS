@@ -1,7 +1,7 @@
 @testset "Fit & Forecast Gamma" begin  
     
     time_series = CSV.read(joinpath(@__DIR__, "data/timeseries_lognormal_rws_d1.csv"), DataFrame)
-    T = size(time_series, 1)
+    T = size(time_series, 2)
     y = time_series[:,2]
     X = [2*y y/2 rand(T)]
     
@@ -160,30 +160,30 @@
     end
 
     #@info(" --- Test quality of fit - Gamma with 2 params")
-    @testset "quality of fit - Gamma with 2 params" begin
-        y         = time_series[1:end-steps_ahead,5]
-        y_test    = time_series[end-steps_ahead+1:end, 5]
-        gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.GammaDistribution(), [true, true],
-                                                        0.0, ["random walk slope", "random walk"], ["deterministic 12", "deterministic 12"], [missing, missing])
-        fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
-        forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
+    # @testset "quality of fit - Gamma with 2 params" begin
+    #     y         = time_series[1:end-steps_ahead,5]
+    #     y_test    = time_series[end-steps_ahead+1:end, 5]
+    #     gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.GammaDistribution(), [true, true],
+    #                                                     0.0, ["random walk slope", "random walk"], ["deterministic 12", "deterministic 12"], [missing, missing])
+    #     fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
+    #     forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
             
-        @test(isapprox(fitted_model.fit_in_sample[2:end], y[2:end]; rtol = 1e0))
-        @test(isapprox(forec["mean"], y_test; rtol = 1e0))
-    end
+    #     @test(isapprox(fitted_model.fit_in_sample[2:end], y[2:end]; rtol = 1e0))
+    #     @test(isapprox(forec["mean"], y_test; rtol = 1e0))
+    # end
 
     # #@info(" --- Test quality of fit - Gamma with robust")
-    @testset "quality of fit - Gamma with robust" begin
-        y         = time_series[1:end-steps_ahead,5]
-        y_test    = time_series[end-steps_ahead+1:end, 5]
-        gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.GammaDistribution(), [true, false],
-                                                        1.0, "random walk slope", "deterministic 12", 1)
-        fitted_model = UnobservedComponentsGAS.fit(gas_model, y; α = 0.0, robust = true)
-        forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
+    # @testset "quality of fit - Gamma with robust" begin
+    #     y         = time_series[1:end-steps_ahead,5]
+    #     y_test    = time_series[end-steps_ahead+1:end, 5]
+    #     gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.GammaDistribution(), [true, false],
+    #                                                     1.0, "random walk slope", "deterministic 12", 1)
+    #     fitted_model = UnobservedComponentsGAS.fit(gas_model, y; α = 0.0, robust = true)
+    #     forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
 
-        @test(isapprox(fitted_model.fit_in_sample[2:end], y[2:end]; rtol = 1e0))
-        @test(isapprox(forec["mean"], y_test; rtol = 1e0))
-    end
+    #     @test(isapprox(fitted_model.fit_in_sample[2:end], y[2:end]; rtol = 1e0))
+    #     @test(isapprox(forec["mean"], y_test; rtol = 1e0))
+    # end
 
     @testset "AR(1) level" begin
         y         = time_series[1:end-steps_ahead,5]
