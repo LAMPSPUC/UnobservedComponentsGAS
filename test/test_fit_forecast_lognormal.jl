@@ -155,8 +155,8 @@
     end
 
     @testset " --- Test quality of fit - LogNormal with 2 params" begin
-        y         = time_series[1:end-steps_ahead,4]
-        y_test    = time_series[end-steps_ahead+1:end, 4]
+        y         = time_series[1:end-steps_ahead,2]
+        y_test    = time_series[end-steps_ahead+1:end, 2]
         gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.LogNormalDistribution(), [true, true],
                                                         0.5, ["random walk slope", "random walk"], ["deterministic 12", "deterministic 12"], [missing, missing])
         fitted_model = UnobservedComponentsGAS.fit(gas_model, y)

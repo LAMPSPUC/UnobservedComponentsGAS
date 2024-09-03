@@ -14,5 +14,3 @@ include("test_optimization.jl")
 include("test_distributions.jl")
 include("test_initialization.jl")
 include("test_residuals_diagnostics.jl")
-
-

@@ -1,5 +1,5 @@
 test_gas_alves.jl
-Manifest.toml
+
 forecast_example.jl
 residuals_diagnostic_example.jl
 test_numeric_integration.jl
@@ -8,6 +8,9 @@ test_dynamic_comb.jl
 inovations_ssmodels.jl
 test_component_expression.jl
 test_gas.jl
+
+# Manifest file
+Manifest.toml
 
 # Files with csv extension
 *.csv
