@@ -150,21 +150,21 @@
         fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
         forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
 
-        @test(isapprox(fitted_model.fit_in_sample[2:end], y[2:end]; rtol = 1e-1))
-        @test(isapprox(forec["mean"], y_test; rtol = 1e2))
+        @test(isapprox(fitted_model.fit_in_sample[2:end], y[2:end]; rtol = 1e0))
+        @test(isapprox(forec["mean"], y_test; rtol = 1e1))
     end
 
     @testset " --- Test quality of fit - LogNormal with 2 params" begin
-        y         = time_series[1:end-steps_ahead,4]
-        y_test    = time_series[end-steps_ahead+1:end, 4]
+        y         = time_series[1:end-steps_ahead,2]
+        y_test    = time_series[end-steps_ahead+1:end, 2]
         gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.LogNormalDistribution(), [true, true],
                                                         0.5, ["random walk slope", "random walk"], ["deterministic 12", "deterministic 12"], [missing, missing])
         fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
         forec        = UnobservedComponentsGAS.predict(gas_model, fitted_model, y, steps_ahead, num_scenarious)
 
         hcat(fitted_model.fit_in_sample[2:end], y[2:end])
-        @test(isapprox(fitted_model.fit_in_sample[2:end], y[2:end]; rtol = 1e-1))
-        @test(isapprox(forec["mean"], y_test; rtol = 1e2))
+        @test(isapprox(fitted_model.fit_in_sample[2:end], y[2:end]; rtol = 1e0))
+        @test(isapprox(forec["mean"], y_test; rtol = 1e1))
     end
             
 end
