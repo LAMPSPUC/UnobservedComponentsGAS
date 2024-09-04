@@ -45,6 +45,7 @@ Convert the fit-in-sample vector and the dictionary of fitted parameters, which 
 """
 function convert_to_exp_scale(fit_in_sample::Vector{Fl}, fitted_params::Dict{String, Vector{Float64}}) where Fl
      
+    # fitted_params["param_2"] = fitted_params["param_2"] ./10000
     new_fit_in_sample = exp.(fit_in_sample .+ fitted_params["param_2"]./2)
 
     new_fitted_params = Dict{String, Vector{Float64}}()

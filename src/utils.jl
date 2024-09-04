@@ -28,7 +28,7 @@ Returns the fitted values and components of the specified GAS model.
 """
 function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Matrix{Fl}}) where {Ml,  Fl} 
     
-    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
+    @unpack dist, time_varying_params, d, level, seasonality, ar, combination = gas_model
 
     idx_params                                      = get_idxs_time_varying_params(time_varying_params)
     seasonality_dict, stochastic, stochastic_params = get_seasonality_dict_and_stochastic(seasonality)
@@ -50,6 +50,9 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
             fitted_params["param_$i"] = ones(length(fit_in_sample)) * value(model[:fixed_params][i])
         end
     end
+
+    # println("Roubando aqui")
+    # fitted_params["param_2"] = ones(length(fit_in_sample)) * 0.00718304931674615
     
     components = Dict{String, Any}()
 
@@ -57,7 +60,9 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
 
         components["param_$i"] = Dict{String, Any}()
         #components["param_$i"]["intercept"] = value(model[:c][i])
-
+        combination == "nonlinear" ? components["param_$i"]["b_mult"] = value(model[:b_mult][i]) : 
+                                    components["param_$i"]["b_mult"] = Inf
+        
         if has_random_walk(level, i)
             components["param_$i"]["level"]                    = Dict{String, Any}()
             components["param_$i"]["level"]["hyperparameters"] = Dict{String, Any}()

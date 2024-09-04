@@ -14,7 +14,7 @@ Creates a dictionary containing hyperparameters and fitted components along with
 """
 function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GASModel, output::Output, steps_ahead::Int64, num_scenarios::Int64)
 
-    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
+    @unpack dist, time_varying_params, d, level, seasonality, ar, combination = gas_model
 
     idx_params = get_idxs_time_varying_params(time_varying_params) 
     order      = get_AR_order(ar)
@@ -32,6 +32,9 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     elseif length(idx_params) > length(num_harmonic) #considera os mesmos harmonicos para todos os parametros variantes, para não quebrar a update_S!
         num_harmonic = Int64.(ones(length(idx_params)) * num_harmonic[1])
     end
+
+    DICT_ZEROS_ONES = Dict("linear"=>zeros, "nonlinear"=>ones)
+
     
     T_fitted = length(output.fitted_params["param_1"])
 
@@ -45,9 +48,11 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     dict_hyperparams_and_fitted_components["params"]       = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
     # dict_hyperparams_and_fitted_components["intercept"]    = zeros(num_params)
     dict_hyperparams_and_fitted_components["score"]        = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
+    dict_hyperparams_and_fitted_components["b_mult"]       = zeros(num_params)
   
     dict_hyperparams_and_fitted_components["rw"]["value"]  = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
     dict_hyperparams_and_fitted_components["rw"]["κ"]      = zeros(num_params)
+    
 
     dict_hyperparams_and_fitted_components["rws"]["value"] = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
     dict_hyperparams_and_fitted_components["rws"]["b"]     = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
@@ -59,13 +64,13 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     dict_hyperparams_and_fitted_components["ar1_level"]["ϕ"]      = zeros(num_params)
     dict_hyperparams_and_fitted_components["ar1_level"]["ω"]      = zeros(num_params)
 
-    dict_hyperparams_and_fitted_components["seasonality"]["value"]   = zeros(num_params, T_fitted + steps_ahead, num_scenarios)
-    dict_hyperparams_and_fitted_components["seasonality"]["κ"]       = zeros(num_params)
+    dict_hyperparams_and_fitted_components["seasonality"]["value"]   = DICT_ZEROS_ONES[combination](num_params, T_fitted + steps_ahead, num_scenarios)
+    dict_hyperparams_and_fitted_components["seasonality"]["κ"]       = DICT_ZEROS_ONES[combination](num_params)
 
     if has_seasonality(seasonality) 
         #if stochastic
-            dict_hyperparams_and_fitted_components["seasonality"]["γ"]       = zeros(num_harmonic[idx_params[1]], T_fitted + steps_ahead, num_params, num_scenarios) 
-            dict_hyperparams_and_fitted_components["seasonality"]["γ_star"]  = zeros(num_harmonic[idx_params[1]], T_fitted + steps_ahead, num_params, num_scenarios)
+            dict_hyperparams_and_fitted_components["seasonality"]["γ"]       = DICT_ZEROS_ONES[combination](num_harmonic[idx_params[1]], T_fitted + steps_ahead, num_params, num_scenarios) 
+            dict_hyperparams_and_fitted_components["seasonality"]["γ_star"]  = DICT_ZEROS_ONES[combination](num_harmonic[idx_params[1]], T_fitted + steps_ahead, num_params, num_scenarios)
         #else
          #   dict_hyperparams_and_fitted_components["seasonality"]["γ"]       = zeros(num_harmonic[idx_params[1]], num_params) 
         #    dict_hyperparams_and_fitted_components["seasonality"]["γ_star"]  = zeros(num_harmonic[idx_params[1]], num_params)
@@ -83,9 +88,10 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     for i in 1:num_params
         dict_hyperparams_and_fitted_components["params"][i, 1:T_fitted, :] .= output.fitted_params["param_$i"]
 
-        # if i in idx_params
-        #     dict_hyperparams_and_fitted_components["intercept"][i] = components["param_$i"]["intercept"]
-        # end
+        if i in idx_params
+            # dict_hyperparams_and_fitted_components["intercept"][i] = components["param_$i"]["intercept"]
+            dict_hyperparams_and_fitted_components["b_mult"][i]    = components["param_$i"]["b_mult"]
+        end
 
         if has_random_walk(level, i)
             dict_hyperparams_and_fitted_components["rw"]["value"][i, 1:T_fitted, :] .= components["param_$i"]["level"]["value"]
@@ -332,14 +338,23 @@ Updates predictions for the specified parameter for a given time period and scen
 ## Returns
 Updates predictions for the specified parameter for a given time period and scenario in the `dict_hyperparams_and_fitted_components` object.
 """
-function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64)
+function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any}, param::Int64, t::Int64, s::Int64; combination::String="linear")
 
-    dict_hyperparams_and_fitted_components["params"][param, t, s] = #dict_hyperparams_and_fitted_components["intercept"][param] + 
-                                                                    dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] + 
-                                                                    dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] +
-                                                                    dict_hyperparams_and_fitted_components["ar1_level"]["value"][param, t, s] +
-                                                                    dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s] +
-                                                                    dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s] 
+    if combination == "linear"
+        dict_hyperparams_and_fitted_components["params"][param, t, s] = #dict_hyperparams_and_fitted_components["intercept"][param] + 
+                                                                        dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] + 
+                                                                        dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] +
+                                                                        dict_hyperparams_and_fitted_components["ar1_level"]["value"][param, t, s] +
+                                                                        dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s] +
+                                                                        dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s] 
+    else
+        m = dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] +
+            dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] +
+            dict_hyperparams_and_fitted_components["ar"]["value"][param, t, s] +
+            dict_hyperparams_and_fitted_components["ar1_level"]["value"][param, t, s]
+        b_mult = dict_hyperparams_and_fitted_components["b_mult"][param]
+        dict_hyperparams_and_fitted_components["params"][param, t, s] = (m + exp(b_mult*m) * dict_hyperparams_and_fitted_components["seasonality"]["value"][param, t, s])
+    end
                                                                                 
 end
 
@@ -362,7 +377,7 @@ Updates the parameter predictions for the specified parameter, time period, and 
 function update_params!(dict_hyperparams_and_fitted_components::Dict{String, Any}, X_forecast::Matrix{Fl}, period_X::Int64, param::Int64, t::Int64, s::Int64) where Fl
 
     n_exp = size(X_forecast, 2)
-
+    
     dict_hyperparams_and_fitted_components["params"][param, t, s] = #dict_hyperparams_and_fitted_components["intercept"][param] + 
                                                                     dict_hyperparams_and_fitted_components["rw"]["value"][param, t, s] + 
                                                                     dict_hyperparams_and_fitted_components["rws"]["value"][param, t, s] +
@@ -390,7 +405,7 @@ Simulates future values of a time series using the specified GAS model and fitte
 """
 function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitted_components::Dict{String, Any}, y::Vector{Float64}, steps_ahead::Int64, num_scenarios::Int64)
     
-    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
+    @unpack dist, time_varying_params, d, level, seasonality, ar, combination = gas_model
 
     idx_params                   = get_idxs_time_varying_params(time_varying_params) 
     order                        = get_AR_order(ar)
@@ -436,7 +451,7 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
                 if has_AR(ar, i)
                     update_AR!(dict_hyperparams_and_fitted_components, order, i, T_fitted + t, s)
                 end
-                update_params!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s)
+                update_params!(dict_hyperparams_and_fitted_components, i, T_fitted + t, s; combination = combination)
             end
             pred_y[T_fitted + t, s] = sample_dist(dict_hyperparams_and_fitted_components["params"][:, T_fitted + t, s], dist)
         end
@@ -464,7 +479,7 @@ Simulates future values of a time series using the specified GAS model, fitted c
 """
 function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitted_components::Dict{String, Any}, y::Vector{Float64}, X_forecast::Matrix{Fl}, steps_ahead::Int64, num_scenarios::Int64) where {Fl}
     
-    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
+    @unpack dist, time_varying_params, d, level, seasonality, ar, combination = gas_model
 
     idx_params                   = get_idxs_time_varying_params(time_varying_params) 
     order                        = get_AR_order(ar)

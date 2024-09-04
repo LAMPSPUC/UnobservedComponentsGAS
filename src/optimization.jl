@@ -31,7 +31,12 @@ function include_parameters(model::Ml, time_varying_params::Vector{Bool}, T::Int
         end
         #Verifica se um parametro fixo precisa dessa restrição 
         if positive_constrants[i] * !time_varying_params[i] == 1
+            println(typeof(dist))
             @constraint(model, fixed_params[i] ≥ 1e-4)
+            if typeof(dist) == LogNormalDistribution
+                println("Entrou")
+                @constraint(model, fixed_params[i] <= 100)
+            end
         end
     end
 
@@ -135,29 +140,48 @@ This function modifies the optimization model `model` by including dynamic compo
 """
 function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASModel, X::Union{Matrix, Missing}, T::Int64) where {Ml, Gl}
 
-    @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
+    @unpack dist, time_varying_params, d, level, seasonality, ar, combination = gas_model
     
     idx_time_varying_params = get_idxs_time_varying_params(time_varying_params) 
 
     #@variable(model, c[idx_time_varying_params])
+    @variable(model, -10 <= b_mult[idx_time_varying_params] <= 10)
+    @operator(model, my_exp, 1, exp)
 
     has_explanatory = !ismissing(X) ? true : false
 
     for i in idx_time_varying_params
 
         dynamic_aux = Vector(undef, T)
+        m           = Vector(undef, T)
 
         has_explanatory_param = has_explanatory && i == 1
 
-        for t in 2:T
-            dynamic_aux[t] = #model[:c][i] + 
-                             include_component_in_dynamic(model, :RW, has_random_walk(level, i), t, i) +
-                             include_component_in_dynamic(model, :RWS, has_random_walk_slope(level, i), t, i) +
-                             include_component_in_dynamic(model, :AR1_LEVEL, has_ar1_level(level, i), t, i ) + 
-                             include_component_in_dynamic(model, :AR, has_AR(ar, i), t, i) +
-                             include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i) +
-                             include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i)
+        if combination == "linear"
+            println(combination)
+            for t in 2:T
+                dynamic_aux[t] = #model[:c][i] + 
+                                include_component_in_dynamic(model, :RW, has_random_walk(level, i), t, i) +
+                                include_component_in_dynamic(model, :RWS, has_random_walk_slope(level, i), t, i) +
+                                include_component_in_dynamic(model, :AR1_LEVEL, has_ar1_level(level, i), t, i ) + 
+                                include_component_in_dynamic(model, :AR, has_AR(ar, i), t, i) +
+                                include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i) +
+                                include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i)
+            end
+        else
+            println(combination)
+            # μ_t = m_t + exp(b*m_t) × s_t
+            for t in 2:T                
+                m[t] = (include_component_in_dynamic(model, :RW, has_random_walk(level, i), t, i; combination=combination) +
+                        include_component_in_dynamic(model, :RWS, has_random_walk_slope(level, i), t, i; combination=combination) +
+                        include_component_in_dynamic(model, :AR, has_AR(ar, i), t, i; combination=combination) +
+                        include_component_in_dynamic(model, :AR1_LEVEL, has_ar1_level(level, i), t, i ))
+                s_t = include_component_in_dynamic(model, :S, has_seasonality(seasonality, i), t, i; combination=combination)
 
+                exp_b_mult = @expression(model, m[t] + my_exp(b_mult[i]*m[t])*s_t)
+
+                dynamic_aux[t] = exp_b_mult  
+            end
         end
         @constraint(model,[t = 2:T], parameters[t, i] ==  dynamic_aux[t])
     end

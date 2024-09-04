@@ -527,12 +527,20 @@ Returns the expression of a specific component in the dynamic equation of the mo
 ## Returns
 - Returns the expression of the specified component in the dynamic equation of the model at the given time index and parameter index, or 0 if the component is not present in the model.
 """
-function include_component_in_dynamic(model::Ml, component::Symbol, has_component::Bool, t::Int64, idx_param::Int64) where Ml
+function include_component_in_dynamic(model::Ml, component::Symbol, has_component::Bool, t::Int64, idx_param::Int64; combination::String="linear") where Ml
 
     if has_component
         return model[component][t, idx_param]
     else
-        return 0
+        if (component == :S) && (combination == "nonlinear")
+            # println("$component $combination -> Retorno = 1")
+            r = 1
+        else
+            # println("$component $combination -> Retorno = 0")
+            r = 0
+        end
+        # println("r = $r")
+        return r
     end
 end
 

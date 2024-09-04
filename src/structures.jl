@@ -30,15 +30,19 @@ mutable struct GASModel
     level::Union{String, Vector{String}}
     seasonality::Union{String, Vector{String}} # includes type and seasonal period: "deterministic 12"
     ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}}
+    combination::String
 
     function GASModel(dist::ScoreDrivenDistribution,
         time_varying_params::Vector{Bool},
         d::Union{Int64, Float64, Missing},
         level::Union{String, Vector{String}},
         seasonality::Union{String, Vector{String}},# includes type and seasonal period: "deterministic 12"
-        ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}},  Vector{Union{Missing, Vector{Int64}}}})
+        ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}},  Vector{Union{Missing, Vector{Int64}}}},
+        combination::String)
 
         num_params = length(time_varying_params)
+
+        @assert combination ∈ ["linear", "nonlinear"]
         
         @assert d ∈ [1.0, 0.5, 0.0, 1, 0] "Invalid d value! It must be 1.0, 0.5 or 0.0"
 
@@ -85,7 +89,7 @@ mutable struct GASModel
             ar[time_varying_params .== false] .= missing
         end
 
-        return new(dist, time_varying_params, d, level, seasonality, ar)
+        return new(dist, time_varying_params, d, level, seasonality, ar, combination)
         
     end
 end
