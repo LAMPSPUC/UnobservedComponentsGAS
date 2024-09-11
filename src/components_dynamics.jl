@@ -222,7 +222,7 @@ Adds AutoRegressive (AR) components to the optimization model.
 - Modifies the provided optimization model by adding AR components.
 """
 function add_AR!(model::Ml, s::Vector{Fl}, T::Int64, ar::Union{Int64, Vector{Int64}, Vector{Missing}, Vector{Union{Int64, Missing}}, Missing, Vector{Vector{Int64}}, Vector{Union{Vector{Int64}, Missing}}};
-                κ_min::Int64 = 0, κ_max::Int64 = 2) where {Ml, Fl}
+                κ_min::Union{Fl, Int64} = 0., κ_max::Union{Fl, Int64} = 2.) where {Ml, Fl}
 
     idx_params = findall(i -> !ismissing(i), ar) # Time-varying parameters with autoregressive dynamic
     order      = get_AR_order(ar)
@@ -264,7 +264,7 @@ Incorporate the random walk with slope component into the dynamics of the specif
 - Modifies the input model by adding random walk with slope components.
 """
 function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_slope::Dict{Int64, Bool};
-                                κ_min::Int64 = 0, κ_max::Int64 = 2) where {Ml, Fl}
+                                κ_min::Union{Fl, Int64} = 0., κ_max::Union{Fl, Int64} = 2.) where {Ml, Fl}
     
     idx_params = findall(i -> i == true, random_walk_slope) #Time-varying parameters with the random walk with slope dynamic
 
@@ -294,7 +294,7 @@ Incorporate the random walk component into the dynamics of the specified paramet
 - Modifies the input model by adding random walk components.
 """
 function add_random_walk!(model::Ml, s::Vector{Fl}, T::Int64, random_walk::Dict{Int64, Bool};
-                        κ_min::Int64 = 0, κ_max::Int64 = 2) where {Ml, Fl}
+                        κ_min::Union{Fl, Int64} = 0., κ_max::Union{Fl, Int64} = 2.) where {Ml, Fl}
 
     idx_params = findall(i -> i == true, random_walk) # Time-varying parameters with the random walk dynamic
 
@@ -320,7 +320,7 @@ Adds AutoRegressive (AR(1)) components to the optimization model.
 - Modifies the provided optimization model by adding AR(1) components.
 """
 function add_ar1!(model::Ml, s::Vector{Fl}, T::Int64, ar1::Dict{Int64, Bool};
-                κ_min::Int64 = 0, κ_max::Int64 = 2)  where {Fl, Ml}
+                κ_min::Union{Fl, Int64} = 0., κ_max::Union{Fl, Int64} = 2.)  where {Fl, Ml}
 
     idx_params = findall(i -> i == true, ar1)
 
@@ -351,7 +351,7 @@ Adds level components to the optimization model based on the provided level info
 - Modifies the provided optimization model by adding level components.
 """
 function add_level!(model::Ml, s::Vector{Fl}, T::Int64, level::Vector{String};
-                    κ_min::Int64 = 0, κ_max::Int64 = 2) where {Fl, Ml}
+                    κ_min::Union{Fl, Int64} = 0., κ_max::Union{Fl, Int64} = 2.) where {Fl, Ml}
 
     if "random walk" ∈ level 
         random_walk = Dict{Int64, Bool}()
@@ -425,7 +425,7 @@ Adds trigonometric seasonality components to the optimization model based on the
 - Modifies the provided optimization model by adding trigonometric seasonality components.
 """
 function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seasonality::Vector{String};
-                                        κ_min::Int64 = 0, κ_max::Int64 = 2) where {Ml, Fl}
+                                        κ_min::Union{Fl, Int64} = 0., κ_max::Union{Fl, Int64} = 2.) where {Ml, Fl}
     
     seasonality_dict, stochastic, stochastic_params = get_seasonality_dict_and_stochastic(seasonality)
     
@@ -495,7 +495,7 @@ Incorporates various components into the specified model based on the configurat
 - Modifies the input model by adding components such as random walk, random walk slope, autoregressive (AR), and trigonometric seasonality based on the configurations provided in the `GASModel`.
 """
 function include_components!(model::Ml, s::Vector{Fl}, gas_model::GASModel, T::Int64;
-                            κ_min::Int64 = 0, κ_max::Int64 = 2) where {Ml, Fl}
+                            κ_min::Union{Fl, Int64} = 0., κ_max::Union{Fl, Int64} = 2.) where {Ml, Fl}
 
     @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
     
@@ -533,13 +533,10 @@ function include_component_in_dynamic(model::Ml, component::Symbol, has_componen
         return model[component][t, idx_param]
     else
         if (component == :S) && (combination == "nonlinear")
-            # println("$component $combination -> Retorno = 1")
             r = 1
         else
-            # println("$component $combination -> Retorno = 0")
             r = 0
         end
-        # println("r = $r")
         return r
     end
 end

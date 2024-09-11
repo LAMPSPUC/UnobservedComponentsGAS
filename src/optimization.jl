@@ -31,12 +31,7 @@ function include_parameters(model::Ml, time_varying_params::Vector{Bool}, T::Int
         end
         #Verifica se um parametro fixo precisa dessa restrição 
         if positive_constrants[i] * !time_varying_params[i] == 1
-            println(typeof(dist))
             @constraint(model, fixed_params[i] ≥ 1e-4)
-            if typeof(dist) == LogNormalDistribution
-                println("Entrou")
-                @constraint(model, fixed_params[i] <= 100)
-            end
         end
     end
 

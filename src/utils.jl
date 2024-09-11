@@ -50,9 +50,6 @@ function get_fitted_values(gas_model::GASModel, model::Ml, X::Union{Missing, Mat
             fitted_params["param_$i"] = ones(length(fit_in_sample)) * value(model[:fixed_params][i])
         end
     end
-
-    # println("Roubando aqui")
-    # fitted_params["param_2"] = ones(length(fit_in_sample)) * 0.00718304931674615
     
     components = Dict{String, Any}()
 
@@ -142,7 +139,7 @@ Calculates the standardized residuals of a time series' model.
 - `std_res::Vector{Fl}`: A vector containing the standardized residuals.
 """
 function get_std_residuals(y::Vector{Fl}, fit_in_sample::Vector{Fl}) where Fl
-    residuals = y .- fit_in_sample
+    residuals = y[:] .- fit_in_sample
     std_res = (residuals .- mean(residuals)) / std(residuals)
 
     return std_res
@@ -164,20 +161,22 @@ Calculates the conditional score (CS) residuals for a time series based on the f
 function get_cs_residuals(y::Vector{Fl}, fitted_params::Dict{String, Vector{Float64}}, dist_code::Int64) where Fl
     
     T = length(y)
-    num_params = length(fitted_params)  ## COMO É ESSA CONTA?
+    num_params = length(fitted_params) 
 
-    cs_residuals = zeros(T, num_params)
+    cs_residuals = zeros(T-1, num_params)
 
+    # fitted params are already stating in the second observation
+    # y is starting in the first observation
     if num_params == 2
         for i in 1:num_params
-            for t in 1:T
-                cs_residuals[t, i] = scaled_score(fitted_params["param_1"][t], fitted_params["param_2"][t], y[t], 0.5, dist_code, i)
+            for t in 2:T
+                cs_residuals[t-1, i] = scaled_score(fitted_params["param_1"][t-1], fitted_params["param_2"][t-1], y[t], 0.5, dist_code, i)
             end
         end
     elseif num_params == 3
         for i in 1:(num_params-1)
-            for t in 1:T
-                cs_residuals[t, i] = scaled_score(fitted_params["param_1"][t], fitted_params["param_2"][t],fitted_params["param_3"][t], y[t], 0.5, dist_code, i)
+            for t in 2:T
+                cs_residuals[t-1, i] = scaled_score(fitted_params["param_1"][t-1], fitted_params["param_2"][t-1],fitted_params["param_3"][t-1], y[t], 0.5, dist_code, i)
             end
         end
     else
@@ -206,16 +205,16 @@ function get_quantile_residuals(y::Vector{Fl}, fitted_params::Dict{String, Vecto
     T          = length(y)
     num_params = length(fitted_params)
 
-    q_residuals = zeros(T)
+    q_residuals = zeros(T-1)
     if num_params == 2
-        for t in 1:T
+        for t in 2:T #alterei os indices dos residuos
             PIT = DICT_CDF[dist_name]([fitted_params["param_1"][t],fitted_params["param_2"][t]],  y[t])
-            q_residuals[t] = quantile(Normal(0, 1), PIT)
+            q_residuals[t-1] = quantile(Normal(0, 1), PIT)
         end
     elseif num_params == 3
-        for t in 1:T
+        for t in 2:T
             PIT = DICT_CDF[dist_name]([fitted_params["param_1"][t],fitted_params["param_2"][t], fitted_params["param_3"][t]],  y[t])
-            q_residuals[t] = quantile(Normal(0, 1), PIT)
+            q_residuals[t-1] = quantile(Normal(0, 1), PIT)
         end
     end
 
@@ -423,8 +422,6 @@ function fit_AR_model(y::Vector{Fl}, order::Union{Vector{Int64}, Vector{Nothing}
     @variable(model, ϕ[order])
     @variable(model, y_hat[1:T])
 
-    # println(order)
-    # println(typeof(order))
     @constraint(model, [t = max_order+1:T], y_hat[t] == c + sum(ϕ[i]*y[t - i] for i in order))
    
     @objective(model, Min, sum((y .- y_hat).^2))
