@@ -153,7 +153,6 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
         has_explanatory_param = has_explanatory && i == 1
 
         if combination == "linear"
-            println(combination)
             for t in 2:T
                 dynamic_aux[t] = #model[:c][i] + 
                                 include_component_in_dynamic(model, :RW, has_random_walk(level, i), t, i) +
@@ -164,7 +163,6 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
                                 include_explanatories_in_dynamic(model, X, has_explanatory_param, t, i)
             end
         else
-            println(combination)
             # μ_t = m_t + exp(b*m_t) × s_t
             for t in 2:T                
                 m[t] = (include_component_in_dynamic(model, :RW, has_random_walk(level, i), t, i; combination=combination) +

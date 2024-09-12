@@ -139,7 +139,7 @@ Calculates the standardized residuals of a time series' model.
 - `std_res::Vector{Fl}`: A vector containing the standardized residuals.
 """
 function get_std_residuals(y::Vector{Fl}, fit_in_sample::Vector{Fl}) where Fl
-    residuals = y[:] .- fit_in_sample
+    residuals = y .- fit_in_sample
     std_res = (residuals .- mean(residuals)) / std(residuals)
 
     return std_res
@@ -205,16 +205,16 @@ function get_quantile_residuals(y::Vector{Fl}, fitted_params::Dict{String, Vecto
     T          = length(y)
     num_params = length(fitted_params)
 
-    q_residuals = zeros(T-1)
+    q_residuals = zeros(T)
     if num_params == 2
-        for t in 2:T #alterei os indices dos residuos
+        for t in 1:T #alterei os indices dos residuos
             PIT = DICT_CDF[dist_name]([fitted_params["param_1"][t],fitted_params["param_2"][t]],  y[t])
-            q_residuals[t-1] = quantile(Normal(0, 1), PIT)
+            q_residuals[t] = quantile(Normal(0, 1), PIT)
         end
     elseif num_params == 3
-        for t in 2:T
+        for t in 1:T
             PIT = DICT_CDF[dist_name]([fitted_params["param_1"][t],fitted_params["param_2"][t], fitted_params["param_3"][t]],  y[t])
-            q_residuals[t-1] = quantile(Normal(0, 1), PIT)
+            q_residuals[t] = quantile(Normal(0, 1), PIT)
         end
     end
 

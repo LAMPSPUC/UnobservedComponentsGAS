@@ -21,8 +21,8 @@ Creates a generalized autoregressive score (GAS) model based on the given model'
 """
 function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missing, Int64};
     number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
-    κ_min::Union{Fl, Int64} = 0., κ_max::Union{Fl, Int64} = 2., initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
-    println("Serie original ", y[1:5])
+    κ_min::Union{Fl, Int64} = 1e-5, κ_max::Union{Fl, Int64} = 2., initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+
     if typeof(gas_model.dist) == LogNormalDistribution
         gas_model.dist = NormalDistribution()
         y = log.(y)
@@ -30,7 +30,6 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missin
     else
         log_normal_flag = false
     end 
-    println("Serie log ", y[1:5])
 
     # @unpack dist, time_varying_params, d, random_walk, random_walk_slope, ar, seasonality, robust, stochastic = gas_model
     @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
@@ -105,7 +104,7 @@ Creates a generalized autoregressive score (GAS) model with explanatory variable
 """
 function create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_ν::Union{Missing, Int64};
     number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
-    κ_min::Union{Fl, Int64} = 0., κ_max::Union{Fl, Int64} = 2., initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+    κ_min::Union{Fl, Int64} = 1e-5, κ_max::Union{Fl, Int64} = 2., initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
 
     if typeof(gas_model.dist) == LogNormalDistribution
         gas_model.dist = NormalDistribution()
@@ -185,7 +184,7 @@ Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticit
 function fit(gas_model::GASModel, y::Vector{Fl}; 
                 α::Float64 = 0.0, robust::Bool = false, robust_prop::Float64 = 0.7, 
                 number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
-                κ_min::Union{Fl, Int64} = 0., κ_max::Union{Fl, Int64} = 2., initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+                κ_min::Union{Fl, Int64} = 1e-5, κ_max::Union{Fl, Int64} = 2., initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
 
     dist = gas_model.dist
 
@@ -234,7 +233,7 @@ Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticit
 function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; 
                 α::Float64 = 0.0, robust::Bool=false, robust_prop::Float64 = 0.7, 
                 number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
-                κ_min::Union{Fl, Int64} = 0., κ_max::Union{Fl, Int64} = 2., initial_values::Union{Dict{String, Any}, Missing} = missing,tol::Float64 = 0.005) where Fl
+                κ_min::Union{Fl, Int64} = 1e-5, κ_max::Union{Fl, Int64} = 2., initial_values::Union{Dict{String, Any}, Missing} = missing,tol::Float64 = 0.005) where Fl
 
     dist = gas_model.dist
 
@@ -299,12 +298,10 @@ function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{G
     include_objective_function!(model, parameters, y, T, robust, dist_code; α = α, robust_prop = robust_prop);
 
     # @info("Initializing variables...")
-    println("Variancia inicial = ", initial_values["fixed_param"])
     initialize_components!(model, initial_values, gas_model; );
 
     #@info("Optimizing the model...")
     optimize!(model)
-    println("Variancia estimada = ", value.(model[:fixed_params][2]))    #@info termination_status(model)
 
     if log_normal_flag
         gas_model.dist = LogNormalDistribution()
@@ -413,22 +410,12 @@ function create_output_fit(model::Ml, parameters::Matrix{Gl} ,y::Vector{Fl}, X::
 
     fit_in_sample, fitted_params, components = get_fitted_values(gas_model, model,  X)
 
-    println(" ####### Params no log ####### ")
-    println("media ",fitted_params["param_1"][1:5])
-    println("variancia ",fitted_params["param_2"][1:5])
-    println("level ",components["param_1"]["level"]["value"][1:5])
-    # println("slope ",components["param_1"]["slope"]["value"][1:5])
     if typeof(dist) == LogNormalDistribution
         fit_in_sample, fitted_params = convert_to_exp_scale(fit_in_sample, fitted_params)
         residuals = get_residuals(exp.(y), fit_in_sample, fitted_params, dist)
     else
         residuals = get_residuals(y, fit_in_sample, fitted_params, dist)
     end
-    println(" ####### Params na escala original ####### ")
-    println("media ",fitted_params["param_1"][1:5])
-    println("variancia ",fitted_params["param_2"][1:5])
-    println("level ",components["param_1"]["level"]["value"][1:5])
-    # println("slope ",components["param_1"]["slope"]["value"][1:5])
 
     return Output(fit_in_sample, fitted_params, components, selected_variables, residuals, information_criteria, penalty_factor, String(Symbol(termination_status(model))))
 
