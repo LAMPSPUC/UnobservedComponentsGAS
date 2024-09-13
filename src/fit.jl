@@ -21,7 +21,7 @@ Creates a generalized autoregressive score (GAS) model based on the given model'
 """
 function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missing, Int64};
     number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
-    κ_min::Int64 = 0, κ_max::Int64 = 2, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+    κ_min::Union{Fl, Int64} = 1e-5, κ_max::Union{Fl, Int64} = 2, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
 
     if typeof(gas_model.dist) == LogNormalDistribution
         gas_model.dist = NormalDistribution()
@@ -104,7 +104,7 @@ Creates a generalized autoregressive score (GAS) model with explanatory variable
 """
 function create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_ν::Union{Missing, Int64};
     number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
-    κ_min::Int64 = 0, κ_max::Int64 = 2, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+    κ_min::Union{Fl, Int64} = 1e-5, κ_max::Union{Fl, Int64} = 2, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
 
     if typeof(gas_model.dist) == LogNormalDistribution
         gas_model.dist = NormalDistribution()
@@ -184,7 +184,7 @@ Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticit
 function fit(gas_model::GASModel, y::Vector{Fl}; 
                 α::Float64 = 0.0, robust::Bool = false, robust_prop::Float64 = 0.7, 
                 number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
-                κ_min::Int64 = 0, κ_max::Int64 = 2, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
+                κ_min::Union{Fl, Int64} = 1e-5, κ_max::Union{Fl, Int64} = 2, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where Fl
 
     dist = gas_model.dist
 
@@ -233,7 +233,7 @@ Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticit
 function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; 
                 α::Float64 = 0.0, robust::Bool=false, robust_prop::Float64 = 0.7, 
                 number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
-                κ_min::Int64 = 0, κ_max::Int64 = 2, initial_values::Union{Dict{String, Any}, Missing} = missing,tol::Float64 = 0.005) where Fl
+                κ_min::Union{Fl, Int64} = 1e-5, κ_max::Union{Fl, Int64} = 2, initial_values::Union{Dict{String, Any}, Missing} = missing,tol::Float64 = 0.005) where Fl
 
     dist = gas_model.dist
 
