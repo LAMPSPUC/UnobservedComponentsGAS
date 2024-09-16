@@ -439,8 +439,6 @@ function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seas
     S_aux = Matrix(undef, T, length(seasonality))
 
     if !isempty(idx_params_stochastic)
-
-
         @variable(model, κ_S[idx_params_stochastic])
         @constraint(model, [i in idx_params_stochastic], κ_min  ≤ κ_S[i] ≤ κ_max)    
         #JuMP.fix.(model[:κ_S][idx_params_deterministic], 1e-4)
