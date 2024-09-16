@@ -2,7 +2,7 @@
     
     time_series = CSV.read(joinpath(@__DIR__, "data/timeseries_lognormal_rws_d1.csv"), DataFrame)
     T,N = size(time_series)
-    y = time_series[:,2]
+    y = time_series[:,3]
     X = [2*y y/2 rand(T)]
     
     steps_ahead    = 12

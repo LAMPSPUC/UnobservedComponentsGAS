@@ -156,8 +156,8 @@
     end
 
     @testset " --- Test quality of fit - tDist with 2 params" begin
-        y         = time_series[1:end-steps_ahead,1]
-        y_test    = time_series[end-steps_ahead+1:end, 1]
+        y         = time_series[1:end-steps_ahead,2]
+        y_test    = time_series[end-steps_ahead+1:end, 2]
         gas_model = UnobservedComponentsGAS.GASModel(UnobservedComponentsGAS.tLocationScaleDistribution(), [true, true, false],
                                                         0.0, ["random walk slope", "random walk", ""], ["deterministic 12", "deterministic 12", ""], [missing, missing, missing])
         fitted_model = UnobservedComponentsGAS.fit(gas_model, y)
