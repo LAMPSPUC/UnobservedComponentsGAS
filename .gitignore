@@ -14,3 +14,6 @@ Manifest.toml
 
 # Files with csv extension
 *.csv
+
+# Personal folders
+SBPO/
