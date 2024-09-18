@@ -13,7 +13,7 @@ test_gas.jl
 Manifest.toml
 
 # Files with csv extension
-*.csv
+# *.csv
 
 # Personal folders
 SBPO/
