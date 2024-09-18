@@ -433,18 +433,26 @@ function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seas
     idx_params = sort(findall(i -> i != false, seasonality_dict)) # Time-varying parameters with the seasonality dynamic
     idx_params_deterministic = idx_params[.!stochastic_params[idx_params]]
     idx_params_stochastic    = idx_params[stochastic_params[idx_params]]
-
+    
     unique_num_harmonic = unique(num_harmonic)[minimum(idx_params)]
-
+    
+    println(unique_num_harmonic)
+    unique_num_harmonic = 6
+    println(unique_num_harmonic)
+    
     S_aux = Matrix(undef, T, length(seasonality))
 
     if !isempty(idx_params_stochastic)
         @variable(model, κ_S[idx_params_stochastic])
-        @constraint(model, [i in idx_params_stochastic], κ_min  ≤ κ_S[i] ≤ κ_max)    
+        @constraint(model, [i in idx_params_stochastic], κ_min  ≤ κ_S[i] ≤ κ_max)
+        # @constraint(model, [i in idx_params_stochastic], 0.  ≤ κ_S[i] ≤ 0.)
         #JuMP.fix.(model[:κ_S][idx_params_deterministic], 1e-4)
 
         @variable(model, γ_sto[1:unique_num_harmonic, 1:T, idx_params_stochastic])
         @variable(model, γ_star_sto[1:unique_num_harmonic, 1:T, idx_params_stochastic])
+
+        # @constraint(model, [t = 2:T], γ_sto[1:unique_num_harmonic, 1, idx_params_stochastic] == γ_sto[1:unique_num_harmonic, t, idx_params_stochastic])
+        # @constraint(model, [t = 2:T], γ_star_sto[1:unique_num_harmonic, 1, idx_params_stochastic] == γ_star_sto[1:unique_num_harmonic, t, idx_params_stochastic])
 
         @constraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params_stochastic], γ_sto[i, t, j] == γ_sto[i, t-1, j] * cos(2*π*i / seasonal_period[j]) + 
                                                                                     γ_star_sto[i,t-1, j]*sin(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t])

@@ -14,7 +14,7 @@ function create_folder_if_not_exists(folder_path::String)
     end
 end
 
-path_data = pwd() * "/../../0_Dados/"
+path_data = pwd() * "/StochasticSeasonality/"
 path_folders = pwd() * "/StochasticSeasonality/"
 
 series = ["ts_seasonality_var_1", "ts_seasonality_var_100", 
@@ -24,7 +24,7 @@ series = ["ts_seasonality_var_1", "ts_seasonality_var_100",
 for serie in series
     println(serie)
     data = CSV.read(path_data*"$serie.csv", DataFrame)
-    for K in 1:2  # Number of harmonics
+    for K in 1:6  # Number of harmonics
         println("  K = $K")
         for κ_max in [1,2,3]
             println("    κ_max = $(κ_max)")
