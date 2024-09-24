@@ -390,7 +390,8 @@ Retrieve the number of harmonics and seasonal periods specified in the input sea
 - `num_harmonic::Vector{Union{Int64, Nothing}}`: A vector containing the number of harmonics for each parameter with a seasonal component; otherwise, it contains nothing.
 - `seasonal_period::Vector{Int64}`: A vector containing the seasoanl period for each parameter with a seasonal component; otherwise, it contains nothing.
 """
-function get_num_harmonic_and_seasonal_period(seasonality::Dict{Int64, Union{Bool, Int64}})
+function get_num_harmonic_and_seasonal_period(seasonality::Dict{Int64, Union{Bool, Int64}}; 
+                                                fix_num_harmonic::Vector{U} = [missing, missing]) where{U}
 
     num_params = length(seasonality)
 
@@ -399,8 +400,19 @@ function get_num_harmonic_and_seasonal_period(seasonality::Dict{Int64, Union{Boo
 
     for i in 1:num_params
         if typeof(seasonality[i]) == Int64
+
             push!(seasonal_period, seasonality[i])
-            push!(num_harmonic, Int64(floor(seasonal_period[i] / 2)))
+            max_num_harmonic = Int64(floor(seasonal_period[i] / 2))
+
+            if ismissing(fix_num_harmonic[i])
+                push!(num_harmonic, max_num_harmonic)
+            else
+                if fix_num_harmonic[i] > max_num_harmonic
+                    @warn "Num harmonics should be less or equal than $max_num_harmonic. Fixing num harmonics to $max_num_harmonic."
+                    fix_num_harmonic[i] = max_num_harmonic
+                end
+                push!(num_harmonic, fix_num_harmonic[i])
+            end
         else
             push!(seasonal_period, nothing)
             push!(num_harmonic, nothing)
@@ -425,27 +437,24 @@ Adds trigonometric seasonality components to the optimization model based on the
 - Modifies the provided optimization model by adding trigonometric seasonality components.
 """
 function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seasonality::Vector{String};
-                                        κ_min::Union{Float64, Int64} = 1e-5, κ_max::Union{Float64, Int64} = 2) where {Ml, Fl}
+                                        κ_min::Union{Float64, Int64} = 1e-5, κ_max::Union{Float64, Int64} = 2,
+                                        fix_num_harmonic::Vector{U} = [missing, missing]) where {Ml, Fl, U}
     
     seasonality_dict, stochastic, stochastic_params = get_seasonality_dict_and_stochastic(seasonality)
     
-    num_harmonic, seasonal_period = get_num_harmonic_and_seasonal_period(seasonality_dict)
+    num_harmonic, seasonal_period = get_num_harmonic_and_seasonal_period(seasonality_dict; fix_num_harmonic = fix_num_harmonic)
     idx_params = sort(findall(i -> i != false, seasonality_dict)) # Time-varying parameters with the seasonality dynamic
     idx_params_deterministic = idx_params[.!stochastic_params[idx_params]]
     idx_params_stochastic    = idx_params[stochastic_params[idx_params]]
     
     unique_num_harmonic = unique(num_harmonic)[minimum(idx_params)]
-    
-    println(unique_num_harmonic)
-    unique_num_harmonic = 6
-    println(unique_num_harmonic)
-    
+
     S_aux = Matrix(undef, T, length(seasonality))
 
     if !isempty(idx_params_stochastic)
         @variable(model, κ_S[idx_params_stochastic])
         @constraint(model, [i in idx_params_stochastic], κ_min  ≤ κ_S[i] ≤ κ_max)
-        # @constraint(model, [i in idx_params_stochastic], 0.  ≤ κ_S[i] ≤ 0.)
+        # @constraint(model, [i in idx_params_stochastic], 0.0 ≤ κ_S[i] ≤ 0.0)
         #JuMP.fix.(model[:κ_S][idx_params_deterministic], 1e-4)
 
         @variable(model, γ_sto[1:unique_num_harmonic, 1:T, idx_params_stochastic])
@@ -501,7 +510,8 @@ Incorporates various components into the specified model based on the configurat
 - Modifies the input model by adding components such as random walk, random walk slope, autoregressive (AR), and trigonometric seasonality based on the configurations provided in the `GASModel`.
 """
 function include_components!(model::Ml, s::Vector{Fl}, gas_model::GASModel, T::Int64;
-                            κ_min::Union{Float64, Int64} = 1e-5, κ_max::Union{Float64, Int64} = 2) where {Ml, Fl}
+                            κ_min::Union{Float64, Int64} = 1e-5, κ_max::Union{Float64, Int64} = 2,
+                            fix_num_harmonic::Vector{U} = [missing, missing]) where {Ml, Fl, U}
 
     @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
     
@@ -514,7 +524,7 @@ function include_components!(model::Ml, s::Vector{Fl}, gas_model::GASModel, T::I
     end
 
     if has_seasonality(seasonality)
-        add_trigonometric_seasonality!(model, s, T, seasonality; κ_min = κ_min, κ_max = κ_max)
+        add_trigonometric_seasonality!(model, s, T, seasonality; κ_min = κ_min, κ_max = κ_max, fix_num_harmonic = fix_num_harmonic)
     end
 end
 

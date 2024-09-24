@@ -26,6 +26,9 @@ function get_dict_hyperparams_and_fitted_components_with_forecast(gas_model::GAS
     idx_params_stochastic    = idx_params[stochastic_params[idx_params]]
     
     num_harmonic, seasonal_period = get_num_harmonic_and_seasonal_period(seasonality_dict)
+    for i in idx_params
+        num_harmonic[i] = size(components["param_1"]["seasonality"]["hyperparameters"]["γ"], 1)
+    end
 
     if isempty(num_harmonic) #caso não tenha sazonalidade, assume 1 harmonico para nao quebrar a função update_S!
         num_harmonic = Int64.(ones(get_num_params(dist)))
@@ -397,6 +400,10 @@ function simulate(gas_model::GASModel, output::Output, dict_hyperparams_and_fitt
     seasonality_dict, stochastic, stochastic_params = get_seasonality_dict_and_stochastic(seasonality)
     num_harmonic, _              = get_num_harmonic_and_seasonal_period(seasonality_dict)
     dist_code                    = get_dist_code(dist)
+
+    for i in idx_params
+        num_harmonic[i] = size(output.components["param_1"]["seasonality"]["hyperparameters"]["γ"], 1)
+    end
  
     T        = length(y)
     T_fitted = length(output.fit_in_sample)
