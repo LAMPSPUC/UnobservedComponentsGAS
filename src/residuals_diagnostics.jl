@@ -7,11 +7,11 @@
 function get_residuals(output::Output; type::String="q")
     fitted_model = deepcopy(output)
     if type == "q"
-        return fitted_model.residuals["q_residuals"][2:end]
+        return fitted_model.residuals["q_residuals"][1:end]
     elseif type == "std"
-        return fitted_model.residuals["std_residuals"][2:end]
+        return fitted_model.residuals["std_residuals"][1:end]
     else
-        return fitted_model.residuals["cs_residuals"][2:end, :]
+        return fitted_model.residuals["cs_residuals"][1:end, :]
     end
 end
 
@@ -63,7 +63,7 @@ end
 function get_acf_residuals(fitted_model::Output; lags::Int=25, type::String="q", squared::Bool=false)
     
     resid = get_residuals(fitted_model; type=type)
-
+    println(length(resid))
     squared == true ? resid = resid.^2 : nothing
     
     return StatsBase.autocor(resid, 0:lags)
@@ -80,7 +80,7 @@ end
 function plot_acf_residuals(output::Output; lags::Int=25, type::String="q", squared::Bool=false)
     acf_values = get_acf_residuals(output; lags = lags, type = type, squared = squared)
     resid      = get_residuals(output; type=type)
-
+    println(length(resid))
     if type == "q"
         name = "Quantile"
     elseif type == "std"

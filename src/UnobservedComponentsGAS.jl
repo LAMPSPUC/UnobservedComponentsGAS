@@ -15,6 +15,7 @@ module UnobservedComponentsGAS
     using StatsPlots
     using StatsBase
     using ARCHModels
+    using StateSpaceLearning
      
     # include("../NonParametricStructuralModels/src/NonParametricStructuralModels.jl")
 

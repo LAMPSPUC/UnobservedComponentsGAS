@@ -175,6 +175,41 @@ function define_state_space_model(y::Vector{Float64}, X::Union{Matrix{Float64}, 
                 "γ" => initial_γ,"γ_star" => initial_γ_star,"explanatory" => explanatory_coefs,"res" => res)
 end
 
+
+function define_SSL_model(y::Vector{Float64}, X::Union{Matrix{Float64}, Missing}, has_level::Bool, has_slope::Bool, 
+                            has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool)
+    
+    
+    T                   = length(y)
+    ismissing(X) ? N = 0 : N = size(X, 2)
+    initial_level       = zeros(T)
+    initial_slope       = zeros(T)
+    initial_seasonality = zeros(T)
+    initial_γ           = zeros(1)
+    initial_γ_star      = zeros(1)
+    explanatory_coefs   = zeros(N)
+
+    model_input = Dict("level" => has_level, "stochastic_level" => has_level, "trend" => has_slope, "stochastic_trend" => has_slope, 
+                    "seasonal" => has_seasonality, "stochastic_seasonal" => stochastic, "freq_seasonal" => seasonal_period, "outlier" => false, "ζ_ω_threshold" => 12)
+
+    if ismissing(X)
+        ssl_model = StateSpaceLearning.fit_model(y; model_input = model_input);
+    else
+        ssl_model = StateSpaceLearning.fit_model(y; model_input = model_input, Exogenous_X = X);
+    end
+
+    initial_level = ssl_model.components["μ1"]["Values"] + ssl_model.components["ξ"]["Values"]
+    initial_slope = ssl_model.components["ν1"]["Values"] + ssl_model.components["ζ"]["Values"]
+    initial_seasonality = ssl_model.components["γ1"]["Values"] + ssl_model.components["ω"]["Values"]
+    initial_γ, initial_γ_star = fit_harmonics(initial_seasonality, seasonal_period, stochastic)
+    explanatory_coefs = ssl_model.components["Exogenous_X"]["Coefs"]
+    res = ssl_model.ε
+
+    return Dict("level" => initial_level,"slope" => initial_slope,"seasonality" => initial_seasonality,
+                "γ" => initial_γ,"γ_star" => initial_γ_star,"explanatory" => explanatory_coefs,"res" => res)
+end
+
+
 """
 ## get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missing}, has_level::Bool, has_ar1_level::Bool, has_slope::Bool, has_seasonality::Bool, seasonal_period::Union{Missing, Int64}, stochastic::Bool, order::Union{Vector{Int64}, Vector{Nothing}}, max_order::Int64)
 
@@ -217,6 +252,7 @@ function get_initial_values(y::Vector{Float64}, X::Union{Matrix{Float64}, Missin
         else
             ss_components = define_state_space_model(y, (has_level || has_ar1_level), has_slope, has_seasonality, seasonal_period, stochastic)
         end
+        # ss_components = define_SSL_model(y, X, has_level, has_slope, has_seasonality, seasonal_period, stochastic)
 
         if !isnothing(order[1])
             res = ss_components["res"]

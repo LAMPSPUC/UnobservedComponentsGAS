@@ -276,7 +276,7 @@ function add_random_walk_slope!(model::Ml, s::Vector{Fl}, T::Int64, random_walk_
     @constraint(model, [t = 2:T, j in idx_params], b[t, j]   == b[t - 1, j] + κ_b[j] * s[j][t])
     @constraint(model, [t = 2:T, j in idx_params], RWS[t, j] == RWS[t - 1, j] + b[t - 1, j] + κ_RWS[j] * s[j][t])
     @constraint(model, [j in idx_params], κ_min ≤ κ_RWS[j] ≤ κ_max)
-    @constraint(model, [j in idx_params], κ_min ≤ κ_b[j] ≤ κ_max)
+    @constraint(model, [j in idx_params], κ_min ≤ κ_b[j] ≤ κ_min)
 end
 
 """
@@ -437,7 +437,7 @@ Adds trigonometric seasonality components to the optimization model based on the
 - Modifies the provided optimization model by adding trigonometric seasonality components.
 """
 function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seasonality::Vector{String};
-                                        κ_min::Union{Float64, Int64} = 1e-5, κ_max::Union{Float64, Int64} = 2,
+                                        κ_min::Union{Float64, Int64} = 1e-5, κ_max_s::Union{Float64, Int64} = 1,
                                         fix_num_harmonic::Vector{U} = [missing, missing]) where {Ml, Fl, U}
     
     seasonality_dict, stochastic, stochastic_params = get_seasonality_dict_and_stochastic(seasonality)
@@ -453,21 +453,41 @@ function add_trigonometric_seasonality!(model::Ml, s::Vector{Fl}, T::Int64, seas
 
     if !isempty(idx_params_stochastic)
         @variable(model, κ_S[idx_params_stochastic])
-        @constraint(model, [i in idx_params_stochastic], κ_min  ≤ κ_S[i] ≤ κ_max)
+        @constraint(model, [i in idx_params_stochastic], κ_min  ≤ κ_S[i] ≤ κ_max_s)
         # @constraint(model, [i in idx_params_stochastic], 0.0 ≤ κ_S[i] ≤ 0.0)
-        #JuMP.fix.(model[:κ_S][idx_params_deterministic], 1e-4)
 
         @variable(model, γ_sto[1:unique_num_harmonic, 1:T, idx_params_stochastic])
         @variable(model, γ_star_sto[1:unique_num_harmonic, 1:T, idx_params_stochastic])
-
-        # @constraint(model, [t = 2:T], γ_sto[1:unique_num_harmonic, 1, idx_params_stochastic] == γ_sto[1:unique_num_harmonic, t, idx_params_stochastic])
-        # @constraint(model, [t = 2:T], γ_star_sto[1:unique_num_harmonic, 1, idx_params_stochastic] == γ_star_sto[1:unique_num_harmonic, t, idx_params_stochastic])
 
         @constraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params_stochastic], γ_sto[i, t, j] == γ_sto[i, t-1, j] * cos(2*π*i / seasonal_period[j]) + 
                                                                                     γ_star_sto[i,t-1, j]*sin(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t])
         @constraint(model, [i = 1:unique_num_harmonic, t = 2:T, j in idx_params_stochastic], γ_star_sto[i, t, j] == -γ_sto[i, t-1, j] * sin(2*π*i / seasonal_period[j]) + 
                                                                                     γ_star_sto[i,t-1, j]*cos(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t])
 
+        # Define the decision variables only for the initial time step
+        # @variable(model, γ_sto_ini[1:unique_num_harmonic, idx_params_stochastic])
+        # @variable(model, γ_star_sto_ini[1:unique_num_harmonic, idx_params_stochastic])
+        # γ_sto = Array{NonlinearExpr}(undef, unique_num_harmonic, T, length(idx_params_stochastic))
+        # γ_star_sto = Array{NonlinearExpr}(undef, unique_num_harmonic, T, length(idx_params_stochastic))
+        # println("Criando expression")
+        # # Create JuMP expressions to calculate γ_sto and γ_star_sto over time
+        # for i in 1:unique_num_harmonic, t in 1:T, j in idx_params_stochastic
+        #     if t == 1
+        #         # For t == 1, use the initial values
+        #         γ_sto[i, t, j] = γ_sto_ini[i, j]
+        #         γ_star_sto[i, t, j] = γ_star_sto_ini[i, j]
+        #     else
+        #         # For t > 1, use the recurrence relations
+        #         γ_sto[i, t, j] = γ_sto[i, t-1, j] * cos(2*π*i / seasonal_period[j]) + 
+        #                             γ_star_sto[i, t-1, j] * sin(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t]
+        #         γ_star_sto[i, t, j] = -γ_sto[i, t-1, j] * sin(2*π*i / seasonal_period[j]) + 
+        #                                     γ_star_sto[i, t-1, j] * cos(2*π*i / seasonal_period[j]) + κ_S[j] * s[j][t]
+        #     end
+        # end
+
+        # @expression(model, γ_sto, γ_sto)
+        # @expression(model, γ_star_sto, γ_star_sto)
+        # println("Fim criação expression")
         for j in idx_params_stochastic  
             for t in 1:T
                 S_aux[t, j] = sum(γ_sto[i, t, j]  for i in 1:unique_num_harmonic)
@@ -511,7 +531,7 @@ Incorporates various components into the specified model based on the configurat
 """
 function include_components!(model::Ml, s::Vector{Fl}, gas_model::GASModel, T::Int64;
                             κ_min::Union{Float64, Int64} = 1e-5, κ_max::Union{Float64, Int64} = 2,
-                            fix_num_harmonic::Vector{U} = [missing, missing]) where {Ml, Fl, U}
+                            κ_max_s::Union{Float64, Int64} = 1, fix_num_harmonic::Vector{U} = [missing, missing]) where {Ml, Fl, U}
 
     @unpack dist, time_varying_params, d, level, seasonality, ar = gas_model
     
@@ -524,7 +544,7 @@ function include_components!(model::Ml, s::Vector{Fl}, gas_model::GASModel, T::I
     end
 
     if has_seasonality(seasonality)
-        add_trigonometric_seasonality!(model, s, T, seasonality; κ_min = κ_min, κ_max = κ_max, fix_num_harmonic = fix_num_harmonic)
+        add_trigonometric_seasonality!(model, s, T, seasonality; κ_min = κ_min, κ_max_s = κ_max_s, fix_num_harmonic = fix_num_harmonic)
     end
 end
 

@@ -21,7 +21,7 @@ Creates a generalized autoregressive score (GAS) model based on the given model'
 """
 function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missing, Int64};
     number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0,
-    κ_min::Union{Float64, Int64} = 1e-5, κ_max::Union{Float64, Int64} = 2, 
+    κ_min::Union{Float64, Int64} = 1e-5, κ_max::Union{Float64, Int64} = 2, κ_max_s::Union{Float64, Int64} = 1,
     fix_num_harmonic::Vector{U} = [missing, missing], initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where {Fl, U}
 
     if typeof(gas_model.dist) == LogNormalDistribution
@@ -40,7 +40,7 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missin
     
     T = length(y)
 
-    # #@info("Creating GAS model...")
+    @info("Creating GAS model...")
     model = JuMP.Model(Ipopt.Optimizer)
 
     set_optimizer_attribute(model, "max_iter", number_max_iterations)
@@ -48,22 +48,22 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, fixed_ν::Union{Missin
     set_optimizer_attribute(model, "tol", tol)
     set_silent(model)
 
-    # #@info("Including parameters...")
+    @info("Including parameters...")
     parameters = include_parameters(model, time_varying_params, T, dist, fixed_ν);
 
-    # #@info("Computing score...")
+    @info("Computing score...")
     s = compute_score(model, parameters, y, d, time_varying_params, T, dist);
     
-    # #@info("Including components...")
-    include_components!(model, s, gas_model, T; κ_min = κ_min, κ_max = κ_max, fix_num_harmonic = fix_num_harmonic);
+    @info("Including components...")
+    include_components!(model, s, gas_model, T; κ_min = κ_min, κ_max = κ_max, κ_max_s = κ_max_s, fix_num_harmonic = fix_num_harmonic);
 
-    # #@info("Computing initial values...")
+    @info("Computing initial values...")
     if ismissing(initial_values)
         Random.seed!(123)
         initial_values = create_output_initialization(y, missing, gas_model; fix_num_harmonic = fix_num_harmonic);
     end
 
-    # #@info("Including dynamics..")
+    @info("Including dynamics..")
     include_dynamics!(model,parameters, gas_model,  missing, T);
 
     # if get_num_params(gas_model.dist) == 3
@@ -105,7 +105,7 @@ Creates a generalized autoregressive score (GAS) model with explanatory variable
 """
 function create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_ν::Union{Missing, Int64};
     number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
-    κ_min::Union{Float64, Int64} = 1e-5, κ_max::Union{Float64, Int64} = 2, 
+    κ_min::Union{Float64, Int64} = 1e-5, κ_max::Union{Float64, Int64} = 2, κ_max_s::Union{Float64, Int64} = 1,
     fix_num_harmonic::Vector{U} = [missing, missing], initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where {Fl, U}
 
     if typeof(gas_model.dist) == LogNormalDistribution
@@ -124,7 +124,7 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_�
     
     T = length(y)
 
-    # #@info("Creating GAS model...")
+    #@info("Creating GAS model...")
     model = JuMP.Model(Ipopt.Optimizer)
 
     set_optimizer_attribute(model, "max_iter", number_max_iterations)
@@ -139,7 +139,7 @@ function create_model(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}, fixed_�
     s = compute_score(model, parameters,  y, d, time_varying_params, T, dist);
     
     #@info("Including components...")
-    include_components!(model, s, gas_model, T; κ_min = κ_min, κ_max = κ_max, fix_num_harmonic = fix_num_harmonic);
+    include_components!(model, s, gas_model, T; κ_min = κ_min, κ_max = κ_max, κ_max_s = κ_max_s, fix_num_harmonic = fix_num_harmonic);
 
     #@info("Computing initial values...")
     if ismissing(initial_values)
@@ -186,7 +186,7 @@ Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticit
 function fit(gas_model::GASModel, y::Vector{Fl}; 
                 α::Float64 = 0.0, robust::Bool = false, robust_prop::Float64 = 0.7, 
                 number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
-                fix_num_harmonic::Vector{U} = [missing, missing],
+                fix_num_harmonic::Vector{U} = [missing, missing], κ_max_s::Union{Float64, Int64} = 1,
                 κ_min::Union{Float64, Int64} = 1e-5, κ_max::Union{Float64, Int64} = 2, initial_values::Union{Dict{String, Any}, Missing} = missing, tol::Float64 = 0.005) where {Fl, U}
 
     dist = gas_model.dist
@@ -195,14 +195,14 @@ function fit(gas_model::GASModel, y::Vector{Fl};
 
         fitted_model = fit_tlocationscale_local_search(gas_model, y; 
                                                        α = α, robust = robust ,robust_prop = robust_prop, 
-                                                       number_max_iterations = number_max_iterations, κ_min = κ_min, κ_max = κ_max,
+                                                       number_max_iterations = number_max_iterations, κ_min = κ_min, κ_max = κ_max, κ_max_s = κ_max_s,
                                                        max_optimization_time = max_optimization_time, initial_values = initial_values, 
                                                        fix_num_harmonic = fix_num_harmonic)
     else
     
         model, parameters, initial_values = create_model(gas_model, y,missing;  number_max_iterations = number_max_iterations,
                                          max_optimization_time = max_optimization_time, initial_values = initial_values, tol = tol,
-                                         κ_min = κ_min, κ_max = κ_max, fix_num_harmonic = fix_num_harmonic)
+                                         κ_min = κ_min, κ_max = κ_max, κ_max_s = κ_max_s, fix_num_harmonic = fix_num_harmonic)
 
         fitted_model = fit(gas_model, y, model, parameters, initial_values; α = α, robust = robust, robust_prop = robust_prop)
     end
@@ -237,7 +237,7 @@ Fits the specified GAS (Generalized AutoRegressive Conditional Heteroskedasticit
 function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; 
                 α::Float64 = 0.0, robust::Bool=false, robust_prop::Float64 = 0.7, 
                 number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
-                κ_min::Union{Float64, Int64} = 1e-5, κ_max::Union{Float64, Int64} = 2, 
+                κ_min::Union{Float64, Int64} = 1e-5, κ_max::Union{Float64, Int64} = 2, κ_max_s::Union{Float64, Int64} = 1,
                 fix_num_harmonic::Vector{U} = [missing, missing], initial_values::Union{Dict{String, Any}, Missing} = missing,tol::Float64 = 0.005) where {Fl, U}
 
     dist = gas_model.dist
@@ -247,11 +247,11 @@ function fit(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl};
         fitted_model = fit_tlocationscale_local_search(gas_model, y, X;  
                                                        tol = 0.01, α = α, robust = robust, robust_prop = robust_prop, number_max_iterations = number_max_iterations,
                                                        max_optimization_time = max_optimization_time, initial_values = initial_values,
-                                                       κ_min = κ_min, κ_max = κ_max, fix_num_harmonic = fix_num_harmonic)
+                                                       κ_min = κ_min, κ_max = κ_max, κ_max_s = κ_max_s, fix_num_harmonic = fix_num_harmonic)
     else
         model, parameters, initial_values = create_model(gas_model, y, X, missing;  number_max_iterations = number_max_iterations,
                                          max_optimization_time = max_optimization_time,  tol = tol,
-                                         κ_min = κ_min, κ_max = κ_max, initial_values = initial_values, fix_num_harmonic = fix_num_harmonic)
+                                         κ_min = κ_min, κ_max = κ_max, κ_max_s = κ_max_s, initial_values = initial_values, fix_num_harmonic = fix_num_harmonic)
 
         fitted_model = fit(gas_model, y, X, model, parameters, initial_values; α = α, robust = robust, robust_prop = robust_prop)
     end
@@ -299,13 +299,13 @@ function fit(gas_model::GASModel, y::Vector{Fl}, model::Ml, parameters::Matrix{G
     
     T = length(y)
 
-    #@info("Including objective funcion...")
+    @info("Including objective funcion...")
     include_objective_function!(model, parameters, y, T, robust, dist_code; α = α, robust_prop = robust_prop);
 
-    #@info("Initializing variables...")
+    @info("Initializing variables...")
     initialize_components!(model, initial_values, gas_model; );
 
-    #@info("Optimizing the model...")
+    @info("Optimizing the model...")
     optimize!(model)
     @info termination_status(model)
 

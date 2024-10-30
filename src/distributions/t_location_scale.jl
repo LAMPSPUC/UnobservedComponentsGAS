@@ -413,6 +413,7 @@ find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}, X::Matrix{
 function find_first_model_for_local_search(gas_model::GASModel, y::Vector{Fl}, X::Matrix{Fl}; 
                                           α::Float64 = 0.5, robust::Bool = false, robust_prop::Float64 = 0.7, 
                                           κ_min::Union{Float64, Int64} = 1e-5, κ_max::Union{Float64, Int64} = 2, 
+                                          κ_max_s::Union{Float64, Int64} = 1,
                                           number_max_iterations::Int64 = 30000, max_optimization_time::Float64 = 180.0, 
                                           initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl, Dl}
     T    = length(y)
@@ -471,14 +472,14 @@ fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl};
 function fit_tlocationscale_local_search(gas_model::GASModel, y::Vector{Fl};
                                             tol::Float64 = 0.01, α::Float64 = 0.5, robust::Bool = false, robust_prop::Float64 = 0.7,
                                             κ_min::Union{Float64, Int64} = 1e-5, κ_max::Union{Float64, Int64} = 2, number_max_iterations::Int64 = 30000, 
-                                            max_optimization_time::Float64 = 180.0, fix_num_harmonic::Vector{U} = [missing, missing], 
-                                            initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl, Dl, U}
+                                            κ_max_s::Union{Float64, Int64} = 1, max_optimization_time::Float64 = 180.0, 
+                                            fix_num_harmonic::Vector{U} = [missing, missing], initial_values::Union{Dict{String, Any}, Missing} = missing) where {Fl, Dl, U}
 
     T    = length(y)
     dist = gas_model.dist
 
     fitted_model_ν, first_ν = find_first_model_for_local_search(gas_model, y;  α = α, robust = robust, robust_prop = robust_prop, number_max_iterations = number_max_iterations,
-                                                                κ_min = κ_min, κ_max = κ_max, max_optimization_time =  max_optimization_time, initial_values = initial_values)
+                                                                κ_min = κ_min, κ_max = κ_max, κ_max_s = κ_max_s, max_optimization_time =  max_optimization_time, initial_values = initial_values)
 
     model_lower, parameters_lower, initial_values_lower = create_model(gas_model, y,  first_ν-1; number_max_iterations = number_max_iterations,
                                                  max_optimization_time =  max_optimization_time, initial_values = initial_values,

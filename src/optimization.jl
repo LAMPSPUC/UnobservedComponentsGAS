@@ -148,7 +148,6 @@ function include_dynamics!(model::Ml, parameters::Matrix{Gl}, gas_model::GASMode
         dynamic_aux = Vector(undef, T)
 
         has_explanatory_param = has_explanatory && i == 1
-
         for t in 2:T
             dynamic_aux[t] = #model[:c][i] + 
                              include_component_in_dynamic(model, :RW, has_random_walk(level, i), t, i) +
