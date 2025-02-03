@@ -223,3 +223,7 @@ Please refer to the folder *examples* in order to dive deeply into the package f
 ## References
 
 - BERTSIMAS, D.; PASKOV, I. Time series that are robust to regime changes. **Journal of Machine Learning Research**, v. 21, p. 1–31, 2020.
+
+---
+<img src="Figures/logo_stonelab.PNG" alt="Observed" width="300">
+The UnobservedComponentsGAS project is sponsored by Stone through its research laboratory, Stonelab.
